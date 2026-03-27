@@ -28,7 +28,10 @@
       "Bash(git push:*)",
       "Bash(gh auth:*)",
       "Bash(git commit -m \"Redesign: dark theme, mobile-first, bottom nav bar:*)",
-      "Bash(git commit -m \"Style: Poppins font, higher contrast, larger text:*)"
+      "Bash(git commit -m \"Style: Poppins font, higher contrast, larger text:*)",
+      "Bash(SUPABASE_SERVICE_ROLE_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaW1rZW9sbmlnb2Z6cmFma3ZuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDYwMjkyMiwiZXhwIjoyMDkwMTc4OTIyfQ.GqfgI_7jD10pqhpX4aucheN51SL6MbOCi_-NmDGOQ8c\" NEXT_PUBLIC_SUPABASE_URL=\"https://voimkeolnigofzrafkvn.supabase.co\" npx tsx scripts/seed.ts 2>&1)",
+      "Bash(node -e \":*)",
+      "Bash(git commit -m \"Add PWA support + seed script:*)"
     ]
   }
 }

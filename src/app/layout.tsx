@@ -12,12 +12,24 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "BetTracker - Suivi de paris progressifs",
   description: "Application de suivi de séries de paris sportifs progressifs",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "BetTracker",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: "#0f172a",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -27,6 +39,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
+      <head>
+        <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/icons/icon.svg" />
+      </head>
       <body className={`${poppins.variable} font-sans antialiased`}>
         {children}
       </body>
