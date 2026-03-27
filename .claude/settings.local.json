@@ -27,7 +27,8 @@
       "Bash(git remote:*)",
       "Bash(git push:*)",
       "Bash(gh auth:*)",
-      "Bash(git commit -m \"Redesign: dark theme, mobile-first, bottom nav bar:*)"
+      "Bash(git commit -m \"Redesign: dark theme, mobile-first, bottom nav bar:*)",
+      "Bash(git commit -m \"Style: Poppins font, higher contrast, larger text:*)"
     ]
   }
 }
