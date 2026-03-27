@@ -6,7 +6,7 @@ import { formatEuros } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, PlusCircle } from "lucide-react";
 
 interface AddBetFormProps {
   seriesId: string;
@@ -55,9 +55,11 @@ export function AddBetForm({ seriesId }: AddBetFormProps) {
 
   return (
     <div className="space-y-4">
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-2">
-          <Label htmlFor="odds">Cote du pari</Label>
+          <Label htmlFor="odds" className="text-sm text-slate-300">
+            Cote du pari
+          </Label>
           <Input
             id="odds"
             name="odds"
@@ -67,35 +69,43 @@ export function AddBetForm({ seriesId }: AddBetFormProps) {
             placeholder="Ex : 1.50"
             required
             disabled={isPending}
+            className="h-11 md:h-12 text-base bg-slate-800/60 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500/20"
           />
         </div>
 
         {error && (
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-red-400">{error}</p>
         )}
 
-        <Button type="submit" disabled={isPending} className="w-full">
+        <Button
+          type="submit"
+          disabled={isPending}
+          className="w-full h-11 md:h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm md:text-base"
+        >
           {isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Calcul en cours...
             </>
           ) : (
-            "Ajouter le pari"
+            <>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Ajouter le pari
+            </>
           )}
         </Button>
       </form>
 
       {result && (
-        <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
-          <p className="text-sm font-medium">
+        <div className="rounded-lg border-l-4 border-l-emerald-500 bg-slate-800/60 p-4 space-y-2">
+          <p className="text-sm font-semibold text-emerald-400">
             Pari n°{result.bet_number} ajouté avec succès
           </p>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <span className="text-muted-foreground">Mise calculée :</span>
-            <span className="font-medium">{formatEuros(result.stake)}</span>
-            <span className="text-muted-foreground">Gain potentiel net :</span>
-            <span className="font-medium text-green-600">
+          <div className="grid grid-cols-2 gap-1.5 text-sm">
+            <span className="text-slate-400">Mise calculée :</span>
+            <span className="font-medium text-slate-200">{formatEuros(result.stake)}</span>
+            <span className="text-slate-400">Gain potentiel net :</span>
+            <span className="font-medium text-emerald-400">
               {formatEuros(result.potential_net)}
             </span>
           </div>

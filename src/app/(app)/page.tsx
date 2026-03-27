@@ -8,8 +8,10 @@ export default async function DashboardPage() {
   const stats = await getDashboardStats();
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Tableau de bord</h1>
+    <div className="space-y-4 md:space-y-6">
+      <h2 className="text-lg md:text-xl font-semibold text-slate-200">
+        Résumé
+      </h2>
 
       <StatsCards
         stats={{
@@ -20,7 +22,7 @@ export default async function DashboardPage() {
         }}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <SuccessByRank data={stats.successByRank} />
         <DistributionChart data={stats.distributionByType} />
       </div>
