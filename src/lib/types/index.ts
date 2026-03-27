@@ -18,21 +18,21 @@ export type BetResult = "gagne" | "perdu" | null;
 
 // Dashboard
 export interface DashboardStats {
-  netGain: number;
-  roi: number;
+  capital: number;
   totalStakes: number;
-  activeSeriesCount: number;
-  successByRank: {
-    rank: number;
-    won: number;
-    total: number;
-  }[];
-  distributionByType: {
-    type: BetType;
-    count: number;
-    percentage: number;
-  }[];
-  activeSeries: (SeriesWithBets & {
-    cumulativeStake: number;
-  })[];
+  totalGains: number;
+  roi: number;
+  miseEnCours: number;
+  gainsPotentiels: number;
+  seriesEnCours: number;
+  parisGagnes: number;
+  parisPerdu: number;
+  coteMoyenne: number;
+  miseMoyenne: number;
+  totalDeposits: number;
+  totalWithdrawals: number;
+  bettingProfit: number;
+  capitalEvolution: { date: string; capital: number }[];
+  successByRank: { rank: number; won: number; total: number }[];
+  distributionByType: { type: string; count: number; percentage: number }[];
 }

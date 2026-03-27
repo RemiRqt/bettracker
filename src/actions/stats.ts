@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { DashboardStats, Bet, BetType, SeriesWithBets } from "@/lib/types";
+import type { DashboardStats, Bet, BetType } from "@/lib/types";
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = await createClient();
@@ -22,7 +22,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .eq("user_id", user.id);
 
   if (seriesError) {
-    throw new Error(`Erreur lors de la recuperation des series: ${seriesError.message}`);
+    throw new Error(
+      `Erreur lors de la recuperation des series: ${seriesError.message}`
+    );
   }
 
   const series = seriesList ?? [];
@@ -35,47 +37,151 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .from("bets")
       .select("*")
       .in("series_id", seriesIds)
-      .order("bet_number", { ascending: true });
+      .order("created_at", { ascending: true });
 
     if (betsError) {
-      throw new Error(`Erreur lors de la recuperation des paris: ${betsError.message}`);
+      throw new Error(
+        `Erreur lors de la recuperation des paris: ${betsError.message}`
+      );
     }
 
     allBets = betsData ?? [];
   }
 
-  // Group bets by series
-  const betsBySeriesId = new Map<string, Bet[]>();
-  for (const bet of allBets) {
-    const existing = betsBySeriesId.get(bet.series_id) ?? [];
-    existing.push(bet);
-    betsBySeriesId.set(bet.series_id, existing);
+  // Fetch all transactions for the user
+  const { data: transactions, error: transactionsError } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: true });
+
+  if (transactionsError) {
+    throw new Error(
+      `Erreur lors de la recuperation des transactions: ${transactionsError.message}`
+    );
   }
 
-  // --- netGain & roi ---
-  // totalWon = sum of (stake * odds) for bets where result = 'gagne'
-  // totalStaked (settled) = sum of stake for all bets where result is not null
-  // netGain = totalWon - totalStakedSettled
+  const allTransactions = transactions ?? [];
+
+  // --- Transaction totals ---
+  const totalDeposits = allTransactions
+    .filter((t) => t.type === "depot")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalWithdrawals = allTransactions
+    .filter((t) => t.type === "retrait")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  // --- Bets by category ---
   const settledBets = allBets.filter((b) => b.result !== null);
   const wonBets = allBets.filter((b) => b.result === "gagne");
+  const lostBets = allBets.filter((b) => b.result === "perdu");
+  const pendingBets = allBets.filter((b) => b.result === null);
 
+  // --- Capital en cours (net profit) ---
   const totalWon = wonBets.reduce((sum, b) => sum + b.stake * b.odds, 0);
   const totalStakedSettled = settledBets.reduce((sum, b) => sum + b.stake, 0);
-  const netGain = Math.round((totalWon - totalStakedSettled) * 100) / 100;
+  const bettingProfit =
+    Math.round((totalWon - totalStakedSettled) * 100) / 100;
+  const capital =
+    Math.round((totalDeposits - totalWithdrawals + bettingProfit) * 100) / 100;
+
+  // --- Total Mise (all stakes including pending) ---
+  const totalStakes =
+    Math.round(allBets.reduce((sum, b) => sum + b.stake, 0) * 100) / 100;
+
+  // --- Total Gains (sum of stake * odds for won bets) ---
+  const totalGains = Math.round(totalWon * 100) / 100;
+
+  // --- ROI ---
   const roi =
-    totalStakedSettled > 0
-      ? Math.round((netGain / totalStakedSettled) * 10000) / 100
+    totalStakes > 0
+      ? Math.round((capital / totalStakes) * 10000) / 100
       : 0;
 
-  // --- totalStakes (including pending) ---
-  const totalStakes = Math.round(
-    allBets.reduce((sum, b) => sum + b.stake, 0) * 100
-  ) / 100;
+  // --- Mise en cours (pending stakes) ---
+  const miseEnCours =
+    Math.round(pendingBets.reduce((sum, b) => sum + b.stake, 0) * 100) / 100;
 
-  // --- activeSeriesCount ---
-  const activeSeriesCount = series.filter((s) => s.status === "en_cours").length;
+  // --- Gains potentiels (for pending bets: stake * odds - stake) ---
+  const gainsPotentiels =
+    Math.round(
+      pendingBets.reduce((sum, b) => sum + (b.stake * b.odds - b.stake), 0) *
+        100
+    ) / 100;
 
-  // --- successByRank ---
+  // --- Series en cours ---
+  const seriesEnCours = series.filter((s) => s.status === "en_cours").length;
+
+  // --- Paris gagnes / perdus ---
+  const parisGagnes = wonBets.length;
+  const parisPerdu = lostBets.length;
+
+  // --- Cote moyenne ---
+  const coteMoyenne =
+    allBets.length > 0
+      ? Math.round(
+          (allBets.reduce((sum, b) => sum + b.odds, 0) / allBets.length) * 100
+        ) / 100
+      : 0;
+
+  // --- Mise moyenne ---
+  const miseMoyenne =
+    allBets.length > 0
+      ? Math.round(
+          (allBets.reduce((sum, b) => sum + b.stake, 0) / allBets.length) * 100
+        ) / 100
+      : 0;
+
+  // --- Capital evolution ---
+  // Merge transactions and settled bets into one timeline
+  type TimelineEntry =
+    | { kind: "transaction"; created_at: string; type: string; amount: number }
+    | { kind: "bet"; created_at: string; result: string; stake: number; odds: number };
+
+  const timeline: TimelineEntry[] = [
+    ...allTransactions.map((t) => ({
+      kind: "transaction" as const,
+      created_at: t.created_at,
+      type: t.type,
+      amount: t.amount,
+    })),
+    ...settledBets.map((b) => ({
+      kind: "bet" as const,
+      created_at: b.created_at,
+      result: b.result as string,
+      stake: b.stake,
+      odds: b.odds,
+    })),
+  ].sort(
+    (a, b) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  let runningCapital = 0;
+  const capitalEvolution: { date: string; capital: number }[] = [];
+
+  for (const entry of timeline) {
+    if (entry.kind === "transaction") {
+      if (entry.type === "depot") {
+        runningCapital += entry.amount;
+      } else if (entry.type === "retrait") {
+        runningCapital -= entry.amount;
+      }
+    } else {
+      if (entry.result === "gagne") {
+        runningCapital += entry.stake * entry.odds - entry.stake;
+      } else {
+        runningCapital -= entry.stake;
+      }
+    }
+    capitalEvolution.push({
+      date: entry.created_at,
+      capital: Math.round(runningCapital * 100) / 100,
+    });
+  }
+
+  // --- successByRank (kept for equipes page) ---
   const rankMap = new Map<number, { won: number; total: number }>();
   for (const bet of settledBets) {
     const rank = bet.bet_number;
@@ -91,8 +197,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .sort(([a], [b]) => a - b)
     .map(([rank, data]) => ({ rank, ...data }));
 
-  // --- distributionByType ---
-  const typeCount = new Map<BetType, number>();
+  // --- distributionByType (kept for equipes page) ---
+  const typeCount = new Map<string, number>();
   for (const s of series) {
     const bt = s.bet_type as BetType;
     typeCount.set(bt, (typeCount.get(bt) ?? 0) + 1);
@@ -104,32 +210,29 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       type,
       count,
       percentage:
-        totalSeries > 0 ? Math.round((count / totalSeries) * 10000) / 100 : 0,
+        totalSeries > 0
+          ? Math.round((count / totalSeries) * 10000) / 100
+          : 0,
     })
   );
 
-  // --- activeSeries with cumulativeStake ---
-  const activeSeries = series
-    .filter((s) => s.status === "en_cours")
-    .map((s) => {
-      const bets = betsBySeriesId.get(s.id) ?? [];
-      const cumulativeStake = Math.round(
-        bets.reduce((sum, b) => sum + b.stake, 0) * 100
-      ) / 100;
-      return {
-        ...s,
-        bets,
-        cumulativeStake,
-      } as SeriesWithBets & { cumulativeStake: number };
-    });
-
   return {
-    netGain,
-    roi,
+    capital,
     totalStakes,
-    activeSeriesCount,
+    totalGains,
+    roi,
+    miseEnCours,
+    gainsPotentiels,
+    seriesEnCours,
+    parisGagnes,
+    parisPerdu,
+    coteMoyenne,
+    miseMoyenne,
+    totalDeposits,
+    totalWithdrawals,
+    bettingProfit,
+    capitalEvolution,
     successByRank,
     distributionByType,
-    activeSeries,
   };
 }

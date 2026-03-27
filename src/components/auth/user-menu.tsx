@@ -1,47 +1,18 @@
-"use client";
-
-import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import Link from "next/link";
+import { User } from "lucide-react";
 
 interface UserMenuProps {
   email: string;
 }
 
 export function UserMenu({ email }: UserMenuProps) {
-  const router = useRouter();
-  const supabase = createClient();
-
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="gap-2">
-          {email}
-          <ChevronDown className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>{email}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>
-          Se déconnecter
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Link
+      href="/profile"
+      className="h-8 w-8 rounded-full bg-[#1e293b] border border-slate-600 flex items-center justify-center hover:border-slate-400 transition-colors"
+      title={email}
+    >
+      <User className="h-4 w-4 text-slate-400" />
+    </Link>
   );
 }

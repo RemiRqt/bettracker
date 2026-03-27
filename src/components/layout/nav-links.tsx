@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, List, PlusCircle } from "lucide-react";
+import { BarChart3, Users, CircleDollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/", icon: LayoutDashboard, label: "Accueil" },
-  { href: "/series", icon: List, label: "Séries" },
-  { href: "/series/new", icon: PlusCircle, label: "Nouveau" },
+  { href: "/", icon: BarChart3, label: "Dashboard" },
+  { href: "/series", icon: Users, label: "Équipes" },
+  { href: "/series/new", icon: CircleDollarSign, label: "Paris" },
 ];
 
 interface NavLinksProps {
