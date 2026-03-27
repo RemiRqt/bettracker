@@ -131,20 +131,19 @@ const allSeries: SeriesData[] = [
     { date: "01/11", odds: 2.25, stake: 0.80, result: "gagne" },
   ]},
   { subject: "PSG", bet_type: "victoire", status: "gagnee", bets: [
-    { date: "09/11", odds: 1.78, stake: 1.28, result: "perdu" },
-    { date: "14/12", odds: 1.82, stake: 1.22, result: "gagne" },
-
+    { date: "09/11", odds: 1.78, stake: 1.28, result: "gagne" },
   ]},
   { subject: "PSG", bet_type: "victoire", status: "gagnee", bets: [
-    { date: "14/12", odds: 1.23, stake: 11.87, result: "perdu" },
-    { date: "21/01", odds: 1.80, stake: 1.25, result: "gagne" },
+    { date: "14/12", odds: 1.82, stake: 1.22, result: "perdu" },
+    { date: "14/12", odds: 1.23, stake: 11.87, result: "gagne" },
   ]},
   { subject: "PSG", bet_type: "victoire", status: "gagnee", bets: [
-    { date: "24/01", odds: 1.28, stake: 11.61, result: "perdu" },
+    { date: "21/01", odds: 1.80, stake: 1.25, result: "perdu" },
+    { date: "24/01", odds: 1.28, stake: 11.61, result: "gagne" },
+  ]},
+  { subject: "PSG", bet_type: "victoire", status: "gagnee", bets: [
     { date: "13/02", odds: 1.82, stake: 1.22, result: "perdu" },
-    { date: "18/02", odds: 1.84, stake: 3.83, result: "gagne" },
-  ]},
-  { subject: "PSG", bet_type: "victoire", status: "gagnee", bets: [
+    { date: "18/02", odds: 1.84, stake: 3.83, result: "perdu" },
     { date: "21/02", odds: 1.40, stake: 20.13, result: "gagne" },
   ]},
 
@@ -340,7 +339,7 @@ const allSeries: SeriesData[] = [
     { date: "27/09", odds: 1.83, stake: 2.94, result: "perdu" },
     { date: "01/10", odds: 3.50, stake: 2.55, result: "perdu" },
     { date: "05/10", odds: 2.50, stake: 6.62, result: "perdu" },
-    { date: "17/10", odds: 2.09, stake: 18.10, result: "gagne" },
+    { date: "17/10", odds: 2.09, stake: 16.10, result: "gagne" },
   ]},
 
   // === LIVERPOOL - Victoire ===
@@ -457,7 +456,7 @@ const allSeries: SeriesData[] = [
   { subject: "Panichelli", bet_type: "buteur", status: "abandonnee", bets: [
     { date: "14/12", odds: 5.50, stake: 0.35, result: "perdu" },
     { date: "14/12", odds: 2.37, stake: 1.72, result: "perdu" },
-    { date: "20/12", odds: 1.80, stake: 8.34, result: "perdu" },
+    { date: "20/12", odds: 1.80, stake: 6.34, result: "perdu" },
     { date: "21/12", odds: 1.80, stake: 15.51, result: "perdu" },
   ]},
 
