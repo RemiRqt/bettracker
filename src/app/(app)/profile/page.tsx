@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { getTransactions } from "@/actions/transactions";
+import { ensureTeamMappings } from "@/actions/teams";
 import { TransactionForm } from "@/components/profile/transaction-form";
 import { TransactionList } from "@/components/profile/transaction-list";
+import { FollowedTeams } from "@/components/profile/followed-teams";
 import { SignOutButton } from "@/components/profile/sign-out-button";
 import { User } from "lucide-react";
 
@@ -11,7 +13,10 @@ export default async function ProfilePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const transactions = await getTransactions();
+  const [transactions, teamMappings] = await Promise.all([
+    getTransactions(),
+    ensureTeamMappings(),
+  ]);
 
   const totalDeposits = transactions
     .filter((t) => t.type === "depot")
@@ -45,15 +50,15 @@ export default async function ProfilePage() {
         </h2>
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
-            <p className="text-xs text-slate-400 mb-1">Dépôts</p>
+            <p className="text-xs text-slate-400 mb-1">Depots</p>
             <p className="text-lg font-semibold text-[#10b981]">
-              +{totalDeposits.toFixed(2)} €
+              +{totalDeposits.toFixed(2)} &euro;
             </p>
           </div>
           <div className="text-center">
             <p className="text-xs text-slate-400 mb-1">Retraits</p>
             <p className="text-lg font-semibold text-red-400">
-              -{totalWithdrawals.toFixed(2)} €
+              -{totalWithdrawals.toFixed(2)} &euro;
             </p>
           </div>
           <div className="text-center">
@@ -64,10 +69,18 @@ export default async function ProfilePage() {
               }`}
             >
               {balance >= 0 ? "+" : ""}
-              {balance.toFixed(2)} €
+              {balance.toFixed(2)} &euro;
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Followed teams section */}
+      <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
+        <h2 className="text-sm uppercase tracking-wide text-slate-400 mb-4">
+          Equipes suivies
+        </h2>
+        <FollowedTeams teamMappings={teamMappings} />
       </div>
 
       {/* Transaction form */}

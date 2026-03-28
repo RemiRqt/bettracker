@@ -107,6 +107,45 @@ export interface Database {
         };
         Relationships: [];
       };
+      team_mappings: {
+        Row: {
+          id: string;
+          user_id: string;
+          subject: string;
+          api_team_id: number | null;
+          logo_url: string | null;
+          sport: string;
+          is_followed: boolean;
+          next_matches_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          subject: string;
+          api_team_id?: number | null;
+          logo_url?: string | null;
+          sport?: string;
+          is_followed?: boolean;
+          next_matches_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          subject?: string;
+          api_team_id?: number | null;
+          logo_url?: string | null;
+          sport?: string;
+          is_followed?: boolean;
+          next_matches_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

@@ -49,7 +49,12 @@ export default async function EquipesPage() {
     let totalLostStake = 0;
     let potentialGains = 0;
 
-    const seriesData = group.seriesList.map((s) => {
+    // Sort oldest first for numbering (n°1 = oldest)
+    const sortedOldestFirst = [...group.seriesList].sort(
+      (a, b) => a.created_at.localeCompare(b.created_at)
+    );
+
+    const seriesData = sortedOldestFirst.map((s, idx) => {
       const bets = s.bets.sort((a, b) => a.bet_number - b.bet_number);
       let sStake = 0;
       let sGain = 0;
@@ -79,6 +84,7 @@ export default async function EquipesPage() {
 
       return {
         id: s.id,
+        seriesNumber: idx + 1,
         status: s.status,
         target_gain: s.target_gain,
         created_at: s.created_at,
@@ -96,6 +102,9 @@ export default async function EquipesPage() {
         roi: sRoi,
       };
     });
+
+    // Reverse for display: most recent (highest number) first
+    seriesData.reverse();
 
     const netProfit = totalGain - totalStake;
     const roi = totalStake > 0 ? (netProfit / totalStake) * 100 : 0;

@@ -10,10 +10,9 @@ import type { SeriesStatus } from "@/lib/types";
 
 interface EquipeSeriesItemProps {
   series: EquipeSeries;
-  index: number;
 }
 
-export function EquipeSeriesItem({ series, index }: EquipeSeriesItemProps) {
+export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -23,13 +22,21 @@ export function EquipeSeriesItem({ series, index }: EquipeSeriesItemProps) {
         onClick={() => setExpanded((prev) => !prev)}
         className="w-full text-left p-3 space-y-1.5 hover:bg-white/[0.02] transition-colors"
       >
-        {/* Row 1: Série #N + status badge + chevron */}
+        {/* Row 1: Série #N + status badge + gains + chevron */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-slate-200">
-              Série #{index}
+              Série #{series.seriesNumber}
             </span>
             <SeriesStatusBadge status={series.status as SeriesStatus} />
+            <span
+              className={cn(
+                "text-sm font-bold",
+                series.netProfit >= 0 ? "text-emerald-400" : "text-red-400"
+              )}
+            >
+              {series.netProfit >= 0 ? "+" : ""}{formatEuros(series.netProfit)}
+            </span>
           </div>
           {expanded ? (
             <ChevronDown className="h-4 w-4 text-slate-500 shrink-0" />
@@ -45,16 +52,6 @@ export function EquipeSeriesItem({ series, index }: EquipeSeriesItemProps) {
           </span>
           <span>&middot;</span>
           <span>Mise : {formatEuros(series.totalStake)}</span>
-          <span>&middot;</span>
-          <span
-            className={cn(
-              "font-medium",
-              series.netProfit >= 0 ? "text-emerald-400" : "text-red-400"
-            )}
-          >
-            Gain : {series.netProfit >= 0 ? "+" : ""}
-            {formatEuros(series.netProfit)}
-          </span>
           <span>&middot;</span>
           <span
             className={cn(

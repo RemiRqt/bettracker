@@ -9,6 +9,7 @@ import { EquipeSeriesItem } from "@/components/series/equipe-series-item";
 
 export type EquipeSeries = {
   id: string;
+  seriesNumber: number;
   status: string;
   target_gain: number;
   created_at: string;
@@ -46,7 +47,7 @@ export type Equipe = {
 };
 
 type SortKey = "date" | "gains" | "paris";
-type FilterKey = "tous" | "en_cours" | "gagne" | "perdu" | "pause";
+type FilterKey = "en_cours" | "gagne" | "perdu" | "pause" | null;
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "date", label: "Récent" },
@@ -54,12 +55,11 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "paris", label: "Paris" },
 ];
 
-const FILTER_OPTIONS: { key: FilterKey; label: string; color: string }[] = [
-  { key: "tous", label: "Tous", color: "text-slate-300 border-slate-600" },
-  { key: "en_cours", label: "En cours", color: "text-blue-400 border-blue-500/30" },
-  { key: "gagne", label: "Gagné", color: "text-emerald-400 border-emerald-500/30" },
-  { key: "perdu", label: "Perdu", color: "text-red-400 border-red-500/30" },
-  { key: "pause", label: "En pause", color: "text-amber-400 border-amber-500/30" },
+const FILTER_OPTIONS: { key: "en_cours" | "gagne" | "perdu" | "pause"; label: string; color: string; activeColor: string }[] = [
+  { key: "en_cours", label: "En cours", color: "text-blue-400 border-blue-500/30", activeColor: "bg-blue-500/20" },
+  { key: "gagne", label: "Gagné", color: "text-emerald-400 border-emerald-500/30", activeColor: "bg-emerald-500/20" },
+  { key: "perdu", label: "Perdu", color: "text-red-400 border-red-500/30", activeColor: "bg-red-500/20" },
+  { key: "pause", label: "En pause", color: "text-amber-400 border-amber-500/30", activeColor: "bg-amber-500/20" },
 ];
 
 interface EquipesListProps {
@@ -70,7 +70,7 @@ export function EquipesList({ equipes }: EquipesListProps) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("date");
   const [sortAsc, setSortAsc] = useState(false);
-  const [filterBy, setFilterBy] = useState<FilterKey>("tous");
+  const [filterBy, setFilterBy] = useState<FilterKey>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   function handleSort(key: SortKey) {
@@ -83,7 +83,7 @@ export function EquipesList({ equipes }: EquipesListProps) {
   }
 
   const counts = useMemo(() => {
-    const c = { tous: equipes.length, en_cours: 0, gagne: 0, perdu: 0, pause: 0 };
+    const c = { en_cours: 0, gagne: 0, perdu: 0, pause: 0 };
     for (const eq of equipes) {
       if (eq.enCoursCount > 0) c.en_cours++;
       if (eq.netProfit > 0) c.gagne++;
@@ -95,6 +95,7 @@ export function EquipesList({ equipes }: EquipesListProps) {
 
   const filtered = equipes.filter((eq) => {
     if (!eq.subject.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterBy === null) return true;
     switch (filterBy) {
       case "en_cours":
         return eq.enCoursCount > 0;
@@ -104,8 +105,6 @@ export function EquipesList({ equipes }: EquipesListProps) {
         return eq.netProfit < 0;
       case "pause":
         return eq.lastSeriesStatus === "abandonnee" && eq.enCoursCount === 0;
-      default:
-        return true;
     }
   });
 
@@ -150,23 +149,26 @@ export function EquipesList({ equipes }: EquipesListProps) {
         />
       </div>
 
-      {/* Filter tabs */}
+      {/* Filter tabs - toggleable */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        {FILTER_OPTIONS.map((opt) => (
-          <button
-            key={opt.key}
-            onClick={() => setFilterBy(opt.key)}
-            className={cn(
-              "flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border",
-              filterBy === opt.key
-                ? `bg-white/10 ${opt.color}`
-                : "bg-transparent text-slate-500 border-slate-700/50 hover:border-slate-600"
-            )}
-          >
-            {opt.label}
-            <span className="ml-1 opacity-60">{counts[opt.key]}</span>
-          </button>
-        ))}
+        {FILTER_OPTIONS.map((opt) => {
+          const isActive = filterBy === opt.key;
+          return (
+            <button
+              key={opt.key}
+              onClick={() => setFilterBy(isActive ? null : opt.key)}
+              className={cn(
+                "flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border",
+                isActive
+                  ? `${opt.activeColor} ${opt.color}`
+                  : "bg-transparent text-slate-500 border-slate-700/50 hover:border-slate-600"
+              )}
+            >
+              {opt.label}
+              <span className="ml-1 opacity-60">{counts[opt.key]}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Sort buttons - 1/3 each */}
@@ -281,8 +283,8 @@ export function EquipesList({ equipes }: EquipesListProps) {
                 {/* Expanded series */}
                 {isExpanded && (
                   <div className="border-t border-slate-700/50 px-3 pb-3 pt-2 space-y-1.5">
-                    {equipe.series.map((s, index) => (
-                      <EquipeSeriesItem key={s.id} series={s} index={index + 1} />
+                    {equipe.series.map((s) => (
+                      <EquipeSeriesItem key={s.id} series={s} />
                     ))}
                   </div>
                 )}

@@ -20,3 +20,12 @@ export const STATUS_COLORS = {
   gagnee: "bg-green-100 text-green-800",
   abandonnee: "bg-red-100 text-red-800",
 } as const;
+
+export const SPORT_EMOJIS: Record<string, string> = {
+  football: "\u26BD",
+  tennis: "\uD83C\uDFBE",
+  basketball: "\uD83C\uDFC0",
+  rugby: "\uD83C\uDFC9",
+  handball: "\uD83E\uDD3E",
+  default: "\uD83C\uDFC6",
+};
