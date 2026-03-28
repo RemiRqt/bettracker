@@ -158,8 +158,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
+  // Build daily capital map from timeline events
   let runningCapital = 0;
-  const capitalEvolution: { date: string; capital: number }[] = [];
+  const dailyCapital = new Map<string, number>();
 
   for (const entry of timeline) {
     if (entry.kind === "transaction") {
@@ -175,10 +176,33 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         runningCapital -= entry.stake;
       }
     }
-    capitalEvolution.push({
-      date: entry.created_at,
-      capital: Math.round(runningCapital * 100) / 100,
-    });
+    const dayKey = entry.created_at.slice(0, 10);
+    dailyCapital.set(dayKey, Math.round(runningCapital * 100) / 100);
+  }
+
+  // Fill every day from first event to today
+  const capitalEvolution: { date: string; capital: number }[] = [];
+
+  if (dailyCapital.size > 0) {
+    const sortedDays = [...dailyCapital.keys()].sort();
+    const startDate = new Date(sortedDays[0]);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let prevCapital = 0;
+    const current = new Date(startDate);
+
+    while (current <= today) {
+      const key = current.toISOString().slice(0, 10);
+      if (dailyCapital.has(key)) {
+        prevCapital = dailyCapital.get(key)!;
+      }
+      capitalEvolution.push({
+        date: `${key}T12:00:00`,
+        capital: prevCapital,
+      });
+      current.setDate(current.getDate() + 1);
+    }
   }
 
   // --- successByRank (kept for equipes page) ---
