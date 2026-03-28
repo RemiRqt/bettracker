@@ -2,8 +2,8 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, CheckCircle, XCircle, Trash2, ChevronUp, ChevronDown } from "lucide-react";
-import { validateResult, deleteBet } from "@/actions/bets";
+import { Plus, CheckCircle, XCircle, Trash2, ChevronUp, ChevronDown, Pencil } from "lucide-react";
+import { validateResult, deleteBet, updateBet } from "@/actions/bets";
 import { BET_TYPES } from "@/lib/constants";
 import { formatEuros, cn } from "@/lib/utils";
 import { TeamLogo } from "@/components/ui/team-logo";
@@ -75,6 +75,11 @@ export function ParisPage({
   const [sortBy, setSortBy] = useState<SortKey>("date");
   const [sortAsc, setSortAsc] = useState(false);
 
+  // Edit bet dialog
+  const [editBet, setEditBet] = useState<Bet | null>(null);
+  const [editOdds, setEditOdds] = useState("");
+  const [editStake, setEditStake] = useState("");
+
   function handleSort(key: SortKey) {
     if (sortBy === key) {
       setSortAsc(!sortAsc);
@@ -133,6 +138,24 @@ export function ParisPage({
     if (!confirm("Supprimer ce pari ?")) return;
     startTransition(async () => {
       await deleteBet(betId);
+    });
+  }
+
+  function openEdit(bet: Bet) {
+    setEditBet(bet);
+    setEditOdds(bet.odds.toString());
+    setEditStake(bet.stake.toString());
+  }
+
+  function handleEditSave() {
+    if (!editBet) return;
+    const odds = parseFloat(editOdds);
+    const stake = parseFloat(editStake);
+    if (isNaN(odds) || odds <= 1) return;
+    if (isNaN(stake) || stake <= 0) return;
+    startTransition(async () => {
+      await updateBet(editBet.id, { odds, stake });
+      setEditBet(null);
     });
   }
 
@@ -269,21 +292,45 @@ export function ParisPage({
                           <XCircle className="h-7 w-7" />
                         </button>
                         <button
+                          onClick={() => openEdit(bet)}
+                          disabled={isPending}
+                          className="text-slate-500 hover:text-slate-400 transition-colors disabled:opacity-50"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
                           onClick={() => handleDelete(bet.id)}
                           disabled={isPending}
                           className="text-slate-500 hover:text-slate-400 transition-colors disabled:opacity-50"
                         >
-                          <Trash2 className="h-5 w-5" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </>
-                    ) : bet.result === "gagne" ? (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400">
-                        Gagné
-                      </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
-                        Perdu
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn(
+                          "px-2 py-0.5 rounded-full text-xs font-medium",
+                          bet.result === "gagne"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : "bg-red-500/20 text-red-400"
+                        )}>
+                          {bet.result === "gagne" ? "Gagne" : "Perdu"}
+                        </span>
+                        <button
+                          onClick={() => openEdit(bet)}
+                          disabled={isPending}
+                          className="text-slate-600 hover:text-slate-400 transition-colors disabled:opacity-50"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(bet.id)}
+                          disabled={isPending}
+                          className="text-slate-600 hover:text-red-400 transition-colors disabled:opacity-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -292,6 +339,47 @@ export function ParisPage({
           })}
         </div>
       )}
+
+      {/* Edit bet dialog */}
+      <Dialog open={editBet !== null} onOpenChange={(open) => { if (!open) setEditBet(null); }}>
+        <DialogContent className="bg-[#0f172a] border-slate-700 max-w-sm mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-white">Modifier le pari</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              {editBet && `${editBet.series.subject} - Pari #${editBet.bet_number}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Cote</label>
+              <input
+                type="number"
+                step="0.01"
+                value={editOdds}
+                onChange={(e) => setEditOdds(e.target.value)}
+                className="w-full bg-[#1e293b] border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Mise</label>
+              <input
+                type="number"
+                step="0.01"
+                value={editStake}
+                onChange={(e) => setEditStake(e.target.value)}
+                className="w-full bg-[#1e293b] border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+              />
+            </div>
+            <button
+              onClick={handleEditSave}
+              disabled={isPending}
+              className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+            >
+              Enregistrer
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

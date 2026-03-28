@@ -165,11 +165,6 @@ export async function deleteBet(betId: string) {
     return { error: "Pari introuvable." };
   }
 
-  // Only allow deleting pending bets
-  if (bet.result !== null) {
-    return { error: "Impossible de supprimer un pari déjà résolu." };
-  }
-
   const { error: deleteError } = await supabase
     .from("bets")
     .delete()
@@ -177,6 +172,63 @@ export async function deleteBet(betId: string) {
 
   if (deleteError) {
     return { error: `Erreur: ${deleteError.message}` };
+  }
+
+  revalidatePath(`/series/${bet.series_id}`);
+  revalidatePath("/series");
+  revalidatePath("/series/new");
+
+  return { success: true };
+}
+
+export async function updateBet(
+  betId: string,
+  data: { odds?: number; stake?: number }
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Vous devez etre connecte.");
+  }
+
+  const { data: bet, error: betError } = await supabase
+    .from("bets")
+    .select("id, series_id, odds, stake, bet_number")
+    .eq("id", betId)
+    .single();
+
+  if (betError || !bet) {
+    return { error: "Pari introuvable." };
+  }
+
+  const newOdds = data.odds ?? bet.odds;
+  const newStake = data.stake !== undefined ? Math.round(data.stake * 100) / 100 : bet.stake;
+
+  if (newOdds <= 1) return { error: "La cote doit etre superieure a 1." };
+  if (newStake <= 0) return { error: "La mise doit etre positive." };
+
+  // Recalculate potential_net
+  const { data: prevBets } = await supabase
+    .from("bets")
+    .select("stake")
+    .eq("series_id", bet.series_id)
+    .lt("bet_number", bet.bet_number);
+
+  const sumPrev = (prevBets ?? []).reduce((s, b) => s + b.stake, 0);
+  const potential_net = Math.round((newStake * newOdds - newStake - sumPrev) * 100) / 100;
+
+  const { error: updateError } = await supabase
+    .from("bets")
+    .update({ odds: newOdds, stake: newStake, potential_net })
+    .eq("id", betId);
+
+  if (updateError) {
+    return { error: `Erreur: ${updateError.message}` };
   }
 
   revalidatePath(`/series/${bet.series_id}`);

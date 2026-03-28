@@ -99,3 +99,34 @@ export async function abandonSeries(seriesId: string) {
 
   return { success: true };
 }
+
+export async function deleteSeries(seriesId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Vous devez etre connecte.");
+  }
+
+  // Delete all bets first (foreign key constraint)
+  await supabase.from("bets").delete().eq("series_id", seriesId);
+
+  const { error } = await supabase
+    .from("series")
+    .delete()
+    .eq("id", seriesId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { error: `Erreur: ${error.message}` };
+  }
+
+  revalidatePath("/series");
+  revalidatePath("/series/new");
+
+  return { success: true };
+}

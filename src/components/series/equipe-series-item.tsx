@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { useState, useTransition } from "react";
+import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { SeriesStatusBadge } from "@/components/series/series-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { formatEuros, formatPercent, cn } from "@/lib/utils";
+import { deleteSeries } from "@/actions/series";
 import type { EquipeSeries } from "@/components/series/equipes-list";
 import type { SeriesStatus } from "@/lib/types";
 
@@ -14,6 +15,18 @@ interface EquipeSeriesItemProps {
 
 export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
   const [expanded, setExpanded] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+  const [, startTransition] = useTransition();
+
+  function handleDelete() {
+    if (!confirm(`Supprimer la série #${series.seriesNumber} et tous ses paris ?`)) return;
+    setDeleted(true);
+    startTransition(async () => {
+      await deleteSeries(series.id);
+    });
+  }
+
+  if (deleted) return null;
 
   return (
     <div className="rounded-lg bg-[#0f172a]/60 overflow-hidden">
@@ -38,11 +51,19 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
               {series.netProfit >= 0 ? "+" : ""}{formatEuros(series.netProfit)}
             </span>
           </div>
-          {expanded ? (
-            <ChevronDown className="h-4 w-4 text-slate-500 shrink-0" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-slate-500 shrink-0" />
-          )}
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+              className="text-slate-600 hover:text-red-400 transition-colors p-0.5"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+            {expanded ? (
+              <ChevronDown className="h-4 w-4 text-slate-500" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-slate-500" />
+            )}
+          </div>
         </div>
 
         {/* Row 2: stats */}
