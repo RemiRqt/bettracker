@@ -52,11 +52,14 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
   const [expandedClubs, setExpandedClubs] = useState<Set<string>>(new Set());
 
   // Derive clubs and unlinked subjects
-  // Clubs = one entry per unique api_team_id (the first mapping found)
+  // Clubs = one entry per unique api_team_id (prefer the one with logo_url)
   const clubMap = new Map<number, TeamMapping>();
   for (const m of mappings) {
-    if (m.api_team_id !== null && !clubMap.has(m.api_team_id)) {
-      clubMap.set(m.api_team_id, m);
+    if (m.api_team_id !== null) {
+      const existing = clubMap.get(m.api_team_id);
+      if (!existing || (!existing.logo_url && m.logo_url)) {
+        clubMap.set(m.api_team_id, m);
+      }
     }
   }
   const clubs = [...clubMap.values()].sort((a, b) => {
