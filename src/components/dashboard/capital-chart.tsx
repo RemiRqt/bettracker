@@ -103,7 +103,7 @@ export function CapitalChart({ data }: CapitalChartProps) {
   }, [filteredData]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col h-full gap-2">
       {/* Period selector */}
       <div className="grid grid-cols-5 gap-1">
         {PERIODS.map((p) => (
@@ -124,45 +124,47 @@ export function CapitalChart({ data }: CapitalChartProps) {
 
       {/* Chart */}
       {filteredData.length === 0 ? (
-        <div className="flex h-[180px] items-center justify-center text-sm text-slate-500">
+        <div className="flex flex-1 items-center justify-center text-sm text-slate-500">
           Aucune donnée
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={180}>
-          <AreaChart
-            data={filteredData}
-            margin={{ top: 5, right: 5, left: -15, bottom: 0 }}
-          >
-            <defs>
-              <linearGradient id="capitalGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-            <XAxis
-              dataKey="timestamp"
-              type="number"
-              domain={domain}
-              hide
-            />
-            <YAxis
-              tick={{ fontSize: 10, fill: "#64748b" }}
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(v: number) => `${v}€`}
-              width={40}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Area
-              type="monotone"
-              dataKey="capital"
-              stroke="#10b981"
-              strokeWidth={2}
-              fill="url(#capitalGradient)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <div className="flex-1 min-h-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
+              data={filteredData}
+              margin={{ top: 5, right: 5, left: -15, bottom: 0 }}
+            >
+              <defs>
+                <linearGradient id="capitalGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <XAxis
+                dataKey="timestamp"
+                type="number"
+                domain={domain}
+                hide
+              />
+              <YAxis
+                tick={{ fontSize: 10, fill: "#64748b" }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v: number) => `${v}€`}
+                width={40}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Area
+                type="monotone"
+                dataKey="capital"
+                stroke="#10b981"
+                strokeWidth={2}
+                fill="url(#capitalGradient)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       )}
     </div>
   );

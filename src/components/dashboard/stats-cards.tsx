@@ -31,14 +31,14 @@ function StatCard({
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl bg-[#1e293b] p-3">
-      <div className="flex items-center gap-1.5 mb-1">
+    <div className="rounded-xl bg-[#1e293b] px-3 py-2">
+      <div className="flex items-center gap-1.5 mb-0.5">
         {icon}
         <span className="text-[10px] uppercase tracking-wide text-slate-400 leading-tight">
           {label}
         </span>
       </div>
-      <div className={`text-base font-bold ${color}`}>{value}</div>
+      <div className={`text-sm font-bold ${color}`}>{value}</div>
     </div>
   );
 }
@@ -48,35 +48,35 @@ export function StatsCards({ stats }: StatsCardsProps) {
   const roiPositive = stats.roi >= 0;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {/* Capital en cours - hero card */}
-      <div className="rounded-xl bg-[#1e293b] p-4">
-        <div className="flex items-center gap-2.5 mb-2">
+      <div className="rounded-xl bg-[#1e293b] px-4 py-3">
+        <div className="flex items-center gap-2 mb-1">
           <div
-            className={`flex h-8 w-8 items-center justify-center rounded-full ${
+            className={`flex h-7 w-7 items-center justify-center rounded-full ${
               capitalPositive ? "bg-emerald-500/20" : "bg-red-500/20"
             }`}
           >
             <Wallet
-              className={`h-4 w-4 ${
+              className={`h-3.5 w-3.5 ${
                 capitalPositive ? "text-emerald-400" : "text-red-400"
               }`}
             />
           </div>
-          <span className="text-xs uppercase tracking-wide text-slate-400">
+          <span className="text-[10px] uppercase tracking-wide text-slate-400">
             Capital en cours
           </span>
         </div>
         <div className="flex items-baseline gap-2">
           <span
-            className={`text-2xl font-bold ${
+            className={`text-xl font-bold ${
               capitalPositive ? "text-emerald-400" : "text-red-400"
             }`}
           >
             {formatEuros(stats.capital)}
           </span>
           <span
-            className={`text-sm font-semibold ${
+            className={`text-xs font-semibold ${
               stats.bettingProfit >= 0 ? "text-emerald-400/70" : "text-red-400/70"
             }`}
           >
@@ -86,7 +86,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
       </div>
 
       {/* Row 1: Total Mise / Total Gains / Rendement */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-1.5">
         <StatCard
           label="Total Mise"
           value={formatEuros(stats.totalStakes)}
@@ -113,7 +113,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
       </div>
 
       {/* Row 2: Mise en cours / Gains potentiels */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-1.5">
         <StatCard
           label="Mise en cours"
           value={formatEuros(stats.miseEnCours)}
@@ -129,7 +129,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
       </div>
 
       {/* Row 3: En cours / Gagné / Perdu */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-1.5">
         <Link href="/series/new?filter=en_cours">
           <StatCard
             label="En cours"
@@ -157,7 +157,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
       </div>
 
       {/* Row 4: Cote moyenne / Mise moyenne */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-1.5">
         <StatCard
           label="Cote moyenne"
           value={stats.coteMoyenne.toFixed(2)}
