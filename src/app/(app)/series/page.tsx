@@ -93,6 +93,14 @@ export default async function EquipesPage() {
     const netProfit = totalGain - totalStake;
     const roi = totalStake > 0 ? (netProfit / totalStake) * 100 : 0;
 
+    // Find latest bet date across all series
+    let lastBetDate = "";
+    for (const s of seriesData) {
+      for (const b of s.bets) {
+        if (b.created_at > lastBetDate) lastBetDate = b.created_at;
+      }
+    }
+
     return {
       subject: group.subject,
       bet_type: group.bet_type,
@@ -105,11 +113,12 @@ export default async function EquipesPage() {
       abandonedCount,
       enCoursCount,
       series: seriesData,
+      lastBetDate,
     };
   });
 
-  // Sort by number of series descending
-  equipes.sort((a, b) => b.seriesCount - a.seriesCount);
+  // Sort by last bet date descending (most recent first)
+  equipes.sort((a, b) => b.lastBetDate.localeCompare(a.lastBetDate));
 
   return (
     <div className="space-y-4 md:space-y-6">

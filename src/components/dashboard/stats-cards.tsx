@@ -66,12 +66,21 @@ export function StatsCards({ stats }: StatsCardsProps) {
             Capital en cours
           </span>
         </div>
-        <div
-          className={`text-2xl font-bold ${
-            capitalPositive ? "text-emerald-400" : "text-red-400"
-          }`}
-        >
-          {formatEuros(stats.capital)}
+        <div className="flex items-baseline gap-2">
+          <span
+            className={`text-2xl font-bold ${
+              capitalPositive ? "text-emerald-400" : "text-red-400"
+            }`}
+          >
+            {formatEuros(stats.capital)}
+          </span>
+          <span
+            className={`text-sm font-semibold ${
+              stats.bettingProfit >= 0 ? "text-emerald-400/70" : "text-red-400/70"
+            }`}
+          >
+            ({stats.bettingProfit >= 0 ? "+" : ""}{formatEuros(stats.bettingProfit)})
+          </span>
         </div>
       </div>
 
