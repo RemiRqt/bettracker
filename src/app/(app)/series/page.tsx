@@ -45,6 +45,9 @@ export default async function EquipesPage() {
     let wonCount = 0;
     let abandonedCount = 0;
     let enCoursCount = 0;
+    let totalWonAmount = 0;
+    let totalLostStake = 0;
+    let potentialGains = 0;
 
     const seriesData = group.seriesList.map((s) => {
       const bets = s.bets.sort((a, b) => a.bet_number - b.bet_number);
@@ -55,8 +58,12 @@ export default async function EquipesPage() {
         sStake += bet.stake;
         if (bet.result === "gagne") {
           sGain += bet.stake * bet.odds;
+          totalWonAmount += bet.stake * bet.odds;
+        } else if (bet.result === "perdu") {
+          totalLostStake += bet.stake;
+        } else {
+          potentialGains += bet.stake * bet.odds;
         }
-        // perdu or null: gain = 0 for that bet
       }
 
       const sNetProfit = sGain - sStake;
@@ -121,6 +128,9 @@ export default async function EquipesPage() {
       series: seriesData,
       lastBetDate,
       lastSeriesStatus,
+      totalWonAmount: Math.round(totalWonAmount * 100) / 100,
+      totalLostStake: Math.round(totalLostStake * 100) / 100,
+      potentialGains: Math.round(potentialGains * 100) / 100,
     };
   });
 

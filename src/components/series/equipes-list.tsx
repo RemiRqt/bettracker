@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, ChevronDown, ChevronRight, Inbox, ArrowUpDown } from "lucide-react";
+import { Search, ChevronDown, ChevronRight, ChevronUp, Inbox } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BET_TYPES } from "@/lib/constants";
 import { formatEuros, formatPercent, cn } from "@/lib/utils";
@@ -40,6 +40,9 @@ export type Equipe = {
   series: EquipeSeries[];
   lastBetDate: string;
   lastSeriesStatus: string;
+  totalWonAmount: number;
+  totalLostStake: number;
+  potentialGains: number;
 };
 
 type SortKey = "date" | "gains" | "paris";
@@ -66,8 +69,18 @@ interface EquipesListProps {
 export function EquipesList({ equipes }: EquipesListProps) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("date");
+  const [sortAsc, setSortAsc] = useState(false);
   const [filterBy, setFilterBy] = useState<FilterKey>("tous");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  function handleSort(key: SortKey) {
+    if (sortBy === key) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortBy(key);
+      setSortAsc(false);
+    }
+  }
 
   const counts = useMemo(() => {
     const c = { tous: equipes.length, en_cours: 0, gagne: 0, perdu: 0, pause: 0 };
@@ -97,16 +110,19 @@ export function EquipesList({ equipes }: EquipesListProps) {
   });
 
   const sorted = [...filtered].sort((a, b) => {
+    let cmp = 0;
     switch (sortBy) {
       case "date":
-        return b.lastBetDate.localeCompare(a.lastBetDate);
+        cmp = b.lastBetDate.localeCompare(a.lastBetDate);
+        break;
       case "gains":
-        return b.netProfit - a.netProfit;
+        cmp = b.netProfit - a.netProfit;
+        break;
       case "paris":
-        return b.betsCount - a.betsCount;
-      default:
-        return 0;
+        cmp = b.betsCount - a.betsCount;
+        break;
     }
+    return sortAsc ? -cmp : cmp;
   });
 
   function toggleExpand(key: string) {
@@ -153,23 +169,30 @@ export function EquipesList({ equipes }: EquipesListProps) {
         ))}
       </div>
 
-      {/* Sort buttons */}
-      <div className="flex items-center gap-2">
-        <ArrowUpDown className="h-3.5 w-3.5 text-slate-500" />
-        {SORT_OPTIONS.map((opt) => (
-          <button
-            key={opt.key}
-            onClick={() => setSortBy(opt.key)}
-            className={cn(
-              "px-3 py-1 rounded-full text-xs font-medium transition-colors",
-              sortBy === opt.key
-                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                : "bg-[#1e293b] text-slate-400 border border-slate-700 hover:border-slate-600"
-            )}
-          >
-            {opt.label}
-          </button>
-        ))}
+      {/* Sort buttons - 1/3 each */}
+      <div className="grid grid-cols-3 gap-1.5">
+        {SORT_OPTIONS.map((opt) => {
+          const isActive = sortBy === opt.key;
+          return (
+            <button
+              key={opt.key}
+              onClick={() => handleSort(opt.key)}
+              className={cn(
+                "flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-colors border",
+                isActive
+                  ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                  : "bg-[#1e293b] text-slate-400 border-slate-700 hover:border-slate-600"
+              )}
+            >
+              {opt.label}
+              {isActive && (
+                sortAsc
+                  ? <ChevronUp className="h-3 w-3" />
+                  : <ChevronDown className="h-3 w-3" />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* List */}
@@ -187,10 +210,10 @@ export function EquipesList({ equipes }: EquipesListProps) {
               BET_TYPES[equipe.bet_type as keyof typeof BET_TYPES] ??
               equipe.bet_type;
 
-            const total = equipe.seriesCount;
-            const wonPct = total > 0 ? (equipe.wonCount / total) * 100 : 0;
-            const abandonedPct = total > 0 ? (equipe.abandonedCount / total) * 100 : 0;
-            const enCoursPct = total > 0 ? (equipe.enCoursCount / total) * 100 : 0;
+            const barTotal = equipe.totalWonAmount + equipe.totalLostStake + equipe.potentialGains;
+            const wonPct = barTotal > 0 ? (equipe.totalWonAmount / barTotal) * 100 : 0;
+            const lostPct = barTotal > 0 ? (equipe.totalLostStake / barTotal) * 100 : 0;
+            const pendingPct = barTotal > 0 ? (equipe.potentialGains / barTotal) * 100 : 0;
 
             return (
               <div key={key} className="rounded-xl bg-[#1e293b] overflow-hidden">
@@ -241,16 +264,16 @@ export function EquipesList({ equipes }: EquipesListProps) {
                     </span>
                   </div>
 
-                  {/* Row 3: progress bar */}
+                  {/* Row 3: progress bar (€ proportions) */}
                   <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-slate-700/50">
                     {wonPct > 0 && (
                       <div className="bg-emerald-500" style={{ width: `${wonPct}%` }} />
                     )}
-                    {abandonedPct > 0 && (
-                      <div className="bg-red-500" style={{ width: `${abandonedPct}%` }} />
+                    {lostPct > 0 && (
+                      <div className="bg-red-500" style={{ width: `${lostPct}%` }} />
                     )}
-                    {enCoursPct > 0 && (
-                      <div className="bg-blue-500" style={{ width: `${enCoursPct}%` }} />
+                    {pendingPct > 0 && (
+                      <div className="bg-blue-500" style={{ width: `${pendingPct}%` }} />
                     )}
                   </div>
                 </button>
