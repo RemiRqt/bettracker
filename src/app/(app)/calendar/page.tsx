@@ -1,6 +1,7 @@
 import {
   ensureTeamMappings,
   getCalendarFixtures,
+  getCalendarTeams,
   type CachedFixture,
 } from "@/actions/teams";
 import { CalendarPage } from "@/components/calendar/calendar-page";
@@ -8,6 +9,7 @@ import { CalendarPage } from "@/components/calendar/calendar-page";
 export default async function CalendarRoute() {
   // Ensure mappings are up to date, then fetch cached fixtures
   await ensureTeamMappings();
+  const calendarTeams = await getCalendarTeams();
   const teamFixtures = await getCalendarFixtures();
 
   // Flatten all fixtures with their team subject, then sort by date
@@ -35,5 +37,12 @@ export default async function CalendarRoute() {
       new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime()
   );
 
-  return <CalendarPage fixtures={allFixtures} lastUpdated={lastUpdated} />;
+  return (
+    <CalendarPage
+      fixtures={allFixtures}
+      lastUpdated={lastUpdated}
+      teamCount={calendarTeams.length}
+      teamNames={calendarTeams.map((t) => t.subject)}
+    />
+  );
 }

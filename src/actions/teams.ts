@@ -371,98 +371,151 @@ export async function getCalendarTeams(): Promise<TeamMapping[]> {
   if (!allMappings) return [];
 
   // Filter: followed OR has active series, AND must have api_team_id
-  return (allMappings as TeamMapping[]).filter(
+  const filtered = (allMappings as TeamMapping[]).filter(
     (m) =>
       m.api_team_id !== null &&
       (m.is_followed || activeSubjects.includes(m.subject))
   );
+
+  console.log(
+    `[Calendar] ${allMappings.length} mappings total, ${activeSubjects.length} active series subjects, ${filtered.length} teams eligible for calendar`
+  );
+  if (filtered.length === 0 && allMappings.length > 0) {
+    const withApiId = (allMappings as TeamMapping[]).filter((m) => m.api_team_id !== null);
+    const followed = (allMappings as TeamMapping[]).filter((m) => m.is_followed);
+    console.log(
+      `[Calendar] Debug: ${withApiId.length} with api_team_id, ${followed.length} followed`
+    );
+  }
+
+  return filtered;
 }
 
 const API_FOOTBALL_BASE = "https://v3.football.api-sports.io";
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+const FETCH_DAYS = 10; // Number of days to scan for upcoming fixtures
+const MAX_CONSECUTIVE_EMPTY = 3; // Stop after this many empty days
 
-export async function refreshFixturesIfNeeded(
-  teamMapping: TeamMapping
-): Promise<CachedFixture[] | null> {
-  if (!teamMapping.api_team_id) {
-    return null;
-  }
+interface ApiFixtureItem {
+  fixture: { id: number; date: string };
+  league: { name: string; logo: string };
+  teams: {
+    home: { id: number; name: string; logo: string };
+    away: { id: number; name: string; logo: string };
+  };
+}
 
-  // Check if cache is still valid
-  if (teamMapping.cached_fixtures && teamMapping.fixtures_updated_at) {
-    const updatedAt = new Date(teamMapping.fixtures_updated_at).getTime();
-    const now = Date.now();
-    if (now - updatedAt < CACHE_TTL_MS) {
-      return teamMapping.cached_fixtures;
-    }
-  }
-
-  // Fetch from API-Football
+/**
+ * Fetch upcoming fixtures using date-based queries (works on free plan).
+ * The free plan doesn't support ?team={id}&next={n}, so we fetch all
+ * fixtures per day and filter for our teams client-side.
+ */
+async function fetchFixturesByDate(
+  teamIds: Set<number>,
+  maxPerTeam: number
+): Promise<Map<number, CachedFixture[]>> {
   const apiKey = process.env.API_FOOTBALL_KEY;
   if (!apiKey) {
-    console.error("API_FOOTBALL_KEY is not set");
-    // Return cached data if available, even if stale
-    return teamMapping.cached_fixtures || null;
+    console.error("[Calendar] API_FOOTBALL_KEY is not set");
+    return new Map();
   }
 
-  try {
-    const res = await fetch(
-      `${API_FOOTBALL_BASE}/fixtures?team=${teamMapping.api_team_id}&next=${teamMapping.next_matches_count}`,
-      {
-        headers: {
-          "x-apisports-key": apiKey,
-        },
-      }
-    );
+  const fixturesByTeam = new Map<number, CachedFixture[]>();
+  const seenFixtureIds = new Set<number>();
+  let consecutiveEmpty = 0;
 
-    if (!res.ok) {
-      console.error(
-        `API-Football error for team ${teamMapping.api_team_id}: ${res.status}`
+  const today = new Date();
+
+  for (let i = 0; i < FETCH_DAYS; i++) {
+    // Stop if all teams have enough fixtures
+    const allTeamsFull = [...teamIds].every(
+      (id) => (fixturesByTeam.get(id)?.length ?? 0) >= maxPerTeam
+    );
+    if (allTeamsFull) break;
+
+    // Stop after too many consecutive empty days (no more data available)
+    if (consecutiveEmpty >= MAX_CONSECUTIVE_EMPTY) break;
+
+    const date = new Date(today);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().slice(0, 10);
+
+    try {
+      const res = await fetch(
+        `${API_FOOTBALL_BASE}/fixtures?date=${dateStr}`,
+        {
+          headers: { "x-apisports-key": apiKey },
+        }
       );
-      return teamMapping.cached_fixtures || null;
-    }
 
-    const json = await res.json();
-    const response = json.response || [];
+      if (!res.ok) {
+        console.error(`[Calendar] API HTTP error for date ${dateStr}: ${res.status}`);
+        consecutiveEmpty++;
+        continue;
+      }
 
-    const fixtures: CachedFixture[] = response.map(
-      (item: {
-        fixture: { id: number; date: string };
-        league: { name: string; logo: string };
-        teams: {
-          home: { name: string; logo: string };
-          away: { name: string; logo: string };
+      const json = await res.json();
+
+      if (json.errors && Object.keys(json.errors).length > 0) {
+        console.error(`[Calendar] API errors for date ${dateStr}:`, json.errors);
+        consecutiveEmpty++;
+        continue;
+      }
+
+      const items: ApiFixtureItem[] = json.response || [];
+
+      if (items.length === 0) {
+        consecutiveEmpty++;
+        continue;
+      }
+
+      consecutiveEmpty = 0;
+      let matchesFound = 0;
+
+      for (const item of items) {
+        const homeId = item.teams.home.id;
+        const awayId = item.teams.away.id;
+
+        // Check if either team is one we're tracking
+        const matchedIds = [homeId, awayId].filter((id) => teamIds.has(id));
+        if (matchedIds.length === 0) continue;
+
+        // Skip already-seen fixtures (in case of overlap)
+        if (seenFixtureIds.has(item.fixture.id)) continue;
+        seenFixtureIds.add(item.fixture.id);
+
+        const fixture: CachedFixture = {
+          id: item.fixture.id,
+          date: item.fixture.date,
+          homeTeam: item.teams.home.name,
+          homeLogo: item.teams.home.logo,
+          awayTeam: item.teams.away.name,
+          awayLogo: item.teams.away.logo,
+          league: item.league.name,
+          leagueLogo: item.league.logo,
         };
-      }) => ({
-        id: item.fixture.id,
-        date: item.fixture.date,
-        homeTeam: item.teams.home.name,
-        homeLogo: item.teams.home.logo,
-        awayTeam: item.teams.away.name,
-        awayLogo: item.teams.away.logo,
-        league: item.league.name,
-        leagueLogo: item.league.logo,
-      })
-    );
 
-    // Save to database
-    const supabase = await createClient();
-    await supabase
-      .from("team_mappings")
-      .update({
-        cached_fixtures: JSON.parse(JSON.stringify(fixtures)),
-        fixtures_updated_at: new Date().toISOString(),
-      })
-      .eq("id", teamMapping.id);
+        // Add to each matched team's list (if not already full)
+        for (const teamId of matchedIds) {
+          const teamFixtures = fixturesByTeam.get(teamId) ?? [];
+          if (teamFixtures.length < maxPerTeam) {
+            teamFixtures.push(fixture);
+            fixturesByTeam.set(teamId, teamFixtures);
+            matchesFound++;
+          }
+        }
+      }
 
-    return fixtures;
-  } catch (error) {
-    console.error(
-      `Failed to fetch fixtures for team ${teamMapping.api_team_id}:`,
-      error
-    );
-    return teamMapping.cached_fixtures || null;
+      console.log(
+        `[Calendar] ${dateStr}: ${items.length} fixtures, ${matchesFound} matched our teams`
+      );
+    } catch (error) {
+      console.error(`[Calendar] Failed to fetch fixtures for ${dateStr}:`, error);
+      consecutiveEmpty++;
+    }
   }
+
+  return fixturesByTeam;
 }
 
 export async function getCalendarFixtures(): Promise<
@@ -474,27 +527,83 @@ export async function getCalendarFixtures(): Promise<
     return [];
   }
 
+  // Check if cache is still valid (use the most recent update across all teams)
+  const mostRecentUpdate = teams.reduce((latest, t) => {
+    if (!t.fixtures_updated_at) return latest;
+    const ts = new Date(t.fixtures_updated_at).getTime();
+    return ts > latest ? ts : latest;
+  }, 0);
+
+  const cacheValid = mostRecentUpdate > 0 && Date.now() - mostRecentUpdate < CACHE_TTL_MS;
+
+  if (cacheValid) {
+    console.log("[Calendar] Using cached fixtures");
+    // Return cached data
+    const results: { team: TeamMapping; fixtures: CachedFixture[] }[] = [];
+    const seenFixtureIds = new Set<number>();
+
+    for (const team of teams) {
+      if (team.cached_fixtures && team.cached_fixtures.length > 0) {
+        const uniqueFixtures = team.cached_fixtures.filter((f) => {
+          if (seenFixtureIds.has(f.id)) return false;
+          seenFixtureIds.add(f.id);
+          return true;
+        });
+        if (uniqueFixtures.length > 0) {
+          results.push({ team, fixtures: uniqueFixtures });
+        }
+      }
+    }
+
+    return results;
+  }
+
+  // Fetch fresh data using date-based approach (free plan compatible)
+  console.log(`[Calendar] Fetching fresh fixtures for ${teams.length} teams`);
+
+  const teamIds = new Set(
+    teams.map((t) => t.api_team_id).filter((id): id is number => id !== null)
+  );
+  const maxPerTeam = Math.max(...teams.map((t) => t.next_matches_count));
+  const fixturesByTeam = await fetchFixturesByDate(teamIds, maxPerTeam);
+
+  // Save to database and build results
+  const supabase = await createClient();
   const results: { team: TeamMapping; fixtures: CachedFixture[] }[] = [];
   const seenFixtureIds = new Set<number>();
+  const now = new Date().toISOString();
 
-  // Fetch fixtures for each team (sequentially to be gentle on API limits)
   for (const team of teams) {
-    const fixtures = await refreshFixturesIfNeeded(team);
-    if (fixtures && fixtures.length > 0) {
-      // Deduplicate fixtures across teams
-      const uniqueFixtures = fixtures.filter((f) => {
-        if (seenFixtureIds.has(f.id)) {
-          return false;
-        }
+    const teamFixtures = fixturesByTeam.get(team.api_team_id!) ?? [];
+
+    // Update cache in DB
+    await supabase
+      .from("team_mappings")
+      .update({
+        cached_fixtures: JSON.parse(JSON.stringify(teamFixtures)),
+        fixtures_updated_at: now,
+      })
+      .eq("id", team.id);
+
+    // Deduplicate for display
+    if (teamFixtures.length > 0) {
+      const uniqueFixtures = teamFixtures.filter((f) => {
+        if (seenFixtureIds.has(f.id)) return false;
         seenFixtureIds.add(f.id);
         return true;
       });
-
       if (uniqueFixtures.length > 0) {
-        results.push({ team, fixtures: uniqueFixtures });
+        results.push({
+          team: { ...team, cached_fixtures: teamFixtures, fixtures_updated_at: now },
+          fixtures: uniqueFixtures,
+        });
       }
     }
   }
+
+  console.log(
+    `[Calendar] Found fixtures for ${results.length}/${teams.length} teams`
+  );
 
   return results;
 }

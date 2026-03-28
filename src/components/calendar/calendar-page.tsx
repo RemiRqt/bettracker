@@ -8,13 +8,15 @@ import Link from "next/link";
 interface CalendarPageProps {
   fixtures: { fixture: CachedFixture; teamSubject: string }[];
   lastUpdated: string | null;
+  teamCount?: number;
+  teamNames?: string[];
 }
 
 interface GroupedFixtures {
   [date: string]: { fixture: CachedFixture; teamSubject: string }[];
 }
 
-export function CalendarPage({ fixtures, lastUpdated }: CalendarPageProps) {
+export function CalendarPage({ fixtures, lastUpdated, teamCount = 0, teamNames = [] }: CalendarPageProps) {
   // Group fixtures by date
   const grouped: GroupedFixtures = {};
   for (const item of fixtures) {
@@ -72,10 +74,18 @@ export function CalendarPage({ fixtures, lastUpdated }: CalendarPageProps) {
         <div className="rounded-xl bg-[#1e293b] p-6 text-center space-y-3">
           <CalendarDays className="h-10 w-10 text-slate-600 mx-auto" />
           <p className="text-sm text-slate-400">Aucun match a venir.</p>
-          <p className="text-xs text-slate-500">
-            Suivez des equipes depuis votre profil pour voir leurs prochains
-            matchs.
-          </p>
+          {teamCount === 0 ? (
+            <p className="text-xs text-slate-500">
+              Suivez des equipes depuis votre profil pour voir leurs prochains
+              matchs. Les equipes doivent etre liees a l&apos;API Football et
+              suivies (ou dans une serie active).
+            </p>
+          ) : (
+            <p className="text-xs text-slate-500">
+              {teamCount} equipe{teamCount > 1 ? "s" : ""} eligible{teamCount > 1 ? "s" : ""} ({teamNames.join(", ")}), mais aucun match retourne par l&apos;API.
+              Verifiez les logs serveur pour plus de details.
+            </p>
+          )}
           <Link
             href="/profile"
             className="inline-block mt-2 text-sm text-[#10b981] hover:text-emerald-300 transition-colors"
