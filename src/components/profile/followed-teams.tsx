@@ -58,7 +58,11 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
       clubMap.set(m.api_team_id, m);
     }
   }
-  const clubs = [...clubMap.values()];
+  const clubs = [...clubMap.values()].sort((a, b) => {
+    // Followed first, then A-Z
+    if (a.is_followed !== b.is_followed) return a.is_followed ? -1 : 1;
+    return a.subject.localeCompare(b.subject);
+  });
   const subjects = mappings.filter((m) => m.api_team_id === null);
 
   // --- Handlers ---
@@ -118,8 +122,8 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
 
   // Delete a club (and unlink all subjects linked to it)
   const handleDeleteClub = useCallback((club: TeamMapping) => {
+    if (!confirm(`Supprimer ${club.subject} ?`)) return;
     const apiId = club.api_team_id;
-    // Unlink all subjects linked to this club
     setMappings((prev) =>
       prev
         .filter((m) => m.id !== club.id)
@@ -131,8 +135,6 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     );
     startTransition(async () => {
       await deleteTeamMapping(club.id);
-      // Unlink subjects that were linked to this club
-      // (they'll lose api_team_id on next page load via server)
     });
   }, []);
 
