@@ -8,7 +8,10 @@ interface AppHeaderProps {
 
 export function AppHeader({ email }: AppHeaderProps) {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-slate-700/50 bg-[#0f172a]/95 backdrop-blur-md">
+    <header
+      className="fixed top-0 left-0 right-0 z-50 border-b border-slate-700/50 bg-[#0f172a]/95 backdrop-blur-md"
+      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+    >
       <div className="container mx-auto flex h-12 md:h-14 items-center justify-between px-4">
         <Link href="/" className="text-lg md:text-xl font-bold text-white">
           BetTracker

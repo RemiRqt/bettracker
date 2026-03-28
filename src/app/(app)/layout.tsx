@@ -20,7 +20,13 @@ export default async function AppLayout({
   return (
     <div className="min-h-screen bg-[#0f172a]">
       <AppHeader email={user.email!} />
-      <main className="container mx-auto px-3 pt-14 pb-24 md:px-4 md:pt-16 md:pb-6">
+      <main
+        className="container mx-auto px-3 md:px-4 md:pb-6"
+        style={{
+          paddingTop: "calc(3.5rem + env(safe-area-inset-top, 0px) + 0.5rem)",
+          paddingBottom: "calc(4.5rem + env(safe-area-inset-bottom, 0px))",
+        }}
+      >
         {children}
       </main>
       <BottomNav />
