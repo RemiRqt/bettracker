@@ -147,13 +147,7 @@ export function CapitalChart({ data }: CapitalChartProps) {
                 domain={domain}
                 hide
               />
-              <YAxis
-                tick={{ fontSize: 10, fill: "#64748b" }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v: number) => `${v}€`}
-                width={40}
-              />
+              <YAxis hide />
               <Tooltip content={<CustomTooltip />} />
               <Area
                 type="monotone"
