@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { ParisPage } from "@/components/paris/paris-page";
 
@@ -37,7 +38,6 @@ export default async function NewSeriesPage() {
   if (allSeries) {
     for (const s of allSeries) {
       const key = `${s.subject}::${s.bet_type}`;
-      // First occurrence is the most recent (ordered by created_at DESC)
       if (!groupMap.has(key)) {
         groupMap.set(key, {
           subject: s.subject,
@@ -48,7 +48,6 @@ export default async function NewSeriesPage() {
     }
   }
 
-  // Sort: en_cours first, then abandonnee, then gagnee
   const statusOrder: Record<string, number> = {
     en_cours: 0,
     abandonnee: 1,
@@ -60,17 +59,18 @@ export default async function NewSeriesPage() {
       (statusOrder[a.lastStatus] ?? 99) - (statusOrder[b.lastStatus] ?? 99)
   );
 
-  // Raw teams for the form (without lastStatus)
   const existingTeamsRaw = existingTeams.map((t) => ({
     subject: t.subject,
     bet_type: t.bet_type,
   }));
 
   return (
-    <ParisPage
-      bets={bets ?? []}
-      existingTeams={existingTeams}
-      existingTeamsRaw={existingTeamsRaw}
-    />
+    <Suspense>
+      <ParisPage
+        bets={bets ?? []}
+        existingTeams={existingTeams}
+        existingTeamsRaw={existingTeamsRaw}
+      />
+    </Suspense>
   );
 }

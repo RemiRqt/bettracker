@@ -60,6 +60,7 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
   const [state, formAction] = useActionState(createSeriesAction, null);
   const [subject, setSubject] = useState("");
   const [betType, setBetType] = useState<BetType | "">("");
+  const [targetGain, setTargetGain] = useState(1.0);
   const [selectedTeamKey, setSelectedTeamKey] = useState<string | null>(null);
   const [teamSearch, setTeamSearch] = useState("");
   const [teamsOpen, setTeamsOpen] = useState(false);
@@ -242,24 +243,28 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
         </div>
       </div>
 
-      {/* Target gain input */}
-      <div className="space-y-2">
-        <label
-          htmlFor="target_gain"
-          className="text-sm font-medium text-slate-300"
-        >
-          Objectif de gain (€)
+      {/* Target gain slider */}
+      <div className="space-y-3">
+        <label className="text-sm font-medium text-slate-300">
+          Objectif de gain
         </label>
-        <input
-          id="target_gain"
-          name="target_gain"
-          type="number"
-          step="0.01"
-          min="0.01"
-          placeholder="10.00"
-          required
-          className="w-full h-12 rounded-xl bg-[#1e293b] border border-slate-600 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-colors"
-        />
+        <input type="hidden" name="target_gain" value={targetGain} />
+        <div className="px-1">
+          <input
+            type="range"
+            min={0}
+            max={10}
+            step={0.25}
+            value={targetGain}
+            onChange={(e) => setTargetGain(parseFloat(e.target.value))}
+            className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-700 accent-[#10b981] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#10b981] [&::-webkit-slider-thumb]:shadow-lg"
+          />
+        </div>
+        <div className="flex items-center justify-between text-xs text-slate-500">
+          <span>0 €</span>
+          <span className="text-lg font-bold text-emerald-400">{targetGain.toFixed(2)} €</span>
+          <span>10 €</span>
+        </div>
       </div>
 
       <SubmitButton />

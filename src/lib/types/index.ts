@@ -25,6 +25,7 @@ export interface DashboardStats {
   miseEnCours: number;
   gainsPotentiels: number;
   seriesEnCours: number;
+  parisEnCours: number;
   parisGagnes: number;
   parisPerdu: number;
   coteMoyenne: number;

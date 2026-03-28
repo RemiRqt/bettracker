@@ -224,6 +224,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     miseEnCours,
     gainsPotentiels,
     seriesEnCours,
+    parisEnCours: pendingBets.length,
     parisGagnes,
     parisPerdu,
     coteMoyenne,

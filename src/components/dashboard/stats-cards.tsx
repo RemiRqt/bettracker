@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { formatEuros, formatPercent } from "@/lib/utils";
 import type { DashboardStats } from "@/lib/types";
 import {
@@ -129,24 +130,30 @@ export function StatsCards({ stats }: StatsCardsProps) {
 
       {/* Row 3: En cours / Gagné / Perdu */}
       <div className="grid grid-cols-3 gap-2">
-        <StatCard
-          label="En cours"
-          value={stats.seriesEnCours}
-          icon={<Activity className="h-3.5 w-3.5 text-blue-400" />}
-          color="text-blue-400"
-        />
-        <StatCard
-          label="Gagné"
-          value={stats.parisGagnes}
-          icon={<CheckCircle className="h-3.5 w-3.5 text-emerald-400" />}
-          color="text-emerald-400"
-        />
-        <StatCard
-          label="Perdu"
-          value={stats.parisPerdu}
-          icon={<XCircle className="h-3.5 w-3.5 text-red-400" />}
-          color="text-red-400"
-        />
+        <Link href="/series/new?filter=en_cours">
+          <StatCard
+            label="En cours"
+            value={stats.parisEnCours}
+            icon={<Activity className="h-3.5 w-3.5 text-blue-400" />}
+            color="text-blue-400"
+          />
+        </Link>
+        <Link href="/series/new?filter=gagne">
+          <StatCard
+            label="Gagné"
+            value={stats.parisGagnes}
+            icon={<CheckCircle className="h-3.5 w-3.5 text-emerald-400" />}
+            color="text-emerald-400"
+          />
+        </Link>
+        <Link href="/series/new?filter=perdu">
+          <StatCard
+            label="Perdu"
+            value={stats.parisPerdu}
+            icon={<XCircle className="h-3.5 w-3.5 text-red-400" />}
+            color="text-red-400"
+          />
+        </Link>
       </div>
 
       {/* Row 4: Cote moyenne / Mise moyenne */}
