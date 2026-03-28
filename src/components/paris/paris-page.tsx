@@ -145,7 +145,7 @@ export function ParisPage({
   }
 
   return (
-    <div className="space-y-3 py-2">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-white">Paris</h1>
