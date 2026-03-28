@@ -115,6 +115,7 @@ export interface Database {
           api_team_id: number | null;
           logo_url: string | null;
           sport: string;
+          is_club: boolean;
           is_followed: boolean;
           next_matches_count: number;
           cached_fixtures: Json | null;
@@ -129,6 +130,7 @@ export interface Database {
           api_team_id?: number | null;
           logo_url?: string | null;
           sport?: string;
+          is_club?: boolean;
           is_followed?: boolean;
           next_matches_count?: number;
           cached_fixtures?: Json | null;
@@ -143,6 +145,7 @@ export interface Database {
           api_team_id?: number | null;
           logo_url?: string | null;
           sport?: string;
+          is_club?: boolean;
           is_followed?: boolean;
           next_matches_count?: number;
           cached_fixtures?: Json | null;

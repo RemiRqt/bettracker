@@ -21,6 +21,7 @@ export interface TeamMapping {
   sport: string;
   api_team_id: number | null;
   logo_url: string | null;
+  is_club: boolean;
   is_followed: boolean;
   next_matches_count: number;
   cached_fixtures: CachedFixture[] | null;
@@ -117,14 +118,67 @@ export async function upsertTeamMapping(
       {
         user_id: user.id,
         subject: subject.trim(),
+        is_club: false,
         ...data,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "user_id,subject" }
+      { onConflict: "user_id,subject,is_club" }
     );
 
   if (error) {
     return { error: `Erreur lors de la mise a jour: ${error.message}` };
+  }
+
+  revalidateTeamPaths();
+  return { success: true };
+}
+
+/**
+ * Add an API club as a separate record (is_club=true).
+ */
+export async function addClub(
+  apiTeamId: number,
+  name: string,
+  logoUrl: string
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Vous devez etre connecte.");
+  }
+
+  // Check if club already exists
+  const { data: existing } = await supabase
+    .from("team_mappings")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("api_team_id", apiTeamId)
+    .eq("is_club", true)
+    .maybeSingle();
+
+  if (existing) {
+    return { error: "Cette equipe est deja ajoutee." };
+  }
+
+  const { error } = await supabase
+    .from("team_mappings")
+    .insert({
+      user_id: user.id,
+      subject: name,
+      api_team_id: apiTeamId,
+      logo_url: logoUrl,
+      sport: "football",
+      is_club: true,
+      is_followed: false,
+    });
+
+  if (error) {
+    return { error: `Erreur: ${error.message}` };
   }
 
   revalidateTeamPaths();
@@ -155,7 +209,8 @@ export async function linkTeamToApi(
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", user.id)
-    .eq("subject", subject);
+    .eq("subject", subject)
+    .eq("is_club", false);
 
   if (error) {
     return { error: `Erreur lors du lien avec l'API: ${error.message}` };
@@ -188,7 +243,8 @@ export async function unlinkTeamFromApi(subject: string) {
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", user.id)
-    .eq("subject", subject);
+    .eq("subject", subject)
+    .eq("is_club", false);
 
   if (error) {
     return { error: `Erreur: ${error.message}` };
@@ -403,11 +459,12 @@ export async function getCalendarTeams(): Promise<TeamMapping[]> {
 
   if (!allMappings) return [];
 
-  // Filter: followed OR has active series, AND must have api_team_id
+  // Filter: clubs that are followed, AND must have api_team_id
   const filtered = (allMappings as TeamMapping[]).filter(
     (m) =>
+      m.is_club &&
       m.api_team_id !== null &&
-      (m.is_followed || activeSubjects.includes(m.subject))
+      m.is_followed
   );
 
   console.log(
