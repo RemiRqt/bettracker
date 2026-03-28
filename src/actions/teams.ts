@@ -607,3 +607,30 @@ export async function getCalendarFixtures(): Promise<
 
   return results;
 }
+
+/**
+ * Force refresh fixtures by clearing the cache, then revalidate calendar page.
+ */
+export async function refreshCalendarFixtures() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { error: "Non connecte." };
+  }
+
+  // Clear cache to force re-fetch
+  await supabase
+    .from("team_mappings")
+    .update({ cached_fixtures: null, fixtures_updated_at: null })
+    .eq("user_id", user.id)
+    .not("api_team_id", "is", null);
+
+  revalidatePath("/calendar");
+
+  return { success: true };
+}

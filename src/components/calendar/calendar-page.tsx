@@ -1,9 +1,12 @@
 "use client";
 
+import { useTransition } from "react";
 import type { CachedFixture } from "@/actions/teams";
+import { refreshCalendarFixtures } from "@/actions/teams";
 import { TeamLogo } from "@/components/ui/team-logo";
-import { CalendarDays, Clock, TicketPlus } from "lucide-react";
+import { CalendarDays, Clock, TicketPlus, RefreshCw } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface CalendarPageProps {
   fixtures: { fixture: CachedFixture; teamSubject: string }[];
@@ -17,6 +20,13 @@ interface GroupedFixtures {
 }
 
 export function CalendarPage({ fixtures, lastUpdated, teamCount = 0, teamNames = [] }: CalendarPageProps) {
+  const [isPending, startTransition] = useTransition();
+
+  function handleRefresh() {
+    startTransition(async () => {
+      await refreshCalendarFixtures();
+    });
+  }
   // Group fixtures by date
   const grouped: GroupedFixtures = {};
   for (const item of fixtures) {
@@ -53,9 +63,19 @@ export function CalendarPage({ fixtures, lastUpdated, teamCount = 0, teamNames =
               Calendrier
             </h1>
           </div>
-          <p className="text-xs text-slate-400">
-            {fixtures.length} match{fixtures.length !== 1 ? "s" : ""}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-slate-400">
+              {fixtures.length} match{fixtures.length !== 1 ? "s" : ""}
+            </p>
+            <button
+              onClick={handleRefresh}
+              disabled={isPending}
+              className="p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors disabled:opacity-50"
+              title="Rechercher les matchs"
+            >
+              <RefreshCw className={cn("h-4 w-4 text-slate-400", isPending && "animate-spin")} />
+            </button>
+          </div>
         </div>
 
         {/* Last updated */}
