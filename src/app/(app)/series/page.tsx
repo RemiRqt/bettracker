@@ -101,6 +101,12 @@ export default async function EquipesPage() {
       }
     }
 
+    // Find the status of the most recent series
+    const sortedByDate = [...seriesData].sort(
+      (a, b) => b.created_at.localeCompare(a.created_at)
+    );
+    const lastSeriesStatus = sortedByDate[0]?.status ?? "";
+
     return {
       subject: group.subject,
       bet_type: group.bet_type,
@@ -114,6 +120,7 @@ export default async function EquipesPage() {
       enCoursCount,
       series: seriesData,
       lastBetDate,
+      lastSeriesStatus,
     };
   });
 

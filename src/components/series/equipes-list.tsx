@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Search, ChevronDown, ChevronRight, Inbox, ArrowUpDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BET_TYPES } from "@/lib/constants";
@@ -39,14 +39,24 @@ export type Equipe = {
   enCoursCount: number;
   series: EquipeSeries[];
   lastBetDate: string;
+  lastSeriesStatus: string;
 };
 
 type SortKey = "date" | "gains" | "paris";
+type FilterKey = "tous" | "en_cours" | "gagne" | "perdu" | "pause";
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "date", label: "Récent" },
   { key: "gains", label: "Gains" },
   { key: "paris", label: "Paris" },
+];
+
+const FILTER_OPTIONS: { key: FilterKey; label: string; color: string }[] = [
+  { key: "tous", label: "Tous", color: "text-slate-300 border-slate-600" },
+  { key: "en_cours", label: "En cours", color: "text-blue-400 border-blue-500/30" },
+  { key: "gagne", label: "Gagné", color: "text-emerald-400 border-emerald-500/30" },
+  { key: "perdu", label: "Perdu", color: "text-red-400 border-red-500/30" },
+  { key: "pause", label: "En pause", color: "text-amber-400 border-amber-500/30" },
 ];
 
 interface EquipesListProps {
@@ -56,11 +66,35 @@ interface EquipesListProps {
 export function EquipesList({ equipes }: EquipesListProps) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("date");
+  const [filterBy, setFilterBy] = useState<FilterKey>("tous");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  const filtered = equipes.filter((eq) =>
-    eq.subject.toLowerCase().includes(search.toLowerCase())
-  );
+  const counts = useMemo(() => {
+    const c = { tous: equipes.length, en_cours: 0, gagne: 0, perdu: 0, pause: 0 };
+    for (const eq of equipes) {
+      if (eq.enCoursCount > 0) c.en_cours++;
+      if (eq.netProfit > 0) c.gagne++;
+      if (eq.netProfit < 0) c.perdu++;
+      if (eq.lastSeriesStatus === "abandonnee" && eq.enCoursCount === 0) c.pause++;
+    }
+    return c;
+  }, [equipes]);
+
+  const filtered = equipes.filter((eq) => {
+    if (!eq.subject.toLowerCase().includes(search.toLowerCase())) return false;
+    switch (filterBy) {
+      case "en_cours":
+        return eq.enCoursCount > 0;
+      case "gagne":
+        return eq.netProfit > 0;
+      case "perdu":
+        return eq.netProfit < 0;
+      case "pause":
+        return eq.lastSeriesStatus === "abandonnee" && eq.enCoursCount === 0;
+      default:
+        return true;
+    }
+  });
 
   const sorted = [...filtered].sort((a, b) => {
     switch (sortBy) {
@@ -98,6 +132,25 @@ export function EquipesList({ equipes }: EquipesListProps) {
           onChange={(e) => setSearch(e.target.value)}
           className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#1e293b] border border-slate-700 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
         />
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        {FILTER_OPTIONS.map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => setFilterBy(opt.key)}
+            className={cn(
+              "flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border",
+              filterBy === opt.key
+                ? `bg-white/10 ${opt.color}`
+                : "bg-transparent text-slate-500 border-slate-700/50 hover:border-slate-600"
+            )}
+          >
+            {opt.label}
+            <span className="ml-1 opacity-60">{counts[opt.key]}</span>
+          </button>
+        ))}
       </div>
 
       {/* Sort buttons */}
