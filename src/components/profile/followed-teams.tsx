@@ -4,7 +4,6 @@ import { useState, useTransition, useCallback, useRef } from "react";
 import {
   toggleFollow,
   linkTeamToApi,
-  updateMatchesCount,
   upsertTeamMapping,
 } from "@/actions/teams";
 import type { TeamMapping } from "@/actions/teams";
@@ -53,10 +52,15 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
   const [isSearchingLink, setIsSearchingLink] = useState(false);
   const linkSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Get clubs (entries with api_team_id) and unlinked subjects
-  const clubs = mappings.filter((m) => m.api_team_id !== null && m.is_followed);
+  // Group by api_team_id: one card per unique api team
+  const clubMap = new Map<number, TeamMapping>();
+  for (const m of mappings) {
+    if (m.api_team_id !== null && !clubMap.has(m.api_team_id)) {
+      clubMap.set(m.api_team_id, m);
+    }
+  }
+  const clubs = [...clubMap.values()];
   const subjects = mappings.filter((m) => m.api_team_id === null);
-  const linkedSubjects = mappings.filter((m) => m.api_team_id !== null && !m.is_followed);
 
   // Search API-Football
   const handleClubSearch = useCallback((query: string) => {
@@ -89,15 +93,6 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     // Check if already exists by api_team_id
     const existingByApi = mappings.find((m) => m.api_team_id === club.id);
     if (existingByApi) {
-      // Just follow it
-      if (!existingByApi.is_followed) {
-        setMappings((prev) =>
-          prev.map((m) => m.api_team_id === club.id ? { ...m, is_followed: true } : m)
-        );
-        startTransition(async () => {
-          await toggleFollow(existingByApi.subject);
-        });
-      }
       setAddClubOpen(false);
       setClubSearch("");
       setClubResults([]);
@@ -107,11 +102,10 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     // Check if a mapping with the same subject name already exists (from series)
     const existingByName = mappings.find((m) => m.subject === club.name);
     if (existingByName) {
-      // Update existing mapping in place instead of creating a duplicate
       setMappings((prev) =>
         prev.map((m) =>
           m.subject === club.name
-            ? { ...m, api_team_id: club.id, logo_url: club.logo, is_followed: true }
+            ? { ...m, api_team_id: club.id, logo_url: club.logo }
             : m
         )
       );
@@ -120,7 +114,6 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
           api_team_id: club.id,
           logo_url: club.logo,
           sport: "football",
-          is_followed: true,
         });
       });
       setAddClubOpen(false);
@@ -129,7 +122,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
       return;
     }
 
-    // Create new mapping for truly new clubs
+    // Create new mapping
     const newMapping: TeamMapping = {
       id: crypto.randomUUID(),
       user_id: "",
@@ -137,7 +130,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
       sport: "football",
       api_team_id: club.id,
       logo_url: club.logo,
-      is_followed: true,
+      is_followed: false,
       next_matches_count: 2,
       cached_fixtures: null,
       fixtures_updated_at: null,
@@ -151,7 +144,6 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
         api_team_id: club.id,
         logo_url: club.logo,
         sport: "football",
-        is_followed: true,
       });
     });
 
@@ -160,10 +152,10 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     setClubResults([]);
   }, [mappings]);
 
-  // Unfollow club
-  const handleUnfollow = useCallback((subject: string) => {
+  // Toggle follow (for calendar)
+  const handleToggleFollow = useCallback((subject: string) => {
     setMappings((prev) =>
-      prev.map((m) => m.subject === subject ? { ...m, is_followed: false } : m)
+      prev.map((m) => m.subject === subject ? { ...m, is_followed: !m.is_followed } : m)
     );
     startTransition(async () => {
       await toggleFollow(subject);
@@ -196,16 +188,6 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     );
     startTransition(async () => {
       await linkTeamToApi(subjectName, 0, "");
-    });
-  }, []);
-
-  // Update matches count
-  const handleMatchesCount = useCallback((subject: string, count: number) => {
-    setMappings((prev) =>
-      prev.map((m) => m.subject === subject ? { ...m, next_matches_count: count } : m)
-    );
-    startTransition(async () => {
-      await updateMatchesCount(subject, count);
     });
   }, []);
 
@@ -269,9 +251,9 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     setLinkSearchResults([]);
   }, []);
 
-  // Get subjects linked to a specific club
-  const getLinkedSubjects = useCallback((clubApiId: number) => {
-    return mappings.filter((m) => m.api_team_id === clubApiId && !m.is_followed);
+  // Get other subjects linked to the same api_team_id (exclude the club entry itself)
+  const getLinkedSubjects = useCallback((clubApiId: number, clubSubject: string) => {
+    return mappings.filter((m) => m.api_team_id === clubApiId && m.subject !== clubSubject);
   }, [mappings]);
 
   return (
@@ -282,7 +264,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-slate-600 text-sm text-slate-400 hover:border-emerald-500 hover:text-emerald-400 transition-colors"
       >
         <Plus className="h-4 w-4" />
-        Ajouter un club
+        Ajouter une equipe
       </button>
 
       {/* Followed clubs */}
@@ -290,7 +272,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
         <div className="space-y-2">
           {clubs.map((club) => {
             const isExpanded = expandedClubs.has(club.subject);
-            const linked = getLinkedSubjects(club.api_team_id!);
+            const linked = getLinkedSubjects(club.api_team_id!, club.subject);
 
             return (
               <div key={club.id} className="rounded-xl bg-[#0f172a] overflow-hidden">
@@ -307,23 +289,17 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                     </p>
                   </button>
 
-                  {/* Matches count */}
-                  <div className="flex items-center gap-0.5">
-                    {[2, 3, 4, 5].map((n) => (
-                      <button
-                        key={n}
-                        onClick={() => handleMatchesCount(club.subject, n)}
-                        className={cn(
-                          "h-6 w-6 rounded text-xs font-medium transition-colors",
-                          club.next_matches_count === n
-                            ? "bg-[#10b981] text-white"
-                            : "bg-slate-700 text-slate-400 hover:bg-slate-600"
-                        )}
-                      >
-                        {n}
-                      </button>
-                    ))}
-                  </div>
+                  {/* Follow for calendar */}
+                  <button onClick={() => handleToggleFollow(club.subject)}>
+                    <Star
+                      className={cn(
+                        "h-5 w-5 transition-colors",
+                        club.is_followed
+                          ? "text-amber-400 fill-amber-400"
+                          : "text-slate-600 hover:text-amber-400"
+                      )}
+                    />
+                  </button>
 
                   {/* Expand */}
                   <button onClick={() => toggleClubExpand(club.subject)}>
@@ -331,11 +307,6 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                       ? <ChevronDown className="h-4 w-4 text-slate-500" />
                       : <ChevronRight className="h-4 w-4 text-slate-500" />
                     }
-                  </button>
-
-                  {/* Unfollow */}
-                  <button onClick={() => handleUnfollow(club.subject)}>
-                    <X className="h-4 w-4 text-slate-600 hover:text-red-400 transition-colors" />
                   </button>
                 </div>
 
@@ -393,9 +364,9 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
       <Dialog open={addClubOpen} onOpenChange={setAddClubOpen}>
         <DialogContent className="bg-[#1e293b] border-slate-700 text-white max-w-md mx-auto">
           <DialogHeader>
-            <DialogTitle className="text-white">Ajouter un club</DialogTitle>
+            <DialogTitle className="text-white">Ajouter une equipe</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Recherchez un club pour suivre son calendrier
+              Recherchez une equipe pour recuperer son logo
             </DialogDescription>
           </DialogHeader>
 
@@ -425,7 +396,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
             )}
 
             {clubResults.map((club) => {
-              const alreadyAdded = mappings.some((m) => m.api_team_id === club.id && m.is_followed);
+              const alreadyAdded = mappings.some((m) => m.api_team_id === club.id);
               return (
                 <button
                   key={club.id}
