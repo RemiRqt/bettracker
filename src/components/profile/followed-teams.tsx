@@ -79,16 +79,16 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
 
   // Add a club as favorite
   const handleAddClub = useCallback((club: ApiTeamResult) => {
-    // Check if already exists
-    const existing = mappings.find((m) => m.api_team_id === club.id);
-    if (existing) {
+    // Check if already exists by api_team_id
+    const existingByApi = mappings.find((m) => m.api_team_id === club.id);
+    if (existingByApi) {
       // Just follow it
-      if (!existing.is_followed) {
+      if (!existingByApi.is_followed) {
         setMappings((prev) =>
           prev.map((m) => m.api_team_id === club.id ? { ...m, is_followed: true } : m)
         );
         startTransition(async () => {
-          await toggleFollow(existing.subject);
+          await toggleFollow(existingByApi.subject);
         });
       }
       setAddClubOpen(false);
@@ -97,7 +97,32 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
       return;
     }
 
-    // Create new mapping
+    // Check if a mapping with the same subject name already exists (from series)
+    const existingByName = mappings.find((m) => m.subject === club.name);
+    if (existingByName) {
+      // Update existing mapping in place instead of creating a duplicate
+      setMappings((prev) =>
+        prev.map((m) =>
+          m.subject === club.name
+            ? { ...m, api_team_id: club.id, logo_url: club.logo, is_followed: true }
+            : m
+        )
+      );
+      startTransition(async () => {
+        await upsertTeamMapping(club.name, {
+          api_team_id: club.id,
+          logo_url: club.logo,
+          sport: "football",
+          is_followed: true,
+        });
+      });
+      setAddClubOpen(false);
+      setClubSearch("");
+      setClubResults([]);
+      return;
+    }
+
+    // Create new mapping for truly new clubs
     const newMapping: TeamMapping = {
       id: crypto.randomUUID(),
       user_id: "",
