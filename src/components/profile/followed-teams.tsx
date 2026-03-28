@@ -4,6 +4,7 @@ import { useState, useTransition, useCallback, useRef } from "react";
 import {
   toggleFollow,
   linkTeamToApi,
+  unlinkTeamFromApi,
   upsertTeamMapping,
   deleteTeamMapping,
 } from "@/actions/teams";
@@ -168,11 +169,11 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     setMappings((prev) =>
       prev.map((m) =>
         m.subject === subjectName
-          ? { ...m, api_team_id: null, logo_url: null }
+          ? { ...m, api_team_id: null, logo_url: null, is_followed: false }
           : m
       )
     );
-    startTransition(async () => { await linkTeamToApi(subjectName, 0, ""); });
+    startTransition(async () => { await unlinkTeamFromApi(subjectName); });
   }, []);
 
   // Toggle club expand

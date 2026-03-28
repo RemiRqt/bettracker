@@ -165,6 +165,39 @@ export async function linkTeamToApi(
   return { success: true };
 }
 
+export async function unlinkTeamFromApi(subject: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Vous devez etre connecte.");
+  }
+
+  const { error } = await supabase
+    .from("team_mappings")
+    .update({
+      api_team_id: null,
+      logo_url: null,
+      is_followed: false,
+      cached_fixtures: null,
+      fixtures_updated_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", user.id)
+    .eq("subject", subject);
+
+  if (error) {
+    return { error: `Erreur: ${error.message}` };
+  }
+
+  revalidateTeamPaths();
+  return { success: true };
+}
+
 export async function toggleFollow(subject: string) {
   const supabase = await createClient();
 
