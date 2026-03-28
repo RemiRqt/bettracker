@@ -23,7 +23,7 @@ export default async function AppLayout({
       <main
         className="container mx-auto px-3 md:px-4 md:pb-6"
         style={{
-          paddingTop: "calc(3rem + env(safe-area-inset-top, 0px) + 1px)",
+          paddingTop: "3.25rem",
           paddingBottom: "calc(3.75rem + env(safe-area-inset-bottom, 0px))",
         }}
       >

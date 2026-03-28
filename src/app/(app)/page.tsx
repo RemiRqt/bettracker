@@ -10,7 +10,7 @@ export default async function DashboardPage() {
       className="flex flex-col gap-2"
       style={{
         height:
-          "calc(100dvh - 3rem - env(safe-area-inset-top, 0px) - 1px - 3.75rem - env(safe-area-inset-bottom, 0px))",
+          "calc(100dvh - 3.25rem - 3.75rem - env(safe-area-inset-bottom, 0px))",
       }}
     >
       <StatsCards stats={stats} />
