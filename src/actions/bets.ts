@@ -137,6 +137,51 @@ export async function validateResult(
 
   revalidatePath(`/series/${bet.series_id}`);
   revalidatePath("/series");
+  revalidatePath("/series/new");
+
+  return { success: true };
+}
+
+export async function deleteBet(betId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Vous devez etre connecte.");
+  }
+
+  // Fetch the bet
+  const { data: bet, error: betError } = await supabase
+    .from("bets")
+    .select("id, series_id, result")
+    .eq("id", betId)
+    .single();
+
+  if (betError || !bet) {
+    return { error: "Pari introuvable." };
+  }
+
+  // Only allow deleting pending bets
+  if (bet.result !== null) {
+    return { error: "Impossible de supprimer un pari déjà résolu." };
+  }
+
+  const { error: deleteError } = await supabase
+    .from("bets")
+    .delete()
+    .eq("id", betId);
+
+  if (deleteError) {
+    return { error: `Erreur: ${deleteError.message}` };
+  }
+
+  revalidatePath(`/series/${bet.series_id}`);
+  revalidatePath("/series");
+  revalidatePath("/series/new");
 
   return { success: true };
 }

@@ -1,13 +1,15 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { createSeries } from "@/actions/series";
-import { Trophy, ThumbsDown, Target } from "lucide-react";
+import { Trophy, ThumbsDown, Target, Search, ChevronDown } from "lucide-react";
+import { BET_TYPES } from "@/lib/constants";
 import type { BetType } from "@/lib/types";
 
 interface SeriesFormProps {
-  existingTeams: { subject: string; bet_type: string }[];
+  existingTeams: { subject: string; bet_type: string; lastStatus?: string }[];
+  onSuccess?: () => void;
 }
 
 const BET_TYPE_OPTIONS: {
@@ -19,6 +21,18 @@ const BET_TYPE_OPTIONS: {
   { value: "defaite", label: "Défaite", icon: ThumbsDown },
   { value: "buteur", label: "Buteur", icon: Target },
 ];
+
+const STATUS_DOT_COLORS: Record<string, string> = {
+  en_cours: "bg-blue-500",
+  abandonnee: "bg-red-500",
+  gagnee: "bg-emerald-500",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  en_cours: "En cours",
+  abandonnee: "Abandonnée",
+  gagnee: "Gagnée",
+};
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -42,16 +56,31 @@ async function createSeriesAction(
   return result ?? null;
 }
 
-export function SeriesForm({ existingTeams }: SeriesFormProps) {
+export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
   const [state, formAction] = useActionState(createSeriesAction, null);
   const [subject, setSubject] = useState("");
   const [betType, setBetType] = useState<BetType | "">("");
   const [selectedTeamKey, setSelectedTeamKey] = useState<string | null>(null);
+  const [teamSearch, setTeamSearch] = useState("");
+  const [teamsOpen, setTeamsOpen] = useState(false);
+  const prevStateRef = useRef(state);
 
-  function handleTeamSelect(team: { subject: string; bet_type: string }) {
+  // Detect successful form submission (redirect means state becomes null after being set)
+  useEffect(() => {
+    // If we had a previous state with no error and now it's null, the redirect happened
+    if (prevStateRef.current !== null && state === null && !prevStateRef.current?.error) {
+      onSuccess?.();
+    }
+    prevStateRef.current = state;
+  }, [state, onSuccess]);
+
+  function handleTeamSelect(team: {
+    subject: string;
+    bet_type: string;
+    lastStatus?: string;
+  }) {
     const key = `${team.subject}::${team.bet_type}`;
     if (selectedTeamKey === key) {
-      // Deselect
       setSelectedTeamKey(null);
       setSubject("");
       setBetType("");
@@ -61,6 +90,10 @@ export function SeriesForm({ existingTeams }: SeriesFormProps) {
       setBetType(team.bet_type as BetType);
     }
   }
+
+  const filteredTeams = existingTeams.filter((t) =>
+    t.subject.toLowerCase().includes(teamSearch.toLowerCase())
+  );
 
   return (
     <form action={formAction} className="space-y-6 pt-4">
@@ -73,38 +106,80 @@ export function SeriesForm({ existingTeams }: SeriesFormProps) {
       {/* Existing teams section */}
       {existingTeams.length > 0 && (
         <div className="space-y-3">
-          <label className="text-sm font-medium text-slate-300">
-            Équipe existante
-          </label>
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
-            {existingTeams.map((team) => {
-              const key = `${team.subject}::${team.bet_type}`;
-              const isSelected = selectedTeamKey === key;
-              const typeLabel = BET_TYPE_OPTIONS.find(
-                (o) => o.value === team.bet_type
-              )?.label;
+          <button
+            type="button"
+            onClick={() => setTeamsOpen(!teamsOpen)}
+            className="flex items-center justify-between w-full text-sm font-medium text-slate-300"
+          >
+            <span>Équipe existante</span>
+            <ChevronDown
+              className={`h-4 w-4 text-slate-500 transition-transform ${
+                teamsOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
 
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => handleTeamSelect(team)}
-                  className={`flex-shrink-0 px-3 py-2 rounded-full text-sm font-medium transition-colors border ${
-                    isSelected
-                      ? "bg-[#10b981]/20 border-[#10b981] text-[#10b981]"
-                      : "bg-[#1e293b] border-slate-600 text-slate-300 hover:border-slate-500"
-                  }`}
-                >
-                  {team.subject}
-                  {typeLabel && (
-                    <span className="ml-1.5 text-xs opacity-70">
-                      · {typeLabel}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          {teamsOpen && (
+            <div className="space-y-2">
+              {/* Search input */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                <input
+                  type="text"
+                  value={teamSearch}
+                  onChange={(e) => setTeamSearch(e.target.value)}
+                  placeholder="Rechercher..."
+                  className="w-full h-10 rounded-lg bg-[#1e293b] border border-slate-600 pl-9 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-colors"
+                />
+              </div>
+
+              {/* Scrollable list */}
+              <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-700 bg-[#1e293b] divide-y divide-slate-700/50">
+                {filteredTeams.length === 0 ? (
+                  <div className="px-3 py-4 text-center text-xs text-slate-500">
+                    Aucun résultat
+                  </div>
+                ) : (
+                  filteredTeams.map((team) => {
+                    const key = `${team.subject}::${team.bet_type}`;
+                    const isSelected = selectedTeamKey === key;
+                    const typeLabel =
+                      BET_TYPES[team.bet_type as keyof typeof BET_TYPES] ??
+                      team.bet_type;
+                    const statusColor =
+                      STATUS_DOT_COLORS[team.lastStatus ?? ""] ?? "bg-slate-500";
+
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => handleTeamSelect(team)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                          isSelected
+                            ? "bg-[#10b981]/10"
+                            : "hover:bg-slate-700/50"
+                        }`}
+                      >
+                        <span
+                          className={`flex-shrink-0 h-2 w-2 rounded-full ${statusColor}`}
+                        />
+                        <span
+                          className={`text-sm font-medium truncate ${
+                            isSelected ? "text-[#10b981]" : "text-white"
+                          }`}
+                        >
+                          {team.subject}
+                        </span>
+                        <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-700 text-slate-400">
+                          {typeLabel}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Divider */}
           <div className="flex items-center gap-3">
