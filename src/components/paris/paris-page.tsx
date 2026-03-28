@@ -6,6 +6,7 @@ import { Plus, CheckCircle, XCircle, Trash2, ChevronUp, ChevronDown } from "luci
 import { validateResult, deleteBet } from "@/actions/bets";
 import { BET_TYPES } from "@/lib/constants";
 import { formatEuros, cn } from "@/lib/utils";
+import { TeamLogo } from "@/components/ui/team-logo";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ interface ParisPageProps {
   bets: Bet[];
   existingTeams: { subject: string; bet_type: string; lastStatus: string }[];
   existingTeamsRaw: { subject: string; bet_type: string }[];
+  logoMap?: Record<string, string>;
 }
 
 type FilterKey = "en_cours" | "gagne" | "perdu";
@@ -62,6 +64,7 @@ export function ParisPage({
   bets,
   existingTeams,
   existingTeamsRaw,
+  logoMap = {},
 }: ParisPageProps) {
   const searchParams = useSearchParams();
   const initialFilter = (searchParams.get("filter") as FilterKey) || "en_cours";
@@ -219,6 +222,7 @@ export function ParisPage({
                 {/* Left */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
+                    <TeamLogo logoUrl={logoMap[bet.series.subject]} size="sm" className="flex-shrink-0" />
                     <span className="font-semibold text-white text-sm truncate">
                       {bet.series.subject}
                     </span>

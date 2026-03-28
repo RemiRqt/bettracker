@@ -5,10 +5,15 @@ import type { SeriesWithBets } from "@/lib/types";
 export default async function EquipesPage() {
   const supabase = await createClient();
 
-  const { data: series, error } = await supabase
-    .from("series")
-    .select("*, bets(*)")
-    .order("created_at", { ascending: false });
+  const [{ data: series, error }, { data: teamMappings }] = await Promise.all([
+    supabase
+      .from("series")
+      .select("*, bets(*)")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("team_mappings")
+      .select("subject, logo_url")
+  ]);
 
   if (error) {
     throw new Error(`Erreur lors du chargement des séries : ${error.message}`);
@@ -146,12 +151,18 @@ export default async function EquipesPage() {
   // Sort by last bet date descending (most recent first)
   equipes.sort((a, b) => b.lastBetDate.localeCompare(a.lastBetDate));
 
+  // Build logo map: subject → logo_url
+  const logoMap: Record<string, string> = {};
+  for (const m of teamMappings ?? []) {
+    if (m.logo_url) logoMap[m.subject] = m.logo_url;
+  }
+
   return (
     <div className="space-y-4 md:space-y-6">
       <h1 className="text-xl md:text-2xl font-bold text-slate-100">
         Équipes
       </h1>
-      <EquipesList equipes={equipes} />
+      <EquipesList equipes={equipes} logoMap={logoMap} />
     </div>
   );
 }

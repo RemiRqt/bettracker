@@ -13,14 +13,19 @@ export default async function NewSeriesPage() {
     return null;
   }
 
-  // Fetch all bets with their parent series info
-  const { data: bets } = await supabase
-    .from("bets")
-    .select(
-      "*, series!inner(id, subject, bet_type, status, target_gain, user_id)"
-    )
-    .eq("series.user_id", user.id)
-    .order("created_at", { ascending: false });
+  // Fetch bets and team mappings in parallel
+  const [{ data: bets }, { data: teamMappings }] = await Promise.all([
+    supabase
+      .from("bets")
+      .select(
+        "*, series!inner(id, subject, bet_type, status, target_gain, user_id)"
+      )
+      .eq("series.user_id", user.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("team_mappings")
+      .select("subject, logo_url"),
+  ]);
 
   // Fetch all series to build grouped teams dropdown
   const { data: allSeries } = await supabase
@@ -64,12 +69,19 @@ export default async function NewSeriesPage() {
     bet_type: t.bet_type,
   }));
 
+  // Build logo map: subject → logo_url
+  const logoMap: Record<string, string> = {};
+  for (const m of teamMappings ?? []) {
+    if (m.logo_url) logoMap[m.subject] = m.logo_url;
+  }
+
   return (
     <Suspense>
       <ParisPage
         bets={bets ?? []}
         existingTeams={existingTeams}
         existingTeamsRaw={existingTeamsRaw}
+        logoMap={logoMap}
       />
     </Suspense>
   );

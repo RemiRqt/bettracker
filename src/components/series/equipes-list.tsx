@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { BET_TYPES } from "@/lib/constants";
 import { formatEuros, formatPercent, cn } from "@/lib/utils";
 import { EquipeSeriesItem } from "@/components/series/equipe-series-item";
+import { TeamLogo } from "@/components/ui/team-logo";
 
 export type EquipeSeries = {
   id: string;
@@ -64,9 +65,10 @@ const FILTER_OPTIONS: { key: "en_cours" | "gagne" | "perdu" | "pause"; label: st
 
 interface EquipesListProps {
   equipes: Equipe[];
+  logoMap?: Record<string, string>;
 }
 
-export function EquipesList({ equipes }: EquipesListProps) {
+export function EquipesList({ equipes, logoMap = {} }: EquipesListProps) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("date");
   const [sortAsc, setSortAsc] = useState(false);
@@ -223,9 +225,10 @@ export function EquipesList({ equipes }: EquipesListProps) {
                   onClick={() => toggleExpand(key)}
                   className="w-full text-left p-3 space-y-2 hover:bg-white/[0.02] transition-colors cursor-pointer"
                 >
-                  {/* Row 1: name + type + gain + chevron */}
+                  {/* Row 1: logo + name + type + gain + chevron */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
+                      <TeamLogo logoUrl={logoMap[equipe.subject]} size="sm" className="flex-shrink-0" />
                       <span className="text-base font-bold text-slate-100 truncate">
                         {equipe.subject}
                       </span>
