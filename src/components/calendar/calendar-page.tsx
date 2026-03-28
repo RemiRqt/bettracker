@@ -1,160 +1,44 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import type { TeamMapping } from "@/actions/teams";
+import type { CachedFixture } from "@/actions/teams";
 import { TeamLogo } from "@/components/ui/team-logo";
-import { CalendarDays, Loader2, TicketPlus } from "lucide-react";
+import { CalendarDays, Clock, TicketPlus } from "lucide-react";
 import Link from "next/link";
 
-interface Fixture {
-  fixture: {
-    id: number;
-    date: string;
-    status: {
-      short: string;
-      long: string;
-    };
-  };
-  league: {
-    id: number;
-    name: string;
-    logo: string;
-  };
-  teams: {
-    home: {
-      id: number;
-      name: string;
-      logo: string;
-    };
-    away: {
-      id: number;
-      name: string;
-      logo: string;
-    };
-  };
+interface CalendarPageProps {
+  fixtures: { fixture: CachedFixture; teamSubject: string }[];
+  lastUpdated: string | null;
 }
 
 interface GroupedFixtures {
-  [date: string]: Fixture[];
+  [date: string]: { fixture: CachedFixture; teamSubject: string }[];
 }
 
-interface CalendarPageProps {
-  teams: TeamMapping[];
-}
-
-export function CalendarPage({ teams }: CalendarPageProps) {
-  const [fixtures, setFixtures] = useState<Fixture[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchFixtures() {
-      setLoading(true);
-      setError(null);
-
-      const teamsWithApi = teams.filter((t) => t.api_team_id);
-
-      if (teamsWithApi.length === 0) {
-        setFixtures([]);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const results = await Promise.allSettled(
-          teamsWithApi.map(async (team) => {
-            const res = await fetch(
-              `/api/football/fixtures?teamId=${team.api_team_id}&count=${team.next_matches_count}`
-            );
-            if (!res.ok) return [];
-            const data = await res.json();
-            return data.fixtures || [];
-          })
-        );
-
-        const allFixtures: Fixture[] = [];
-        const seenIds = new Set<number>();
-
-        for (const result of results) {
-          if (result.status === "fulfilled") {
-            for (const fixture of result.value) {
-              if (!seenIds.has(fixture.fixture.id)) {
-                seenIds.add(fixture.fixture.id);
-                allFixtures.push(fixture);
-              }
-            }
-          }
-        }
-
-        // Sort by date
-        allFixtures.sort(
-          (a, b) =>
-            new Date(a.fixture.date).getTime() -
-            new Date(b.fixture.date).getTime()
-        );
-
-        setFixtures(allFixtures);
-      } catch {
-        setError("Erreur lors du chargement des matchs.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchFixtures();
-  }, [teams]);
-
+export function CalendarPage({ fixtures, lastUpdated }: CalendarPageProps) {
   // Group fixtures by date
   const grouped: GroupedFixtures = {};
-  for (const fixture of fixtures) {
-    const date = new Date(fixture.fixture.date).toLocaleDateString("fr-FR", {
+  for (const item of fixtures) {
+    const date = new Date(item.fixture.date).toLocaleDateString("fr-FR", {
       weekday: "long",
       day: "numeric",
       month: "long",
       year: "numeric",
     });
-    if (!grouped[date]) grouped[date] = [];
-    grouped[date].push(fixture);
+    // Capitalize first letter
+    const capitalizedDate = date.charAt(0).toUpperCase() + date.slice(1);
+    if (!grouped[capitalizedDate]) grouped[capitalizedDate] = [];
+    grouped[capitalizedDate].push(item);
   }
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
-          <div className="flex items-center gap-3">
-            <CalendarDays className="h-5 w-5 text-[#10b981]" />
-            <h1 className="text-lg font-semibold text-white font-[family-name:var(--font-poppins)]">
-              Calendrier
-            </h1>
-          </div>
-        </div>
-        <div className="flex flex-col items-center justify-center py-12 gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-[#10b981]" />
-          <p className="text-sm text-slate-400">
-            Chargement des matchs...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-4">
-        <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
-          <div className="flex items-center gap-3">
-            <CalendarDays className="h-5 w-5 text-[#10b981]" />
-            <h1 className="text-lg font-semibold text-white font-[family-name:var(--font-poppins)]">
-              Calendrier
-            </h1>
-          </div>
-        </div>
-        <div className="rounded-xl bg-[#1e293b] p-6 text-center">
-          <p className="text-sm text-red-400">{error}</p>
-        </div>
-      </div>
-    );
-  }
+  const formattedLastUpdated = lastUpdated
+    ? new Date(lastUpdated).toLocaleString("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -171,17 +55,26 @@ export function CalendarPage({ teams }: CalendarPageProps) {
             {fixtures.length} match{fixtures.length !== 1 ? "s" : ""}
           </p>
         </div>
+
+        {/* Last updated */}
+        {formattedLastUpdated && (
+          <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-700">
+            <Clock className="h-3 w-3 text-slate-500" />
+            <p className="text-xs text-slate-500">
+              Derniere mise a jour : {formattedLastUpdated}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Empty state */}
       {fixtures.length === 0 && (
         <div className="rounded-xl bg-[#1e293b] p-6 text-center space-y-3">
           <CalendarDays className="h-10 w-10 text-slate-600 mx-auto" />
-          <p className="text-sm text-slate-400">
-            Aucun match a venir.
-          </p>
+          <p className="text-sm text-slate-400">Aucun match a venir.</p>
           <p className="text-xs text-slate-500">
-            Suivez des equipes depuis votre profil pour voir leurs prochains matchs.
+            Suivez des equipes depuis votre profil pour voir leurs prochains
+            matchs.
           </p>
           <Link
             href="/profile"
@@ -199,8 +92,8 @@ export function CalendarPage({ teams }: CalendarPageProps) {
             {date}
           </h2>
 
-          {dateFixtures.map((fixture) => (
-            <FixtureCard key={fixture.fixture.id} fixture={fixture} />
+          {dateFixtures.map((item) => (
+            <FixtureCard key={item.fixture.id} item={item} />
           ))}
         </div>
       ))}
@@ -210,8 +103,13 @@ export function CalendarPage({ teams }: CalendarPageProps) {
 
 // --- Fixture Card ---
 
-function FixtureCard({ fixture }: { fixture: Fixture }) {
-  const time = new Date(fixture.fixture.date).toLocaleTimeString("fr-FR", {
+function FixtureCard({
+  item,
+}: {
+  item: { fixture: CachedFixture; teamSubject: string };
+}) {
+  const { fixture } = item;
+  const time = new Date(fixture.date).toLocaleTimeString("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -221,15 +119,15 @@ function FixtureCard({ fixture }: { fixture: Fixture }) {
       {/* League + Time */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {fixture.league.logo && (
+          {fixture.leagueLogo && (
             <img
-              src={fixture.league.logo}
+              src={fixture.leagueLogo}
               alt=""
               className="h-4 w-4 object-contain"
             />
           )}
           <span className="text-xs text-slate-400 truncate max-w-[180px]">
-            {fixture.league.name}
+            {fixture.league}
           </span>
         </div>
         <span className="text-xs font-medium text-slate-300">{time}</span>
@@ -240,9 +138,9 @@ function FixtureCard({ fixture }: { fixture: Fixture }) {
         {/* Home */}
         <div className="flex-1 flex items-center gap-2 justify-end">
           <span className="text-sm text-white truncate text-right">
-            {fixture.teams.home.name}
+            {fixture.homeTeam}
           </span>
-          <TeamLogo logoUrl={fixture.teams.home.logo} size="sm" />
+          <TeamLogo logoUrl={fixture.homeLogo} size="sm" />
         </div>
 
         {/* VS */}
@@ -250,9 +148,9 @@ function FixtureCard({ fixture }: { fixture: Fixture }) {
 
         {/* Away */}
         <div className="flex-1 flex items-center gap-2">
-          <TeamLogo logoUrl={fixture.teams.away.logo} size="sm" />
+          <TeamLogo logoUrl={fixture.awayLogo} size="sm" />
           <span className="text-sm text-white truncate">
-            {fixture.teams.away.name}
+            {fixture.awayTeam}
           </span>
         </div>
       </div>

@@ -117,6 +117,8 @@ export interface Database {
           sport: string;
           is_followed: boolean;
           next_matches_count: number;
+          cached_fixtures: Json | null;
+          fixtures_updated_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -129,6 +131,8 @@ export interface Database {
           sport?: string;
           is_followed?: boolean;
           next_matches_count?: number;
+          cached_fixtures?: Json | null;
+          fixtures_updated_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -141,6 +145,8 @@ export interface Database {
           sport?: string;
           is_followed?: boolean;
           next_matches_count?: number;
+          cached_fixtures?: Json | null;
+          fixtures_updated_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

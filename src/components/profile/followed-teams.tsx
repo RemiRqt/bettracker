@@ -24,11 +24,10 @@ interface FollowedTeamsProps {
 }
 
 interface SearchResult {
-  team: {
-    id: number;
-    name: string;
-    logo: string;
-  };
+  id: number;
+  name: string;
+  country: string | null;
+  logo: string;
 }
 
 export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsProps) {
@@ -272,14 +271,19 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
 
             {searchResults.map((result) => (
               <button
-                key={result.team.id}
+                key={result.id}
                 onClick={() =>
-                  handleLinkTeam(result.team.id, result.team.logo || null)
+                  handleLinkTeam(result.id, result.logo || null)
                 }
                 className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-[#0f172a] transition-colors text-left"
               >
-                <TeamLogo logoUrl={result.team.logo} size="md" />
-                <span className="text-sm text-white">{result.team.name}</span>
+                <TeamLogo logoUrl={result.logo} size="md" />
+                <div>
+                  <span className="text-sm text-white">{result.name}</span>
+                  {result.country && (
+                    <span className="text-xs text-slate-500 ml-2">{result.country}</span>
+                  )}
+                </div>
               </button>
             ))}
           </div>

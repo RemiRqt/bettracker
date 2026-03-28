@@ -3,6 +3,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+export interface CachedFixture {
+  id: number;
+  date: string;
+  homeTeam: string;
+  homeLogo: string;
+  awayTeam: string;
+  awayLogo: string;
+  league: string;
+  leagueLogo: string;
+}
+
 export interface TeamMapping {
   id: string;
   user_id: string;
@@ -12,6 +23,8 @@ export interface TeamMapping {
   logo_url: string | null;
   is_followed: boolean;
   next_matches_count: number;
+  cached_fixtures: CachedFixture[] | null;
+  fixtures_updated_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -290,7 +303,7 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
     .eq("user_id", user.id);
 
   const existingSubjects = new Set(
-    (existingMappings || []).map((m: TeamMapping) => m.subject)
+    (existingMappings || []).map((m: { subject: string }) => m.subject)
   );
 
   // Find subjects that don't have a mapping yet
@@ -318,7 +331,6 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
     .eq("user_id", user.id)
     .order("subject", { ascending: true });
 
-  revalidateTeamPaths();
   return (allMappings as TeamMapping[]) || [];
 }
 
@@ -358,8 +370,131 @@ export async function getCalendarTeams(): Promise<TeamMapping[]> {
 
   if (!allMappings) return [];
 
-  // Filter: followed OR has active series
+  // Filter: followed OR has active series, AND must have api_team_id
   return (allMappings as TeamMapping[]).filter(
-    (m) => m.is_followed || activeSubjects.includes(m.subject)
+    (m) =>
+      m.api_team_id !== null &&
+      (m.is_followed || activeSubjects.includes(m.subject))
   );
+}
+
+const API_FOOTBALL_BASE = "https://v3.football.api-sports.io";
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+export async function refreshFixturesIfNeeded(
+  teamMapping: TeamMapping
+): Promise<CachedFixture[] | null> {
+  if (!teamMapping.api_team_id) {
+    return null;
+  }
+
+  // Check if cache is still valid
+  if (teamMapping.cached_fixtures && teamMapping.fixtures_updated_at) {
+    const updatedAt = new Date(teamMapping.fixtures_updated_at).getTime();
+    const now = Date.now();
+    if (now - updatedAt < CACHE_TTL_MS) {
+      return teamMapping.cached_fixtures;
+    }
+  }
+
+  // Fetch from API-Football
+  const apiKey = process.env.API_FOOTBALL_KEY;
+  if (!apiKey) {
+    console.error("API_FOOTBALL_KEY is not set");
+    // Return cached data if available, even if stale
+    return teamMapping.cached_fixtures || null;
+  }
+
+  try {
+    const res = await fetch(
+      `${API_FOOTBALL_BASE}/fixtures?team=${teamMapping.api_team_id}&next=${teamMapping.next_matches_count}`,
+      {
+        headers: {
+          "x-apisports-key": apiKey,
+        },
+      }
+    );
+
+    if (!res.ok) {
+      console.error(
+        `API-Football error for team ${teamMapping.api_team_id}: ${res.status}`
+      );
+      return teamMapping.cached_fixtures || null;
+    }
+
+    const json = await res.json();
+    const response = json.response || [];
+
+    const fixtures: CachedFixture[] = response.map(
+      (item: {
+        fixture: { id: number; date: string };
+        league: { name: string; logo: string };
+        teams: {
+          home: { name: string; logo: string };
+          away: { name: string; logo: string };
+        };
+      }) => ({
+        id: item.fixture.id,
+        date: item.fixture.date,
+        homeTeam: item.teams.home.name,
+        homeLogo: item.teams.home.logo,
+        awayTeam: item.teams.away.name,
+        awayLogo: item.teams.away.logo,
+        league: item.league.name,
+        leagueLogo: item.league.logo,
+      })
+    );
+
+    // Save to database
+    const supabase = await createClient();
+    await supabase
+      .from("team_mappings")
+      .update({
+        cached_fixtures: JSON.parse(JSON.stringify(fixtures)),
+        fixtures_updated_at: new Date().toISOString(),
+      })
+      .eq("id", teamMapping.id);
+
+    return fixtures;
+  } catch (error) {
+    console.error(
+      `Failed to fetch fixtures for team ${teamMapping.api_team_id}:`,
+      error
+    );
+    return teamMapping.cached_fixtures || null;
+  }
+}
+
+export async function getCalendarFixtures(): Promise<
+  { team: TeamMapping; fixtures: CachedFixture[] }[]
+> {
+  const teams = await getCalendarTeams();
+
+  if (teams.length === 0) {
+    return [];
+  }
+
+  const results: { team: TeamMapping; fixtures: CachedFixture[] }[] = [];
+  const seenFixtureIds = new Set<number>();
+
+  // Fetch fixtures for each team (sequentially to be gentle on API limits)
+  for (const team of teams) {
+    const fixtures = await refreshFixturesIfNeeded(team);
+    if (fixtures && fixtures.length > 0) {
+      // Deduplicate fixtures across teams
+      const uniqueFixtures = fixtures.filter((f) => {
+        if (seenFixtureIds.has(f.id)) {
+          return false;
+        }
+        seenFixtureIds.add(f.id);
+        return true;
+      });
+
+      if (uniqueFixtures.length > 0) {
+        results.push({ team, fixtures: uniqueFixtures });
+      }
+    }
+  }
+
+  return results;
 }
