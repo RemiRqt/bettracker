@@ -134,12 +134,23 @@ export async function upsertTeamMapping(
 }
 
 /**
- * Fetch a team logo from SofaScore CDN and return as base64 data URI.
+ * Fetch a team logo via SportAPI7 (RapidAPI) and return as base64 data URI.
+ * Uses RapidAPI instead of SofaScore CDN directly because SofaScore blocks
+ * requests from Vercel servers.
  */
 async function fetchLogoAsDataUri(teamId: number): Promise<string | null> {
+  const apiKey = process.env.RAPIDAPI_KEY;
+  if (!apiKey) return null;
+
   try {
     const res = await fetch(
-      `https://api.sofascore.app/api/v1/team/${teamId}/image`
+      `https://sportapi7.p.rapidapi.com/api/v1/team/${teamId}/image`,
+      {
+        headers: {
+          "x-rapidapi-host": "sportapi7.p.rapidapi.com",
+          "x-rapidapi-key": apiKey,
+        },
+      }
     );
     if (!res.ok) return null;
     const buffer = await res.arrayBuffer();
