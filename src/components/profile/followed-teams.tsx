@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useCallback, useRef } from "react";
+import { useState, useTransition, useCallback } from "react";
 import {
   toggleFollow,
   linkTeamToApi,
@@ -40,8 +40,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
   const [clubSearch, setClubSearch] = useState("");
   const [clubResults, setClubResults] = useState<ApiTeamResult[]>([]);
   const [isSearchingClub, setIsSearchingClub] = useState(false);
-  const clubSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  const [hasSearched, setHasSearched] = useState(false);
   // Link subject to club dialog (from club expand)
   const [linkClubId, setLinkClubId] = useState<string | null>(null);
   const [linkSubjectSearch, setLinkSubjectSearch] = useState("");
@@ -65,28 +64,26 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
 
   // === Handlers ===
 
-  const handleClubSearch = useCallback((query: string) => {
-    setClubSearch(query);
-    if (clubSearchTimeout.current) clearTimeout(clubSearchTimeout.current);
-    if (query.trim().length < 3) { setClubResults([]); return; }
-
-    clubSearchTimeout.current = setTimeout(async () => {
-      setIsSearchingClub(true);
-      try {
-        const res = await fetch(`/api/football/search?q=${encodeURIComponent(query.trim())}`);
-        if (res.ok) {
-          const data = await res.json();
-          setClubResults(Array.isArray(data) ? data : []);
-        }
-      } catch { setClubResults([]); }
-      finally { setIsSearchingClub(false); }
-    }, 500);
-  }, []);
+  const handleClubSearchSubmit = useCallback(async () => {
+    const query = clubSearch.trim();
+    if (query.length < 3) return;
+    setIsSearchingClub(true);
+    setHasSearched(true);
+    setClubResults([]);
+    try {
+      const res = await fetch(`/api/football/search?q=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setClubResults(Array.isArray(data) ? data : []);
+      }
+    } catch { setClubResults([]); }
+    finally { setIsSearchingClub(false); }
+  }, [clubSearch]);
 
   const handleAddClub = useCallback((club: ApiTeamResult) => {
     // Check if already exists
     if (clubs.some((m) => m.api_team_id === club.id)) {
-      setAddClubOpen(false); setClubSearch(""); setClubResults([]);
+      setAddClubOpen(false); setClubSearch(""); setClubResults([]); setHasSearched(false);
       return;
     }
 
@@ -112,7 +109,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
       await addClub(club.id, club.name, club.logo);
     });
 
-    setAddClubOpen(false); setClubSearch(""); setClubResults([]);
+    setAddClubOpen(false); setClubSearch(""); setClubResults([]); setHasSearched(false);
   }, [clubs]);
 
   const handleDeleteClub = useCallback((club: TeamMapping) => {
@@ -317,17 +314,29 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
             </DialogDescription>
           </DialogHeader>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              value={clubSearch}
-              onChange={(e) => handleClubSearch(e.target.value)}
-              placeholder="Ex: Paris Saint Germain, Bayern..."
-              className="w-full bg-[#0f172a] border border-slate-600 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
-              autoFocus
-            />
-          </div>
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleClubSearchSubmit(); }}
+            className="flex gap-2"
+          >
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                value={clubSearch}
+                onChange={(e) => setClubSearch(e.target.value)}
+                placeholder="Ex: PSG, Bayern, France..."
+                className="w-full bg-[#0f172a] border border-slate-600 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+                autoFocus
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={clubSearch.trim().length < 3 || isSearchingClub}
+              className="px-4 py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-medium hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSearchingClub ? <Loader2 className="h-4 w-4 animate-spin" /> : "Rechercher"}
+            </button>
+          </form>
 
           <div className="max-h-72 overflow-y-auto space-y-1">
             {isSearchingClub && (
@@ -335,7 +344,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                 <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
               </div>
             )}
-            {!isSearchingClub && clubResults.length === 0 && clubSearch.length >= 3 && (
+            {!isSearchingClub && clubResults.length === 0 && hasSearched && (
               <p className="text-sm text-slate-500 text-center py-6">Aucun resultat</p>
             )}
             {clubResults.map((club) => {
