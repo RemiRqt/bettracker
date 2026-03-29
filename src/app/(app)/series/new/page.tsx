@@ -24,7 +24,7 @@ export default async function NewSeriesPage() {
       .order("created_at", { ascending: false }),
     supabase
       .from("team_mappings")
-      .select("subject, logo_url, api_team_id"),
+      .select("subject, logo_url, api_team_id, is_club"),
   ]);
 
   // Fetch all series to build grouped teams dropdown
@@ -69,10 +69,19 @@ export default async function NewSeriesPage() {
     bet_type: t.bet_type,
   }));
 
-  // Build logo map: use logo_url directly (base64 data URI or URL)
+  // Build logo map: clubs first, then non-clubs inherit via api_team_id
   const logoMap: Record<string, string> = {};
+  const apiIdToLogo: Record<number, string> = {};
   for (const m of teamMappings ?? []) {
-    if (m.logo_url) logoMap[m.subject] = m.logo_url;
+    if (m.is_club && m.logo_url) {
+      logoMap[m.subject] = m.logo_url;
+      if (m.api_team_id) apiIdToLogo[m.api_team_id] = m.logo_url;
+    }
+  }
+  for (const m of teamMappings ?? []) {
+    if (!m.is_club && !logoMap[m.subject] && m.api_team_id && apiIdToLogo[m.api_team_id]) {
+      logoMap[m.subject] = apiIdToLogo[m.api_team_id];
+    }
   }
 
   return (

@@ -17,15 +17,28 @@ export default async function EquipesRoute() {
         .order("created_at", { ascending: false }),
       supabase
         .from("team_mappings")
-        .select("subject, logo_url, api_team_id"),
+        .select("subject, logo_url, api_team_id, is_club"),
     ]);
 
   const allSeries = (series ?? []) as SeriesWithBets[];
 
-  // Build logo map: use logo_url directly (base64 data URI or URL)
+  // Build logo map: clubs first (they have base64 logos), then non-clubs fill gaps
+  // Also build api_team_id → logo for linking non-club subjects to club logos
   const logoMap: Record<string, string> = {};
+  const apiIdToLogo: Record<number, string> = {};
+
+  // Pass 1: clubs (have base64 logos)
   for (const m of teamMappings ?? []) {
-    if (m.logo_url) logoMap[m.subject] = m.logo_url;
+    if (m.is_club && m.logo_url) {
+      logoMap[m.subject] = m.logo_url;
+      if (m.api_team_id) apiIdToLogo[m.api_team_id] = m.logo_url;
+    }
+  }
+  // Pass 2: non-clubs inherit logo from linked club via api_team_id
+  for (const m of teamMappings ?? []) {
+    if (!m.is_club && !logoMap[m.subject] && m.api_team_id && apiIdToLogo[m.api_team_id]) {
+      logoMap[m.subject] = apiIdToLogo[m.api_team_id];
+    }
   }
 
   // Build merged equipe data
