@@ -3,8 +3,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-const SOFASCORE_CDN = "https://api.sofascore.app/api/v1";
-
 export interface CachedFixture {
   id: number;
   date: string;
@@ -523,12 +521,12 @@ async function fetchTeamNextEvents(
       id: event.id,
       date: new Date(event.startTimestamp * 1000).toISOString(),
       homeTeam: event.homeTeam.name,
-      homeLogo: `${SOFASCORE_CDN}/team/${event.homeTeam.id}/image`,
+      homeLogo: `/api/football/image?teamId=${event.homeTeam.id}`,
       awayTeam: event.awayTeam.name,
-      awayLogo: `${SOFASCORE_CDN}/team/${event.awayTeam.id}/image`,
+      awayLogo: `/api/football/image?teamId=${event.awayTeam.id}`,
       league: event.tournament.uniqueTournament?.name ?? event.tournament.name,
       leagueLogo: event.tournament.uniqueTournament
-        ? `${SOFASCORE_CDN}/unique-tournament/${event.tournament.uniqueTournament.id}/image`
+        ? `/api/football/image?teamId=${event.tournament.uniqueTournament.id}&type=tournament`
         : "",
     }));
   } catch (error) {

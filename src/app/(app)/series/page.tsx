@@ -12,7 +12,7 @@ export default async function EquipesPage() {
       .order("created_at", { ascending: false }),
     supabase
       .from("team_mappings")
-      .select("subject, logo_url")
+      .select("subject, logo_url, api_team_id")
   ]);
 
   if (error) {
@@ -151,10 +151,14 @@ export default async function EquipesPage() {
   // Sort by last bet date descending (most recent first)
   equipes.sort((a, b) => b.lastBetDate.localeCompare(a.lastBetDate));
 
-  // Build logo map: subject → logo_url
+  // Build logo map: subject → logo_url (prefer proxy URL from api_team_id)
   const logoMap: Record<string, string> = {};
   for (const m of teamMappings ?? []) {
-    if (m.logo_url) logoMap[m.subject] = m.logo_url;
+    if (m.api_team_id) {
+      logoMap[m.subject] = `/api/football/image?teamId=${m.api_team_id}`;
+    } else if (m.logo_url) {
+      logoMap[m.subject] = m.logo_url;
+    }
   }
 
   return (

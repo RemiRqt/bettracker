@@ -72,16 +72,16 @@ export async function GET(request: NextRequest) {
         date: new Date(event.startTimestamp * 1000).toISOString(),
         home: {
           name: event.homeTeam.name,
-          logo: `https://api.sofascore.app/api/v1/team/${event.homeTeam.id}/image`,
+          logo: `/api/football/image?teamId=${event.homeTeam.id}`,
         },
         away: {
           name: event.awayTeam.name,
-          logo: `https://api.sofascore.app/api/v1/team/${event.awayTeam.id}/image`,
+          logo: `/api/football/image?teamId=${event.awayTeam.id}`,
         },
         league: {
           name: event.tournament.name,
           logo: event.tournament.uniqueTournament
-            ? `https://api.sofascore.app/api/v1/unique-tournament/${event.tournament.uniqueTournament.id}/image`
+            ? `/api/football/image?teamId=${event.tournament.uniqueTournament.id}&type=tournament`
             : null,
         },
         venue: null,

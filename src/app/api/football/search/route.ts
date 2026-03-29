@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
           id: team.id,
           name: team.name,
           country: team.country?.name ?? null,
-          logo: `https://api.sofascore.app/api/v1/team/${team.id}/image`,
+          logo: `/api/football/image?teamId=${team.id}`,
         })
       );
 

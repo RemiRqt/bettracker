@@ -214,7 +214,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
             return (
               <div key={club.id} className="rounded-xl bg-[#0f172a] overflow-hidden">
                 <div className="flex items-center gap-3 p-3">
-                  <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="md" />
+                  <TeamLogo logoUrl={club.api_team_id ? `/api/football/image?teamId=${club.api_team_id}` : club.logo_url} sport={club.sport} size="md" />
 
                   <button
                     onClick={() => toggleClubExpand(club.id)}
@@ -452,7 +452,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                   onClick={() => handleLinkSubject(linkUnlinkedSubject!, club)}
                   className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#0f172a] transition-colors text-left"
                 >
-                  <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="sm" />
+                  <TeamLogo logoUrl={club.api_team_id ? `/api/football/image?teamId=${club.api_team_id}` : club.logo_url} sport={club.sport} size="sm" />
                   <span className="text-sm text-white">{club.subject}</span>
                 </button>
               ))

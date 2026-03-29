@@ -2,24 +2,39 @@
 
 import { useTransition } from "react";
 import type { CachedFixture } from "@/actions/teams";
+import type { ActiveSeriesInfo } from "@/app/(app)/calendar/page";
 import { refreshCalendarFixtures } from "@/actions/teams";
 import { TeamLogo } from "@/components/ui/team-logo";
-import { CalendarDays, Clock, TicketPlus, RefreshCw } from "lucide-react";
+import { BET_TYPES } from "@/lib/constants";
+import { CalendarDays, Clock, RefreshCw, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 interface CalendarPageProps {
-  fixtures: { fixture: CachedFixture; teamSubject: string }[];
+  fixtures: {
+    fixture: CachedFixture;
+    teamSubject: string;
+    activeSeries: ActiveSeriesInfo[];
+  }[];
   lastUpdated: string | null;
   teamCount?: number;
   teamNames?: string[];
 }
 
 interface GroupedFixtures {
-  [date: string]: { fixture: CachedFixture; teamSubject: string }[];
+  [date: string]: {
+    fixture: CachedFixture;
+    teamSubject: string;
+    activeSeries: ActiveSeriesInfo[];
+  }[];
 }
 
-export function CalendarPage({ fixtures, lastUpdated, teamCount = 0, teamNames = [] }: CalendarPageProps) {
+export function CalendarPage({
+  fixtures,
+  lastUpdated,
+  teamCount = 0,
+  teamNames = [],
+}: CalendarPageProps) {
   const [isPending, startTransition] = useTransition();
 
   function handleRefresh() {
@@ -73,7 +88,12 @@ export function CalendarPage({ fixtures, lastUpdated, teamCount = 0, teamNames =
               className="p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors disabled:opacity-50"
               title="Rechercher les matchs"
             >
-              <RefreshCw className={cn("h-4 w-4 text-slate-400", isPending && "animate-spin")} />
+              <RefreshCw
+                className={cn(
+                  "h-4 w-4 text-slate-400",
+                  isPending && "animate-spin"
+                )}
+              />
             </button>
           </div>
         </div>
@@ -97,13 +117,13 @@ export function CalendarPage({ fixtures, lastUpdated, teamCount = 0, teamNames =
           {teamCount === 0 ? (
             <p className="text-xs text-slate-500">
               Suivez des equipes depuis votre profil pour voir leurs prochains
-              matchs. Les equipes doivent etre liees a l&apos;API Football et
-              suivies (ou dans une serie active).
+              matchs.
             </p>
           ) : (
             <p className="text-xs text-slate-500">
-              {teamCount} equipe{teamCount > 1 ? "s" : ""} eligible{teamCount > 1 ? "s" : ""} ({teamNames.join(", ")}), mais aucun match retourne par l&apos;API.
-              Verifiez les logs serveur pour plus de details.
+              {teamCount} equipe{teamCount > 1 ? "s" : ""} eligible
+              {teamCount > 1 ? "s" : ""} ({teamNames.join(", ")}), mais aucun
+              match retourne par l&apos;API.
             </p>
           )}
           <Link
@@ -136,9 +156,13 @@ export function CalendarPage({ fixtures, lastUpdated, teamCount = 0, teamNames =
 function FixtureCard({
   item,
 }: {
-  item: { fixture: CachedFixture; teamSubject: string };
+  item: {
+    fixture: CachedFixture;
+    teamSubject: string;
+    activeSeries: ActiveSeriesInfo[];
+  };
 }) {
-  const { fixture } = item;
+  const { fixture, activeSeries } = item;
   const time = new Date(fixture.date).toLocaleTimeString("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
@@ -185,16 +209,27 @@ function FixtureCard({
         </div>
       </div>
 
-      {/* Action */}
-      <div className="flex justify-end">
-        <Link
-          href="/series/new"
-          className="flex items-center gap-1.5 text-xs text-[#10b981] hover:text-emerald-300 transition-colors"
-        >
-          <TicketPlus className="h-3.5 w-3.5" />
-          Saisir cote
-        </Link>
-      </div>
+      {/* Active series linked to this fixture */}
+      {activeSeries.length > 0 && (
+        <div className="border-t border-slate-700/50 pt-2 space-y-1.5">
+          {activeSeries.map((s) => (
+            <Link
+              key={s.id}
+              href={`/series/${s.id}`}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#0f172a] hover:bg-slate-800 transition-colors"
+            >
+              <TrendingUp className="h-3.5 w-3.5 text-[#10b981] flex-shrink-0" />
+              <span className="text-xs text-white truncate">{s.subject}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300">
+                {BET_TYPES[s.bet_type as keyof typeof BET_TYPES] ?? s.bet_type}
+              </span>
+              <span className="text-[10px] text-slate-500 ml-auto">
+                {s.target_gain}€/pari
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
