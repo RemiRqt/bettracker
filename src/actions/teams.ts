@@ -134,32 +134,12 @@ export async function upsertTeamMapping(
 }
 
 /**
- * Fetch a team logo via SportAPI7 (RapidAPI) and return as base64 data URI.
- * Uses RapidAPI instead of SofaScore CDN directly because SofaScore blocks
- * requests from Vercel servers.
+ * Fetch a team logo: checks DB cache first, then RapidAPI.
+ * Only 1 API call if not already cached, 0 if cached.
  */
 async function fetchLogoAsDataUri(teamId: number): Promise<string | null> {
-  const apiKey = process.env.RAPIDAPI_KEY;
-  if (!apiKey) return null;
-
-  try {
-    const res = await fetch(
-      `https://sportapi7.p.rapidapi.com/api/v1/team/${teamId}/image`,
-      {
-        headers: {
-          "x-rapidapi-host": "sportapi7.p.rapidapi.com",
-          "x-rapidapi-key": apiKey,
-        },
-      }
-    );
-    if (!res.ok) return null;
-    const buffer = await res.arrayBuffer();
-    const contentType = res.headers.get("content-type") || "image/png";
-    const base64 = Buffer.from(buffer).toString("base64");
-    return `data:${contentType};base64,${base64}`;
-  } catch {
-    return null;
-  }
+  const logos = await getLogos([`team:${teamId}`]);
+  return logos.get(`team:${teamId}`) ?? null;
 }
 
 /**
@@ -558,31 +538,78 @@ interface SportApiEvent {
 }
 
 /**
- * Fetch a logo via SportAPI7 and return as base64 data URI.
+ * Get logos from DB cache, fetch missing ones via RapidAPI, save to DB.
+ * Only makes API calls for logos not already in the cache.
  */
-async function fetchImageAsDataUri(
-  path: string,
-  apiKey: string
-): Promise<string> {
-  try {
-    const res = await fetch(`${SPORTAPI_BASE}${path}`, {
-      headers: {
-        "x-rapidapi-host": "sportapi7.p.rapidapi.com",
-        "x-rapidapi-key": apiKey,
-      },
-    });
-    if (!res.ok) return "";
-    const buffer = await res.arrayBuffer();
-    const contentType = res.headers.get("content-type") || "image/png";
-    return `data:${contentType};base64,${Buffer.from(buffer).toString("base64")}`;
-  } catch {
-    return "";
+async function getLogos(
+  keys: string[] // e.g. ["team:1644", "tournament:34"]
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  if (keys.length === 0) return result;
+
+  const supabase = await createClient();
+
+  // 1. Check DB cache
+  const { data: cached } = await supabase
+    .from("logo_cache")
+    .select("key, data_uri")
+    .in("key", keys);
+
+  for (const row of cached ?? []) {
+    result.set(row.key, row.data_uri);
   }
+
+  // 2. Find missing keys
+  const missing = keys.filter((k) => !result.has(k));
+  if (missing.length === 0) return result;
+
+  const apiKey = process.env.RAPIDAPI_KEY;
+  if (!apiKey) return result;
+
+  // 3. Fetch missing logos via RapidAPI in parallel
+  const toInsert: { key: string; data_uri: string }[] = [];
+
+  await Promise.all(
+    missing.map(async (key) => {
+      const [type, id] = key.split(":");
+      const path =
+        type === "tournament"
+          ? `/api/v1/unique-tournament/${id}/image`
+          : `/api/v1/team/${id}/image`;
+
+      try {
+        const res = await fetch(`${SPORTAPI_BASE}${path}`, {
+          headers: {
+            "x-rapidapi-host": "sportapi7.p.rapidapi.com",
+            "x-rapidapi-key": apiKey,
+          },
+        });
+        if (!res.ok) return;
+        const buffer = await res.arrayBuffer();
+        const contentType = res.headers.get("content-type") || "image/png";
+        const dataUri = `data:${contentType};base64,${Buffer.from(buffer).toString("base64")}`;
+        result.set(key, dataUri);
+        toInsert.push({ key, data_uri: dataUri });
+      } catch {
+        // skip
+      }
+    })
+  );
+
+  // 4. Save new logos to DB cache (ignore conflicts)
+  if (toInsert.length > 0) {
+    await supabase
+      .from("logo_cache")
+      .upsert(toInsert, { onConflict: "key" });
+    console.log(`[Logos] Cached ${toInsert.length} new logos, ${cached?.length ?? 0} from DB`);
+  }
+
+  return result;
 }
 
 /**
  * Fetch upcoming fixtures for a single team via SportAPI7.
- * Logos (teams + league) are fetched and stored as base64 data URIs.
+ * Logos are loaded from DB cache (0 API calls if already cached).
  */
 async function fetchTeamNextEvents(
   teamId: number,
@@ -614,48 +641,29 @@ async function fetchTeamNextEvents(
     const events: SportApiEvent[] = json.events ?? [];
     const sliced = events.slice(0, maxCount);
 
-    // Collect unique IDs to fetch logos
-    const teamIds = new Set<number>();
-    const tournamentIds = new Set<number>();
+    // Collect unique logo keys
+    const logoKeys: string[] = [];
     for (const e of sliced) {
-      teamIds.add(e.homeTeam.id);
-      teamIds.add(e.awayTeam.id);
+      logoKeys.push(`team:${e.homeTeam.id}`, `team:${e.awayTeam.id}`);
       if (e.tournament.uniqueTournament?.id) {
-        tournamentIds.add(e.tournament.uniqueTournament.id);
+        logoKeys.push(`tournament:${e.tournament.uniqueTournament.id}`);
       }
     }
+    const uniqueKeys = [...new Set(logoKeys)];
 
-    // Fetch all logos in parallel
-    const logoCache = new Map<string, string>();
-    const fetches: Promise<void>[] = [];
-
-    for (const id of teamIds) {
-      fetches.push(
-        fetchImageAsDataUri(`/api/v1/team/${id}/image`, apiKey).then((uri) => {
-          logoCache.set(`team:${id}`, uri);
-        })
-      );
-    }
-    for (const id of tournamentIds) {
-      fetches.push(
-        fetchImageAsDataUri(`/api/v1/unique-tournament/${id}/image`, apiKey).then((uri) => {
-          logoCache.set(`tournament:${id}`, uri);
-        })
-      );
-    }
-
-    await Promise.all(fetches);
+    // Get logos (from DB cache first, API only for new ones)
+    const logos = await getLogos(uniqueKeys);
 
     return sliced.map((event) => ({
       id: event.id,
       date: new Date(event.startTimestamp * 1000).toISOString(),
       homeTeam: event.homeTeam.name,
-      homeLogo: logoCache.get(`team:${event.homeTeam.id}`) ?? "",
+      homeLogo: logos.get(`team:${event.homeTeam.id}`) ?? "",
       awayTeam: event.awayTeam.name,
-      awayLogo: logoCache.get(`team:${event.awayTeam.id}`) ?? "",
+      awayLogo: logos.get(`team:${event.awayTeam.id}`) ?? "",
       league: event.tournament.uniqueTournament?.name ?? event.tournament.name,
       leagueLogo: event.tournament.uniqueTournament
-        ? logoCache.get(`tournament:${event.tournament.uniqueTournament.id}`) ?? ""
+        ? logos.get(`tournament:${event.tournament.uniqueTournament.id}`) ?? ""
         : "",
     }));
   } catch (error) {

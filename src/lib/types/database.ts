@@ -107,6 +107,24 @@ export interface Database {
         };
         Relationships: [];
       };
+      logo_cache: {
+        Row: {
+          key: string;
+          data_uri: string;
+          created_at: string;
+        };
+        Insert: {
+          key: string;
+          data_uri: string;
+          created_at?: string;
+        };
+        Update: {
+          key?: string;
+          data_uri?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       equipes: {
         Row: {
           id: string;
