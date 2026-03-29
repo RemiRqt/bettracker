@@ -468,14 +468,14 @@ export async function getCalendarTeams(): Promise<TeamMapping[]> {
       m.is_followed
   );
 
+  // Debug: log all clubs status
+  const clubs = (allMappings as TeamMapping[]).filter((m) => m.is_club);
   console.log(
-    `[Calendar] ${allMappings.length} mappings total, ${activeSubjects.length} active series subjects, ${filtered.length} teams eligible for calendar`
+    `[Calendar] ${allMappings.length} mappings total, ${clubs.length} clubs, ${filtered.length} eligible`
   );
-  if (filtered.length === 0 && allMappings.length > 0) {
-    const withApiId = (allMappings as TeamMapping[]).filter((m) => m.api_team_id !== null);
-    const followed = (allMappings as TeamMapping[]).filter((m) => m.is_followed);
+  for (const c of clubs) {
     console.log(
-      `[Calendar] Debug: ${withApiId.length} with api_team_id, ${followed.length} followed`
+      `[Calendar] Club: "${c.subject}" api_team_id=${c.api_team_id} is_followed=${c.is_followed} is_club=${c.is_club}`
     );
   }
 
@@ -484,8 +484,8 @@ export async function getCalendarTeams(): Promise<TeamMapping[]> {
 
 const API_FOOTBALL_BASE = "https://v3.football.api-sports.io";
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
-const FETCH_DAYS = 10; // Number of days to scan for upcoming fixtures
-const MAX_CONSECUTIVE_EMPTY = 3; // Stop after this many empty days
+const FETCH_DAYS = 30; // Number of days to scan for upcoming fixtures
+const MAX_CONSECUTIVE_EMPTY = 10; // Stop after this many empty days (national teams have long gaps)
 
 interface ApiFixtureItem {
   fixture: { id: number; date: string };
@@ -650,12 +650,11 @@ export async function getCalendarFixtures(): Promise<
   }
 
   // Fetch fresh data using date-based approach (free plan compatible)
-  console.log(`[Calendar] Fetching fresh fixtures for ${teams.length} teams`);
-
   const teamIds = new Set(
     teams.map((t) => t.api_team_id).filter((id): id is number => id !== null)
   );
   const maxPerTeam = Math.max(...teams.map((t) => t.next_matches_count));
+  console.log(`[Calendar] Fetching fresh fixtures for ${teams.length} teams, teamIds=[${[...teamIds]}], maxPerTeam=${maxPerTeam}`);
   const fixturesByTeam = await fetchFixturesByDate(teamIds, maxPerTeam);
 
   // Save to database and build results

@@ -10,6 +10,10 @@ export default async function CalendarRoute() {
   // Ensure mappings are up to date, then fetch cached fixtures
   await ensureTeamMappings();
   const calendarTeams = await getCalendarTeams();
+
+  // Debug: log calendar teams info
+  console.log(`[Calendar Page] ${calendarTeams.length} teams:`, calendarTeams.map(t => `${t.subject} (api=${t.api_team_id}, followed=${t.is_followed})`));
+
   const teamFixtures = await getCalendarFixtures();
 
   // Flatten all fixtures with their team subject, then sort by date
