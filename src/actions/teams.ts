@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+const SOFASCORE_CDN = "https://api.sofascore.app/api/v1";
+
 export interface CachedFixture {
   id: number;
   date: string;
@@ -426,8 +428,7 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
 
 /**
  * Get team mappings relevant for the calendar:
- * - Followed teams
- * - Teams with active series (en_cours)
+ * - Followed clubs with api_team_id
  */
 export async function getCalendarTeams(): Promise<TeamMapping[]> {
   const supabase = await createClient();
@@ -440,17 +441,6 @@ export async function getCalendarTeams(): Promise<TeamMapping[]> {
   if (authError || !user) {
     return [];
   }
-
-  // Get subjects from active series
-  const { data: activeSeries } = await supabase
-    .from("series")
-    .select("subject")
-    .eq("user_id", user.id)
-    .eq("status", "en_cours");
-
-  const activeSubjects = [
-    ...new Set((activeSeries || []).map((s) => s.subject)),
-  ];
 
   // Get all team mappings
   const { data: allMappings } = await supabase
@@ -482,131 +472,69 @@ export async function getCalendarTeams(): Promise<TeamMapping[]> {
   return filtered;
 }
 
-const API_FOOTBALL_BASE = "https://v3.football.api-sports.io";
+const SPORTAPI_BASE = "https://sportapi7.p.rapidapi.com";
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
-const FETCH_DAYS = 30; // Number of days to scan for upcoming fixtures
-const MAX_CONSECUTIVE_EMPTY = 10; // Stop after this many empty days (national teams have long gaps)
 
-interface ApiFixtureItem {
-  fixture: { id: number; date: string };
-  league: { name: string; logo: string };
-  teams: {
-    home: { id: number; name: string; logo: string };
-    away: { id: number; name: string; logo: string };
+interface SportApiEvent {
+  id: number;
+  startTimestamp: number;
+  homeTeam: { id: number; name: string; shortName: string };
+  awayTeam: { id: number; name: string; shortName: string };
+  tournament: {
+    name: string;
+    uniqueTournament?: { id: number; name: string };
   };
 }
 
 /**
- * Fetch upcoming fixtures using date-based queries (works on free plan).
- * The free plan doesn't support ?team={id}&next={n}, so we fetch all
- * fixtures per day and filter for our teams client-side.
+ * Fetch upcoming fixtures for a single team via SportAPI7.
+ * One API call per team — much more efficient than date-based scanning.
  */
-async function fetchFixturesByDate(
-  teamIds: Set<number>,
-  maxPerTeam: number
-): Promise<Map<number, CachedFixture[]>> {
-  const apiKey = process.env.API_FOOTBALL_KEY;
+async function fetchTeamNextEvents(
+  teamId: number,
+  maxCount: number
+): Promise<CachedFixture[]> {
+  const apiKey = process.env.RAPIDAPI_KEY;
   if (!apiKey) {
-    console.error("[Calendar] API_FOOTBALL_KEY is not set");
-    return new Map();
+    console.error("[Calendar] RAPIDAPI_KEY is not set");
+    return [];
   }
 
-  const fixturesByTeam = new Map<number, CachedFixture[]>();
-  const seenFixtureIds = new Set<number>();
-  let consecutiveEmpty = 0;
-
-  const today = new Date();
-
-  for (let i = 0; i < FETCH_DAYS; i++) {
-    // Stop if all teams have enough fixtures
-    const allTeamsFull = [...teamIds].every(
-      (id) => (fixturesByTeam.get(id)?.length ?? 0) >= maxPerTeam
+  try {
+    const res = await fetch(
+      `${SPORTAPI_BASE}/api/v1/team/${teamId}/events/next/0`,
+      {
+        headers: {
+          "x-rapidapi-host": "sportapi7.p.rapidapi.com",
+          "x-rapidapi-key": apiKey,
+        },
+      }
     );
-    if (allTeamsFull) break;
 
-    // Stop after too many consecutive empty days (no more data available)
-    if (consecutiveEmpty >= MAX_CONSECUTIVE_EMPTY) break;
-
-    const date = new Date(today);
-    date.setDate(date.getDate() + i);
-    const dateStr = date.toISOString().slice(0, 10);
-
-    try {
-      const res = await fetch(
-        `${API_FOOTBALL_BASE}/fixtures?date=${dateStr}`,
-        {
-          headers: { "x-apisports-key": apiKey },
-        }
-      );
-
-      if (!res.ok) {
-        console.error(`[Calendar] API HTTP error for date ${dateStr}: ${res.status}`);
-        consecutiveEmpty++;
-        continue;
-      }
-
-      const json = await res.json();
-
-      if (json.errors && Object.keys(json.errors).length > 0) {
-        console.error(`[Calendar] API errors for date ${dateStr}:`, json.errors);
-        consecutiveEmpty++;
-        continue;
-      }
-
-      const items: ApiFixtureItem[] = json.response || [];
-
-      if (items.length === 0) {
-        consecutiveEmpty++;
-        continue;
-      }
-
-      consecutiveEmpty = 0;
-      let matchesFound = 0;
-
-      for (const item of items) {
-        const homeId = item.teams.home.id;
-        const awayId = item.teams.away.id;
-
-        // Check if either team is one we're tracking
-        const matchedIds = [homeId, awayId].filter((id) => teamIds.has(id));
-        if (matchedIds.length === 0) continue;
-
-        // Skip already-seen fixtures (in case of overlap)
-        if (seenFixtureIds.has(item.fixture.id)) continue;
-        seenFixtureIds.add(item.fixture.id);
-
-        const fixture: CachedFixture = {
-          id: item.fixture.id,
-          date: item.fixture.date,
-          homeTeam: item.teams.home.name,
-          homeLogo: item.teams.home.logo,
-          awayTeam: item.teams.away.name,
-          awayLogo: item.teams.away.logo,
-          league: item.league.name,
-          leagueLogo: item.league.logo,
-        };
-
-        // Add to each matched team's list (if not already full)
-        for (const teamId of matchedIds) {
-          const teamFixtures = fixturesByTeam.get(teamId) ?? [];
-          if (teamFixtures.length < maxPerTeam) {
-            teamFixtures.push(fixture);
-            fixturesByTeam.set(teamId, teamFixtures);
-            matchesFound++;
-          }
-        }
-      }
-
-      console.log(
-        `[Calendar] ${dateStr}: ${items.length} fixtures, ${matchesFound} matched our teams`
-      );
-    } catch (error) {
-      console.error(`[Calendar] Failed to fetch fixtures for ${dateStr}:`, error);
-      consecutiveEmpty++;
+    if (!res.ok) {
+      console.error(`[Calendar] SportAPI error for team ${teamId}: ${res.status}`);
+      return [];
     }
-  }
 
-  return fixturesByTeam;
+    const json = await res.json();
+    const events: SportApiEvent[] = json.events ?? [];
+
+    return events.slice(0, maxCount).map((event) => ({
+      id: event.id,
+      date: new Date(event.startTimestamp * 1000).toISOString(),
+      homeTeam: event.homeTeam.name,
+      homeLogo: `${SOFASCORE_CDN}/team/${event.homeTeam.id}/image`,
+      awayTeam: event.awayTeam.name,
+      awayLogo: `${SOFASCORE_CDN}/team/${event.awayTeam.id}/image`,
+      league: event.tournament.uniqueTournament?.name ?? event.tournament.name,
+      leagueLogo: event.tournament.uniqueTournament
+        ? `${SOFASCORE_CDN}/unique-tournament/${event.tournament.uniqueTournament.id}/image`
+        : "",
+    }));
+  } catch (error) {
+    console.error(`[Calendar] Failed to fetch events for team ${teamId}:`, error);
+    return [];
+  }
 }
 
 export async function getCalendarFixtures(): Promise<
@@ -629,7 +557,6 @@ export async function getCalendarFixtures(): Promise<
 
   if (cacheValid) {
     console.log("[Calendar] Using cached fixtures");
-    // Return cached data
     const results: { team: TeamMapping; fixtures: CachedFixture[] }[] = [];
     const seenFixtureIds = new Set<number>();
 
@@ -649,42 +576,42 @@ export async function getCalendarFixtures(): Promise<
     return results;
   }
 
-  // Fetch fresh data using date-based approach (free plan compatible)
-  const teamIds = new Set(
-    teams.map((t) => t.api_team_id).filter((id): id is number => id !== null)
-  );
-  const maxPerTeam = Math.max(...teams.map((t) => t.next_matches_count));
-  console.log(`[Calendar] Fetching fresh fixtures for ${teams.length} teams, teamIds=[${[...teamIds]}], maxPerTeam=${maxPerTeam}`);
-  const fixturesByTeam = await fetchFixturesByDate(teamIds, maxPerTeam);
+  // Fetch fresh data: one call per team (much more efficient than date scanning)
+  console.log(`[Calendar] Fetching fresh fixtures for ${teams.length} teams`);
 
-  // Save to database and build results
   const supabase = await createClient();
   const results: { team: TeamMapping; fixtures: CachedFixture[] }[] = [];
   const seenFixtureIds = new Set<number>();
   const now = new Date().toISOString();
 
-  for (const team of teams) {
-    const teamFixtures = fixturesByTeam.get(team.api_team_id!) ?? [];
+  // Fetch all teams in parallel
+  const fetchResults = await Promise.all(
+    teams.map(async (team) => ({
+      team,
+      fixtures: await fetchTeamNextEvents(team.api_team_id!, team.next_matches_count),
+    }))
+  );
 
+  for (const { team, fixtures } of fetchResults) {
     // Update cache in DB
     await supabase
       .from("team_mappings")
       .update({
-        cached_fixtures: JSON.parse(JSON.stringify(teamFixtures)),
+        cached_fixtures: JSON.parse(JSON.stringify(fixtures)),
         fixtures_updated_at: now,
       })
       .eq("id", team.id);
 
     // Deduplicate for display
-    if (teamFixtures.length > 0) {
-      const uniqueFixtures = teamFixtures.filter((f) => {
+    if (fixtures.length > 0) {
+      const uniqueFixtures = fixtures.filter((f) => {
         if (seenFixtureIds.has(f.id)) return false;
         seenFixtureIds.add(f.id);
         return true;
       });
       if (uniqueFixtures.length > 0) {
         results.push({
-          team: { ...team, cached_fixtures: teamFixtures, fixtures_updated_at: now },
+          team: { ...team, cached_fixtures: fixtures, fixtures_updated_at: now },
           fixtures: uniqueFixtures,
         });
       }

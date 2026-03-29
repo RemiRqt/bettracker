@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
-const API_FOOTBALL_BASE = "https://v3.football.api-sports.io";
+const SPORTAPI_BASE = "https://sportapi7.p.rapidapi.com";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -38,56 +38,60 @@ export async function GET(request: NextRequest) {
 
   try {
     const response = await fetch(
-      `${API_FOOTBALL_BASE}/fixtures?team=${encodeURIComponent(teamId)}&next=${countNum}`,
+      `${SPORTAPI_BASE}/api/v1/team/${encodeURIComponent(teamId)}/events/next/0`,
       {
         headers: {
-          "x-apisports-key": process.env.API_FOOTBALL_KEY!,
+          "x-rapidapi-host": "sportapi7.p.rapidapi.com",
+          "x-rapidapi-key": process.env.RAPIDAPI_KEY!,
         },
-        next: { revalidate: 3600 },
       }
     );
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: "Erreur lors de la requete API-Football." },
+        { error: "Erreur lors de la requete SportAPI." },
         { status: response.status }
       );
     }
 
     const json = await response.json();
-    const results = json.response ?? [];
+    const events = json.events ?? [];
 
-    const fixtures = results.map(
-      (item: {
-        fixture: { id: number; date: string; venue: { name: string | null } };
-        teams: {
-          home: { name: string; logo: string };
-          away: { name: string; logo: string };
+    const fixtures = events.slice(0, countNum).map(
+      (event: {
+        id: number;
+        startTimestamp: number;
+        homeTeam: { name: string; id: number };
+        awayTeam: { name: string; id: number };
+        tournament: {
+          name: string;
+          uniqueTournament?: { id: number };
         };
-        league: { name: string; logo: string };
       }) => ({
-        id: item.fixture.id,
-        date: item.fixture.date,
+        id: event.id,
+        date: new Date(event.startTimestamp * 1000).toISOString(),
         home: {
-          name: item.teams.home.name,
-          logo: item.teams.home.logo,
+          name: event.homeTeam.name,
+          logo: `https://api.sofascore.app/api/v1/team/${event.homeTeam.id}/image`,
         },
         away: {
-          name: item.teams.away.name,
-          logo: item.teams.away.logo,
+          name: event.awayTeam.name,
+          logo: `https://api.sofascore.app/api/v1/team/${event.awayTeam.id}/image`,
         },
         league: {
-          name: item.league.name,
-          logo: item.league.logo,
+          name: event.tournament.name,
+          logo: event.tournament.uniqueTournament
+            ? `https://api.sofascore.app/api/v1/unique-tournament/${event.tournament.uniqueTournament.id}/image`
+            : null,
         },
-        venue: item.fixture.venue?.name ?? null,
+        venue: null,
       })
     );
 
     return NextResponse.json(fixtures);
   } catch {
     return NextResponse.json(
-      { error: "Erreur lors de la connexion a API-Football." },
+      { error: "Erreur lors de la connexion a SportAPI." },
       { status: 500 }
     );
   }

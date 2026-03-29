@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
-const API_FOOTBALL_BASE = "https://v3.football.api-sports.io";
+const SPORTAPI_BASE = "https://sportapi7.p.rapidapi.com";
 
 // In-memory cache: key -> { data, timestamp }
 const cache = new Map<string, { data: unknown; timestamp: number }>();
@@ -42,47 +42,49 @@ export async function GET(request: NextRequest) {
 
   try {
     const response = await fetch(
-      `${API_FOOTBALL_BASE}/teams?search=${encodeURIComponent(searchTerm)}`,
+      `${SPORTAPI_BASE}/api/v1/search/teams/${encodeURIComponent(searchTerm)}/0`,
       {
         headers: {
-          "x-apisports-key": process.env.API_FOOTBALL_KEY!,
+          "x-rapidapi-host": "sportapi7.p.rapidapi.com",
+          "x-rapidapi-key": process.env.RAPIDAPI_KEY!,
         },
-        next: { revalidate: 3600 },
       }
     );
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: "Erreur lors de la recherche API-Football." },
+        { error: "Erreur lors de la recherche SportAPI." },
         { status: response.status }
       );
     }
 
     const json = await response.json();
-    const results = json.response ?? [];
+    const results = json.teams ?? [];
 
     const searchLower = searchTerm.toLowerCase();
 
     const teams = results
-      .filter((item: { team: { national: boolean; name: string } }) => {
+      .filter((team: { sport: { slug: string }; national: boolean; name: string; gender: string }) => {
+        // Only football teams
+        if (team.sport.slug !== "football") return false;
+        // Only male teams (skip women/youth unless searched)
+        if (team.gender !== "M") return false;
         // Include national teams only if the search term matches
-        if (item.team.national) {
-          return item.team.name.toLowerCase().includes(searchLower);
+        if (team.national) {
+          return team.name.toLowerCase().includes(searchLower);
         }
         return true;
       })
       .map(
-        (item: {
-          team: { id: number; name: string; logo: string };
-          venue: { city: string | null };
+        (team: {
+          id: number;
+          name: string;
+          country?: { name: string } | null;
         }) => ({
-          id: item.team.id,
-          name: item.team.name,
-          country:
-            results.find(
-              (r: { team: { id: number } }) => r.team.id === item.team.id
-            )?.team?.country ?? null,
-          logo: item.team.logo,
+          id: team.id,
+          name: team.name,
+          country: team.country?.name ?? null,
+          logo: `https://api.sofascore.app/api/v1/team/${team.id}/image`,
         })
       );
 
@@ -92,7 +94,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(teams);
   } catch {
     return NextResponse.json(
-      { error: "Erreur lors de la connexion a API-Football." },
+      { error: "Erreur lors de la connexion a SportAPI." },
       { status: 500 }
     );
   }
