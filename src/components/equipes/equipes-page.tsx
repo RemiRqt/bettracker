@@ -25,7 +25,6 @@ import {
   Loader2,
   TrendingUp,
 } from "lucide-react";
-import Link from "next/link";
 
 // === Types ===
 
@@ -300,7 +299,6 @@ export function EquipesPage({ equipes: initialEquipes, logoMap }: EquipesPagePro
             const key = `${eq.name}:::${eq.bet_type}`;
             const isExpanded = expandedIds.has(key);
             const betTypeLabel = BET_TYPES[eq.bet_type as keyof typeof BET_TYPES] ?? eq.bet_type;
-            const hasPending = eq.activeSeries?.hasPendingBet;
 
             const barTotal = eq.totalWonAmount + eq.totalLostStake + eq.potentialGains;
             const wonPct = barTotal > 0 ? (eq.totalWonAmount / barTotal) * 100 : 0;
@@ -324,32 +322,6 @@ export function EquipesPage({ equipes: initialEquipes, logoMap }: EquipesPagePro
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      {/* Bet button */}
-                      {!hasPending && eq.activeSeries && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); openBetDialog(eq); }}
-                          className="px-2.5 py-1 rounded-lg bg-[#10b981] text-white text-[11px] font-medium hover:bg-emerald-600 transition-colors"
-                        >
-                          Parier
-                        </button>
-                      )}
-                      {!hasPending && !eq.activeSeries && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); openBetDialog(eq); }}
-                          className="px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-400 text-[11px] font-medium hover:bg-blue-500/30 transition-colors"
-                        >
-                          Nouvelle serie
-                        </button>
-                      )}
-                      {hasPending && eq.activeSeries && (
-                        <Link
-                          href={`/series/${eq.activeSeries.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 text-[11px] font-medium hover:bg-amber-500/30 transition-colors"
-                        >
-                          En attente
-                        </Link>
-                      )}
                       <span className={cn("font-bold text-sm", eq.netProfit >= 0 ? "text-emerald-400" : "text-red-400")}>
                         {eq.netProfit >= 0 ? "+" : ""}{formatEuros(eq.netProfit)}
                       </span>
@@ -382,12 +354,35 @@ export function EquipesPage({ equipes: initialEquipes, logoMap }: EquipesPagePro
                   )}
                 </button>
 
-                {/* Expanded: series list */}
-                {isExpanded && eq.series.length > 0 && (
+                {/* Expanded: series list + action buttons */}
+                {isExpanded && (
                   <div className="border-t border-slate-700/50 px-3 pb-3 pt-2 space-y-1.5">
                     {eq.series.map((s) => (
-                      <EquipeSeriesItem key={s.id} series={s} />
+                      <div key={s.id}>
+                        <EquipeSeriesItem series={s} />
+                        {/* "Parier" button below the active series */}
+                        {s.status === "en_cours" && !eq.activeSeries?.hasPendingBet && (
+                          <button
+                            onClick={() => openBetDialog(eq)}
+                            className="w-full mt-1.5 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#10b981] text-white text-xs font-medium hover:bg-emerald-600 transition-colors"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Parier
+                          </button>
+                        )}
+                      </div>
                     ))}
+
+                    {/* "Nouvelle série" button at the bottom */}
+                    {!eq.activeSeries && (
+                      <button
+                        onClick={() => openBetDialog(eq)}
+                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-slate-600 text-xs text-slate-400 hover:border-[#10b981] hover:text-[#10b981] transition-colors"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Nouvelle serie
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
