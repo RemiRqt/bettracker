@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
-import type { EquipeWithContext } from "@/actions/equipes";
+import { useState, useMemo, useTransition, useCallback } from "react";
 import { createEquipe, deleteEquipe, placeBet } from "@/actions/equipes";
 import { TeamLogo } from "@/components/ui/team-logo";
+import { EquipeSeriesItem } from "@/components/series/equipe-series-item";
+import type { EquipeSeries } from "@/components/series/equipes-list";
 import { BET_TYPES } from "@/lib/constants";
+import { formatEuros, formatPercent, cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -14,27 +17,81 @@ import {
 } from "@/components/ui/dialog";
 import {
   Plus,
-  Trash2,
-  TrendingUp,
-  Target,
-  Loader2,
+  Search,
+  ChevronDown,
   ChevronRight,
-  Hash,
+  ChevronUp,
+  Inbox,
+  Loader2,
+  TrendingUp,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import Link from "next/link";
 
+// === Types ===
+
+export interface MergedEquipe {
+  equipeId: string;
+  name: string;
+  bet_type: string;
+  totalStake: number;
+  netProfit: number;
+  roi: number;
+  seriesCount: number;
+  betsCount: number;
+  wonCount: number;
+  abandonedCount: number;
+  enCoursCount: number;
+  series: EquipeSeries[];
+  lastBetDate: string;
+  lastSeriesStatus: string;
+  totalWonAmount: number;
+  totalLostStake: number;
+  potentialGains: number;
+  activeSeries: {
+    id: string;
+    target_gain: number;
+    betCount: number;
+    sumStakes: number;
+    hasPendingBet: boolean;
+  } | null;
+}
+
+type SortKey = "date" | "gains" | "paris";
+type FilterKey = "en_cours" | "gagne" | "perdu" | "pause" | null;
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "date", label: "Récent" },
+  { key: "gains", label: "Gains" },
+  { key: "paris", label: "Paris" },
+];
+
+const FILTER_OPTIONS: {
+  key: "en_cours" | "gagne" | "perdu" | "pause";
+  label: string;
+  color: string;
+  activeColor: string;
+}[] = [
+  { key: "en_cours", label: "En cours", color: "text-blue-400 border-blue-500/30", activeColor: "bg-blue-500/20" },
+  { key: "gagne", label: "Gagné", color: "text-emerald-400 border-emerald-500/30", activeColor: "bg-emerald-500/20" },
+  { key: "perdu", label: "Perdu", color: "text-red-400 border-red-500/30", activeColor: "bg-red-500/20" },
+  { key: "pause", label: "En pause", color: "text-amber-400 border-amber-500/30", activeColor: "bg-amber-500/20" },
+];
+
 interface EquipesPageProps {
-  equipes: EquipeWithContext[];
+  equipes: MergedEquipe[];
   logoMap: Record<string, string>;
 }
 
-export function EquipesPage({
-  equipes: initialEquipes,
-  logoMap,
-}: EquipesPageProps) {
-  const [equipes, setEquipes] = useState(initialEquipes);
+export function EquipesPage({ equipes: initialEquipes, logoMap }: EquipesPageProps) {
+  const [equipes] = useState(initialEquipes);
   const [, startTransition] = useTransition();
+
+  // Filters & sort
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortKey>("date");
+  const [sortAsc, setSortAsc] = useState(false);
+  const [filterBy, setFilterBy] = useState<FilterKey>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   // Create equipe dialog
   const [createOpen, setCreateOpen] = useState(false);
@@ -43,7 +100,7 @@ export function EquipesPage({
   const [createError, setCreateError] = useState("");
 
   // Bet dialog
-  const [betEquipe, setBetEquipe] = useState<EquipeWithContext | null>(null);
+  const [betEquipe, setBetEquipe] = useState<MergedEquipe | null>(null);
   const [betStep, setBetStep] = useState<"target" | "odds">("odds");
   const [targetGain, setTargetGain] = useState("");
   const [odds, setOdds] = useState("");
@@ -52,55 +109,76 @@ export function EquipesPage({
   const [isBetting, setIsBetting] = useState(false);
   const [betError, setBetError] = useState("");
 
+  // === Sort/Filter logic ===
+
+  function handleSort(key: SortKey) {
+    if (sortBy === key) setSortAsc(!sortAsc);
+    else { setSortBy(key); setSortAsc(false); }
+  }
+
+  const counts = useMemo(() => {
+    const c = { en_cours: 0, gagne: 0, perdu: 0, pause: 0 };
+    for (const eq of equipes) {
+      if (eq.enCoursCount > 0) c.en_cours++;
+      if (eq.netProfit > 0) c.gagne++;
+      if (eq.netProfit < 0) c.perdu++;
+      if (eq.lastSeriesStatus === "abandonnee" && eq.enCoursCount === 0) c.pause++;
+    }
+    return c;
+  }, [equipes]);
+
+  const filtered = equipes.filter((eq) => {
+    if (!eq.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterBy === null) return true;
+    switch (filterBy) {
+      case "en_cours": return eq.enCoursCount > 0;
+      case "gagne": return eq.netProfit > 0;
+      case "perdu": return eq.netProfit < 0;
+      case "pause": return eq.lastSeriesStatus === "abandonnee" && eq.enCoursCount === 0;
+    }
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    let cmp = 0;
+    switch (sortBy) {
+      case "date": cmp = b.lastBetDate.localeCompare(a.lastBetDate); break;
+      case "gains": cmp = b.netProfit - a.netProfit; break;
+      case "paris": cmp = b.betsCount - a.betsCount; break;
+    }
+    return sortAsc ? -cmp : cmp;
+  });
+
+  function toggleExpand(key: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
+
   // === Create Equipe ===
   const handleCreate = useCallback(async () => {
     setCreateError("");
     const result = await createEquipe(newName, newBetType);
-    if (result.error) {
-      setCreateError(result.error);
-      return;
-    }
+    if (result.error) { setCreateError(result.error); return; }
     setCreateOpen(false);
     setNewName("");
-    setNewBetType("victoire");
-    // Refresh page
-    startTransition(() => {
-      window.location.reload();
-    });
+    startTransition(() => { window.location.reload(); });
   }, [newName, newBetType]);
 
-  // === Delete Equipe ===
-  const handleDelete = useCallback(
-    (eq: EquipeWithContext) => {
-      if (!confirm(`Supprimer "${eq.name} - ${BET_TYPES[eq.bet_type as keyof typeof BET_TYPES]}" ?`))
-        return;
-      setEquipes((prev) => prev.filter((e) => e.id !== eq.id));
-      startTransition(async () => {
-        await deleteEquipe(eq.id);
-      });
-    },
-    []
-  );
-
   // === Open Bet Dialog ===
-  const openBetDialog = useCallback((eq: EquipeWithContext) => {
+  const openBetDialog = useCallback((eq: MergedEquipe) => {
     setBetEquipe(eq);
     setBetError("");
     setOdds("");
     setStakeOverride("");
     setCalculatedStake(null);
-
     if (eq.activeSeries && !eq.activeSeries.hasPendingBet) {
-      // Active series without pending bet → go straight to odds
       setBetStep("odds");
       setTargetGain(String(eq.activeSeries.target_gain));
-    } else if (!eq.activeSeries) {
-      // No active series → ask for target gain first
+    } else {
       setBetStep("target");
       setTargetGain("");
-    } else {
-      // Has pending bet → shouldn't open, but handle gracefully
-      setBetEquipe(null);
     }
   }, []);
 
@@ -108,21 +186,10 @@ export function EquipesPage({
   const calculateStake = useCallback(() => {
     const o = parseFloat(odds);
     if (!o || o <= 1 || !betEquipe) return;
-
     const T = parseFloat(targetGain);
     if (!T || T <= 0) return;
-
-    let n: number;
-    let sumPrev: number;
-
-    if (betEquipe.activeSeries) {
-      n = betEquipe.activeSeries.betCount + 1;
-      sumPrev = betEquipe.activeSeries.sumStakes;
-    } else {
-      n = 1;
-      sumPrev = 0;
-    }
-
+    const n = betEquipe.activeSeries ? betEquipe.activeSeries.betCount + 1 : 1;
+    const sumPrev = betEquipe.activeSeries ? betEquipe.activeSeries.sumStakes : 0;
     const stake = Math.round(((n * T + sumPrev) / (o - 1)) * 100) / 100;
     setCalculatedStake(stake);
     setStakeOverride("");
@@ -132,17 +199,11 @@ export function EquipesPage({
   const handlePlaceBet = useCallback(async () => {
     if (!betEquipe) return;
     const o = parseFloat(odds);
-    if (!o || o <= 1) {
-      setBetError("Cote invalide.");
-      return;
-    }
-
+    if (!o || o <= 1) { setBetError("Cote invalide."); return; }
     setIsBetting(true);
     setBetError("");
-
     const stakeOv = stakeOverride ? parseFloat(stakeOverride) : undefined;
     const tg = betEquipe.activeSeries ? undefined : parseFloat(targetGain);
-
     const result = await placeBet({
       equipeName: betEquipe.name,
       betType: betEquipe.bet_type,
@@ -150,18 +211,10 @@ export function EquipesPage({
       stakeOverride: stakeOv,
       targetGain: tg,
     });
-
     setIsBetting(false);
-
-    if (result.error) {
-      setBetError(result.error);
-      return;
-    }
-
+    if (result.error) { setBetError(result.error); return; }
     setBetEquipe(null);
-    startTransition(() => {
-      window.location.reload();
-    });
+    startTransition(() => { window.location.reload(); });
   }, [betEquipe, odds, stakeOverride, targetGain]);
 
   return (
@@ -172,42 +225,176 @@ export function EquipesPage({
           Equipes
         </h1>
         <button
-          onClick={() => {
-            setCreateOpen(true);
-            setCreateError("");
-            setNewName("");
-            setNewBetType("victoire");
-          }}
+          onClick={() => { setCreateOpen(true); setCreateError(""); setNewName(""); setNewBetType("victoire"); }}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#10b981] text-white text-sm font-medium hover:bg-emerald-600 transition-colors"
         >
           <Plus className="h-4 w-4" />
-          Nouvelle equipe
+          Nouvelle
         </button>
       </div>
 
-      {/* Empty state */}
-      {equipes.length === 0 && (
-        <div className="rounded-xl bg-[#1e293b] p-6 text-center space-y-3">
-          <Target className="h-10 w-10 text-slate-600 mx-auto" />
-          <p className="text-sm text-slate-400">Aucune equipe creee.</p>
-          <p className="text-xs text-slate-500">
-            Creez votre premiere equipe pour commencer a parier.
-          </p>
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+        <input
+          placeholder="Rechercher..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#1e293b] border border-slate-700 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+        />
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        {FILTER_OPTIONS.map((opt) => {
+          const isActive = filterBy === opt.key;
+          return (
+            <button
+              key={opt.key}
+              onClick={() => setFilterBy(isActive ? null : opt.key)}
+              className={cn(
+                "flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border",
+                isActive
+                  ? `${opt.activeColor} ${opt.color}`
+                  : "bg-transparent text-slate-500 border-slate-700/50 hover:border-slate-600"
+              )}
+            >
+              {opt.label}
+              <span className="ml-1 opacity-60">{counts[opt.key]}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Sort buttons */}
+      <div className="grid grid-cols-3 gap-1.5">
+        {SORT_OPTIONS.map((opt) => {
+          const isActive = sortBy === opt.key;
+          return (
+            <button
+              key={opt.key}
+              onClick={() => handleSort(opt.key)}
+              className={cn(
+                "flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-colors border",
+                isActive
+                  ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                  : "bg-[#1e293b] text-slate-400 border-slate-700 hover:border-slate-600"
+              )}
+            >
+              {opt.label}
+              {isActive && (sortAsc ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* List */}
+      {sorted.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-slate-500">
+          <Inbox className="h-10 w-10 mb-3 text-slate-600" />
+          <p className="text-sm">Aucune equipe trouvee.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {sorted.map((eq) => {
+            const key = `${eq.name}:::${eq.bet_type}`;
+            const isExpanded = expandedIds.has(key);
+            const betTypeLabel = BET_TYPES[eq.bet_type as keyof typeof BET_TYPES] ?? eq.bet_type;
+            const hasPending = eq.activeSeries?.hasPendingBet;
+
+            const barTotal = eq.totalWonAmount + eq.totalLostStake + eq.potentialGains;
+            const wonPct = barTotal > 0 ? (eq.totalWonAmount / barTotal) * 100 : 0;
+            const lostPct = barTotal > 0 ? (eq.totalLostStake / barTotal) * 100 : 0;
+            const pendingPct = barTotal > 0 ? (eq.potentialGains / barTotal) * 100 : 0;
+
+            return (
+              <div key={key} className="rounded-xl bg-[#1e293b] overflow-hidden">
+                {/* Card header - clickable to expand */}
+                <button
+                  onClick={() => toggleExpand(key)}
+                  className="w-full text-left p-3 space-y-2 hover:bg-white/[0.02] transition-colors cursor-pointer"
+                >
+                  {/* Row 1: logo + name + type + action buttons */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <TeamLogo logoUrl={logoMap[eq.name]} size="sm" className="flex-shrink-0" />
+                      <span className="text-base font-bold text-slate-100 truncate">{eq.name}</span>
+                      <Badge className="shrink-0 bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
+                        {betTypeLabel}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Bet button */}
+                      {!hasPending && eq.activeSeries && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openBetDialog(eq); }}
+                          className="px-2.5 py-1 rounded-lg bg-[#10b981] text-white text-[11px] font-medium hover:bg-emerald-600 transition-colors"
+                        >
+                          Parier
+                        </button>
+                      )}
+                      {!hasPending && !eq.activeSeries && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openBetDialog(eq); }}
+                          className="px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-400 text-[11px] font-medium hover:bg-blue-500/30 transition-colors"
+                        >
+                          Nouvelle serie
+                        </button>
+                      )}
+                      {hasPending && eq.activeSeries && (
+                        <Link
+                          href={`/series/${eq.activeSeries.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 text-[11px] font-medium hover:bg-amber-500/30 transition-colors"
+                        >
+                          En attente
+                        </Link>
+                      )}
+                      <span className={cn("font-bold text-sm", eq.netProfit >= 0 ? "text-emerald-400" : "text-red-400")}>
+                        {eq.netProfit >= 0 ? "+" : ""}{formatEuros(eq.netProfit)}
+                      </span>
+                      {isExpanded ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
+                    </div>
+                  </div>
+
+                  {/* Row 2: stats + ROI */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-500">
+                      {eq.seriesCount} serie{eq.seriesCount > 1 ? "s" : ""} · {eq.betsCount} pari{eq.betsCount > 1 ? "s" : ""}
+                      {eq.activeSeries && (
+                        <span className="text-blue-400 ml-2">
+                          <TrendingUp className="h-3 w-3 inline" /> en cours (#{eq.activeSeries.betCount})
+                        </span>
+                      )}
+                    </span>
+                    <span className={cn("text-xs font-medium", eq.roi >= 0 ? "text-emerald-400/70" : "text-red-400/70")}>
+                      ROI {formatPercent(eq.roi)}
+                    </span>
+                  </div>
+
+                  {/* Row 3: progress bar */}
+                  {barTotal > 0 && (
+                    <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-slate-700/50">
+                      {wonPct > 0 && <div className="bg-emerald-500" style={{ width: `${wonPct}%` }} />}
+                      {lostPct > 0 && <div className="bg-red-500" style={{ width: `${lostPct}%` }} />}
+                      {pendingPct > 0 && <div className="bg-blue-500" style={{ width: `${pendingPct}%` }} />}
+                    </div>
+                  )}
+                </button>
+
+                {/* Expanded: series list */}
+                {isExpanded && eq.series.length > 0 && (
+                  <div className="border-t border-slate-700/50 px-3 pb-3 pt-2 space-y-1.5">
+                    {eq.series.map((s) => (
+                      <EquipeSeriesItem key={s.id} series={s} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
-
-      {/* Equipes list */}
-      <div className="space-y-2">
-        {equipes.map((eq) => (
-          <EquipeCard
-            key={eq.id}
-            equipe={eq}
-            logoUrl={logoMap[eq.name]}
-            onBet={() => openBetDialog(eq)}
-            onDelete={() => handleDelete(eq)}
-          />
-        ))}
-      </div>
 
       {/* === Create Equipe Dialog === */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -218,7 +405,6 @@ export function EquipesPage({
               Creez une equipe avec un type de pari
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-4">
             <div>
               <label className="text-xs text-slate-400 mb-1.5 block">Nom</label>
@@ -231,15 +417,10 @@ export function EquipesPage({
                 autoFocus
               />
             </div>
-
             <div>
-              <label className="text-xs text-slate-400 mb-1.5 block">
-                Type de pari
-              </label>
+              <label className="text-xs text-slate-400 mb-1.5 block">Type de pari</label>
               <div className="flex gap-2">
-                {(
-                  Object.entries(BET_TYPES) as [string, string][]
-                ).map(([key, label]) => (
+                {(Object.entries(BET_TYPES) as [string, string][]).map(([key, label]) => (
                   <button
                     key={key}
                     onClick={() => setNewBetType(key)}
@@ -255,11 +436,7 @@ export function EquipesPage({
                 ))}
               </div>
             </div>
-
-            {createError && (
-              <p className="text-xs text-red-400">{createError}</p>
-            )}
-
+            {createError && <p className="text-xs text-red-400">{createError}</p>}
             <button
               onClick={handleCreate}
               disabled={!newName.trim()}
@@ -272,20 +449,13 @@ export function EquipesPage({
       </Dialog>
 
       {/* === Bet Creation Dialog === */}
-      <Dialog
-        open={betEquipe !== null}
-        onOpenChange={(open) => {
-          if (!open) setBetEquipe(null);
-        }}
-      >
+      <Dialog open={betEquipe !== null} onOpenChange={(open) => { if (!open) setBetEquipe(null); }}>
         <DialogContent className="bg-[#1e293b] border-slate-700 text-white max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle className="text-white">
               {betEquipe?.activeSeries
                 ? `Pari #${betEquipe.activeSeries.betCount + 1}`
-                : "Nouvelle serie"}
-              {" — "}
-              {betEquipe?.name}
+                : "Nouvelle serie"}{" — "}{betEquipe?.name}
             </DialogTitle>
             <DialogDescription className="text-slate-400">
               {betEquipe?.activeSeries
@@ -300,9 +470,7 @@ export function EquipesPage({
               {betStep === "target" && (
                 <>
                   <div>
-                    <label className="text-xs text-slate-400 mb-1.5 block">
-                      Gain souhaite par pari (€)
-                    </label>
+                    <label className="text-xs text-slate-400 mb-1.5 block">Gain souhaite par pari (€)</label>
                     <input
                       type="number"
                       value={targetGain}
@@ -314,12 +482,8 @@ export function EquipesPage({
                       autoFocus
                     />
                   </div>
-
                   <button
-                    onClick={() => {
-                      const t = parseFloat(targetGain);
-                      if (t > 0) setBetStep("odds");
-                    }}
+                    onClick={() => { if (parseFloat(targetGain) > 0) setBetStep("odds"); }}
                     disabled={!targetGain || parseFloat(targetGain) <= 0}
                     className="w-full py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-medium hover:bg-emerald-600 transition-colors disabled:opacity-50"
                   >
@@ -331,53 +495,32 @@ export function EquipesPage({
               {/* Step: Odds + Stake */}
               {betStep === "odds" && (
                 <>
-                  {/* Series info for active series */}
-                  {betEquipe.activeSeries && (
-                    <div className="bg-[#0f172a] rounded-xl p-3 space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-400">Gain cible</span>
-                        <span className="text-white">
-                          {betEquipe.activeSeries.target_gain}€
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-400">
-                          Mises precedentes
-                        </span>
-                        <span className="text-white">
-                          {betEquipe.activeSeries.sumStakes.toFixed(2)}€
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-400">Pari n°</span>
-                        <span className="text-white">
-                          {betEquipe.activeSeries.betCount + 1}
-                        </span>
-                      </div>
+                  {/* Series info */}
+                  <div className="bg-[#0f172a] rounded-xl p-3 space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">Gain cible</span>
+                      <span className="text-white">{betEquipe.activeSeries?.target_gain ?? targetGain}€</span>
                     </div>
-                  )}
-
-                  {/* New series info */}
-                  {!betEquipe.activeSeries && (
-                    <div className="bg-[#0f172a] rounded-xl p-3">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-400">Gain cible</span>
-                        <span className="text-white">{targetGain}€</span>
-                      </div>
-                    </div>
-                  )}
+                    {betEquipe.activeSeries && (
+                      <>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-400">Mises precedentes</span>
+                          <span className="text-white">{betEquipe.activeSeries.sumStakes.toFixed(2)}€</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-400">Pari n°</span>
+                          <span className="text-white">{betEquipe.activeSeries.betCount + 1}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
 
                   <div>
-                    <label className="text-xs text-slate-400 mb-1.5 block">
-                      Cote
-                    </label>
+                    <label className="text-xs text-slate-400 mb-1.5 block">Cote</label>
                     <input
                       type="number"
                       value={odds}
-                      onChange={(e) => {
-                        setOdds(e.target.value);
-                        setCalculatedStake(null);
-                      }}
+                      onChange={(e) => { setOdds(e.target.value); setCalculatedStake(null); }}
                       onBlur={calculateStake}
                       placeholder="Ex: 2.10"
                       step="0.01"
@@ -387,7 +530,6 @@ export function EquipesPage({
                     />
                   </div>
 
-                  {/* Calculate button */}
                   {odds && parseFloat(odds) > 1 && calculatedStake === null && (
                     <button
                       onClick={calculateStake}
@@ -397,52 +539,35 @@ export function EquipesPage({
                     </button>
                   )}
 
-                  {/* Calculated stake */}
                   {calculatedStake !== null && (
                     <div className="space-y-3">
                       <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
-                        <p className="text-xs text-emerald-400 mb-1">
-                          Mise calculee
-                        </p>
-                        <p className="text-2xl font-bold text-white">
-                          {calculatedStake.toFixed(2)}€
-                        </p>
+                        <p className="text-xs text-emerald-400 mb-1">Mise calculee</p>
+                        <p className="text-2xl font-bold text-white">{calculatedStake.toFixed(2)}€</p>
                       </div>
-
                       <div>
-                        <label className="text-xs text-slate-400 mb-1.5 block">
-                          Mise modifiee (optionnel)
-                        </label>
+                        <label className="text-xs text-slate-400 mb-1.5 block">Mise modifiee (optionnel)</label>
                         <input
                           type="number"
                           value={stakeOverride}
                           onChange={(e) => setStakeOverride(e.target.value)}
-                          placeholder={`${calculatedStake.toFixed(2)}`}
+                          placeholder={calculatedStake.toFixed(2)}
                           step="0.01"
                           min="0.01"
                           className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
                         />
                       </div>
-
-                      {betError && (
-                        <p className="text-xs text-red-400">{betError}</p>
-                      )}
-
+                      {betError && <p className="text-xs text-red-400">{betError}</p>}
                       <button
                         onClick={handlePlaceBet}
                         disabled={isBetting}
                         className="w-full py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-medium hover:bg-emerald-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
-                        {isBetting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          "Valider le pari"
-                        )}
+                        {isBetting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Valider le pari"}
                       </button>
                     </div>
                   )}
 
-                  {/* Back button for new series */}
                   {!betEquipe.activeSeries && (
                     <button
                       onClick={() => setBetStep("target")}
@@ -457,105 +582,6 @@ export function EquipesPage({
           )}
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-// === Equipe Card ===
-
-function EquipeCard({
-  equipe,
-  logoUrl,
-  onBet,
-  onDelete,
-}: {
-  equipe: EquipeWithContext;
-  logoUrl?: string;
-  onBet: () => void;
-  onDelete: () => void;
-}) {
-  const hasPending = equipe.activeSeries?.hasPendingBet;
-
-  return (
-    <div className="rounded-xl bg-[#1e293b] p-3">
-      <div className="flex items-center gap-3">
-        <TeamLogo logoUrl={logoUrl} size="md" />
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-white truncate">
-              {equipe.name}
-            </p>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300 whitespace-nowrap">
-              {BET_TYPES[equipe.bet_type as keyof typeof BET_TYPES]}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3 mt-0.5">
-            {equipe.activeSeries ? (
-              <Link
-                href={`/series/${equipe.activeSeries.id}`}
-                className="flex items-center gap-1 text-xs text-[#10b981] hover:text-emerald-300"
-              >
-                <TrendingUp className="h-3 w-3" />
-                Serie en cours (pari #{equipe.activeSeries.betCount})
-              </Link>
-            ) : (
-              <span className="text-xs text-slate-500">Aucune serie active</span>
-            )}
-
-            {equipe.stats.seriesCount > 0 && (
-              <span className="text-xs text-slate-500">
-                <Hash className="h-3 w-3 inline" />
-                {equipe.stats.seriesCount} serie{equipe.stats.seriesCount > 1 ? "s" : ""}
-              </span>
-            )}
-
-            {equipe.stats.netProfit !== 0 && (
-              <span
-                className={cn(
-                  "text-xs font-medium",
-                  equipe.stats.netProfit > 0
-                    ? "text-emerald-400"
-                    : "text-red-400"
-                )}
-              >
-                {equipe.stats.netProfit > 0 ? "+" : ""}
-                {equipe.stats.netProfit.toFixed(2)}€
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-1.5">
-          {!hasPending && (
-            <button
-              onClick={onBet}
-              className="px-3 py-1.5 rounded-lg bg-[#10b981] text-white text-xs font-medium hover:bg-emerald-600 transition-colors"
-            >
-              Parier
-            </button>
-          )}
-
-          {hasPending && equipe.activeSeries && (
-            <Link
-              href={`/series/${equipe.activeSeries.id}`}
-              className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 text-xs font-medium hover:bg-amber-500/30 transition-colors flex items-center gap-1"
-            >
-              En attente
-              <ChevronRight className="h-3 w-3" />
-            </Link>
-          )}
-
-          <button
-            onClick={onDelete}
-            className="p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors"
-          >
-            <Trash2 className="h-4 w-4 text-slate-600 hover:text-red-400 transition-colors" />
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
