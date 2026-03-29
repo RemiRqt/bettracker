@@ -107,6 +107,30 @@ export interface Database {
         };
         Relationships: [];
       };
+      equipes: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          bet_type: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          bet_type: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          bet_type?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       team_mappings: {
         Row: {
           id: string;
