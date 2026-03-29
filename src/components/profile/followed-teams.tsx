@@ -138,7 +138,15 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     setMappings((prev) =>
       prev.map((m) => m.id === clubId ? { ...m, is_followed: !m.is_followed } : m)
     );
-    startTransition(async () => { await toggleFollow(club.subject); });
+    startTransition(async () => {
+      const result = await toggleFollow(club.subject);
+      if (result?.error) {
+        // Revert optimistic update on failure
+        setMappings((prev) =>
+          prev.map((m) => m.id === clubId ? { ...m, is_followed: !m.is_followed } : m)
+        );
+      }
+    });
   }, [mappings]);
 
   // Link a subject to a club

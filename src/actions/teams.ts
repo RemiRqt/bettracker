@@ -266,13 +266,14 @@ export async function toggleFollow(subject: string) {
     throw new Error("Vous devez etre connecte.");
   }
 
-  // Check if mapping exists
+  // Check if mapping exists (filter by is_club to avoid conflict with series subjects)
   const { data: existing } = await supabase
     .from("team_mappings")
     .select("id, is_followed")
     .eq("user_id", user.id)
     .eq("subject", subject)
-    .single();
+    .eq("is_club", true)
+    .maybeSingle();
 
   if (existing) {
     // Toggle the existing value

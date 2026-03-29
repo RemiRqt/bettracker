@@ -44,10 +44,11 @@ interface ParisPageProps {
   logoMap?: Record<string, string>;
 }
 
-type FilterKey = "en_cours" | "gagne" | "perdu";
+type FilterValue = "en_cours" | "gagne" | "perdu";
+type FilterKey = FilterValue | null;
 type SortKey = "date" | "gains" | "mise" | "cote";
 
-const FILTERS: { key: FilterKey; label: string; color: string; activeColor: string }[] = [
+const FILTERS: { key: FilterValue; label: string; color: string; activeColor: string }[] = [
   { key: "en_cours", label: "En cours", color: "text-blue-400 border-blue-500/30", activeColor: "bg-blue-500/20" },
   { key: "gagne", label: "Gagné", color: "text-emerald-400 border-emerald-500/30", activeColor: "bg-emerald-500/20" },
   { key: "perdu", label: "Perdu", color: "text-red-400 border-red-500/30", activeColor: "bg-red-500/20" },
@@ -67,7 +68,7 @@ export function ParisPage({
   logoMap = {},
 }: ParisPageProps) {
   const searchParams = useSearchParams();
-  const initialFilter = (searchParams.get("filter") as FilterKey) || "en_cours";
+  const initialFilter = (searchParams.get("filter") as FilterKey) || null;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -96,6 +97,7 @@ export function ParisPage({
   }), [bets]);
 
   const filtered = useMemo(() => {
+    if (filter === null) return bets;
     return bets.filter((b) => {
       switch (filter) {
         case "en_cours": return b.result === null;
@@ -185,7 +187,7 @@ export function ParisPage({
         {FILTERS.map((f) => (
           <button
             key={f.key}
-            onClick={() => setFilter(f.key)}
+            onClick={() => setFilter(filter === f.key ? null : f.key)}
             className={cn(
               "py-2 rounded-xl text-xs font-semibold transition-colors border",
               filter === f.key

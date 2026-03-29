@@ -54,7 +54,17 @@
       "Bash(git commit -m \"Cached fixtures system, fix types, fix layout padding:*)",
       "Bash(node -e \"const d=require\\(''''fs''''\\).readFileSync\\(0,''''utf8''''\\);const j=JSON.parse\\(d\\);console.log\\(''''Results:'''', j.results\\); j.response?.slice\\(0,3\\).forEach\\(t=>console.log\\(t.team.id, t.team.name, t.team.country\\)\\)\")",
       "Bash(SUPABASE_SERVICE_ROLE_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaW1rZW9sbmlnb2Z6cmFma3ZuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDYwMjkyMiwiZXhwIjoyMDkwMTc4OTIyfQ.GqfgI_7jD10pqhpX4aucheN51SL6MbOCi_-NmDGOQ8c\" NEXT_PUBLIC_SUPABASE_URL=\"https://voimkeolnigofzrafkvn.supabase.co\" node -e \"\nconst { createClient } = require\\('@supabase/supabase-js'\\);\nconst sb = createClient\\(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY\\);\n\nasync function run\\(\\) {\n  const userId = '517bc9c6-a360-4182-ae31-0b2f3de9ec0f';\n  const psgLogo = 'https://media.api-sports.io/football/teams/85.png';\n  const psgApiId = 85;\n\n  // 1. Add PSG club as favorite\n  const { error: e1 } = await sb.from\\('team_mappings'\\).upsert\\({\n    user_id: userId,\n    subject: 'Paris Saint Germain',\n    api_team_id: psgApiId,\n    logo_url: psgLogo,\n    sport: 'football',\n    is_followed: true,\n    next_matches_count: 2,\n  }, { onConflict: 'user_id,subject' }\\);\n  console.log\\('Add PSG club:', e1 ? e1.message : 'OK'\\);\n\n  // 2. Link 'PSG' subject to PSG api_team_id\n  const { error: e2 } = await sb.from\\('team_mappings'\\)\n    .update\\({ api_team_id: psgApiId, logo_url: psgLogo }\\)\n    .eq\\('user_id', userId\\)\n    .eq\\('subject', 'PSG'\\);\n  console.log\\('Link PSG:', e2 ? e2.message : 'OK'\\);\n\n  // 3. Link 'Dembélé' subject to PSG api_team_id\n  const { error: e3 } = await sb.from\\('team_mappings'\\)\n    .update\\({ api_team_id: psgApiId, logo_url: psgLogo }\\)\n    .eq\\('user_id', userId\\)\n    .eq\\('subject', 'Dembélé'\\);\n  console.log\\('Link Dembélé:', e3 ? e3.message : 'OK'\\);\n\n  // Verify\n  const { data } = await sb.from\\('team_mappings'\\)\n    .select\\('subject, api_team_id, logo_url, is_followed'\\)\n    .eq\\('user_id', userId\\)\n    .in\\('subject', ['Paris Saint Germain', 'PSG', 'Dembélé']\\);\n  console.log\\('Result:', JSON.stringify\\(data, null, 2\\)\\);\n}\nrun\\(\\);\n\" 2>&1)",
-      "Bash(git commit -m \"Revamp team management: add clubs, link subjects, fix API search:*)"
+      "Bash(git commit -m \"Revamp team management: add clubs, link subjects, fix API search:*)",
+      "Bash(python -m json.tool)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); t=d.get\\(''''teams'''',[]\\); [print\\(f''''{x[idTeam]} - {x[strTeam]}''''\\) for x in \\(t or []\\)]\")",
+      "Bash(python -c \":*)",
+      "Bash(npm run:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(grep -r import.*ParisPage /c/Users/cgill/projects/bettracker/src --include=*.tsx --include=*.ts)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''{len\\(d\\)} supprimé\\(s\\)''''\\)\")",
+      "Bash(find /c/Users/cgill/projects/bettracker -name *.sql -type f)",
+      "Bash(grep -r \"revalidatePath\\\\|revalidateTag\\\\|cache\" /c/Users/cgill/projects/bettracker/src/actions --include=*.ts)"
     ]
   }
 }
