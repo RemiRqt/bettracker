@@ -22,14 +22,10 @@ export default async function EquipesRoute() {
 
   const allSeries = (series ?? []) as SeriesWithBets[];
 
-  // Build logo map
+  // Build logo map: use logo_url directly (base64 data URI or URL)
   const logoMap: Record<string, string> = {};
   for (const m of teamMappings ?? []) {
-    if (m.api_team_id) {
-      logoMap[m.subject] = `/api/football/image?teamId=${m.api_team_id}`;
-    } else if (m.logo_url) {
-      logoMap[m.subject] = m.logo_url;
-    }
+    if (m.logo_url) logoMap[m.subject] = m.logo_url;
   }
 
   // Build merged equipe data

@@ -134,7 +134,26 @@ export async function upsertTeamMapping(
 }
 
 /**
+ * Fetch a team logo from SofaScore CDN and return as base64 data URI.
+ */
+async function fetchLogoAsDataUri(teamId: number): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://api.sofascore.app/api/v1/team/${teamId}/image`
+    );
+    if (!res.ok) return null;
+    const buffer = await res.arrayBuffer();
+    const contentType = res.headers.get("content-type") || "image/png";
+    const base64 = Buffer.from(buffer).toString("base64");
+    return `data:${contentType};base64,${base64}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Add an API club as a separate record (is_club=true).
+ * Auto-fetches the logo from SofaScore and stores as base64 data URI.
  */
 export async function addClub(
   apiTeamId: number,
@@ -165,13 +184,16 @@ export async function addClub(
     return { error: "Cette equipe est deja ajoutee." };
   }
 
+  // Auto-fetch logo as base64
+  const dataUri = await fetchLogoAsDataUri(apiTeamId);
+
   const { error } = await supabase
     .from("team_mappings")
     .insert({
       user_id: user.id,
       subject: name,
       api_team_id: apiTeamId,
-      logo_url: logoUrl,
+      logo_url: dataUri ?? logoUrl,
       sport: "football",
       is_club: true,
       is_followed: false,
@@ -180,6 +202,46 @@ export async function addClub(
   if (error) {
     return { error: `Erreur: ${error.message}` };
   }
+
+  revalidateTeamPaths();
+  return { success: true };
+}
+
+/**
+ * Refresh logo for an existing club by re-fetching from SofaScore CDN.
+ */
+export async function refreshClubLogo(clubId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Vous devez etre connecte.");
+  }
+
+  const { data: club } = await supabase
+    .from("team_mappings")
+    .select("id, api_team_id")
+    .eq("id", clubId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!club?.api_team_id) {
+    return { error: "Club introuvable ou sans ID API." };
+  }
+
+  const dataUri = await fetchLogoAsDataUri(club.api_team_id);
+  if (!dataUri) {
+    return { error: "Impossible de recuperer le logo." };
+  }
+
+  await supabase
+    .from("team_mappings")
+    .update({ logo_url: dataUri, updated_at: new Date().toISOString() })
+    .eq("id", clubId);
 
   revalidateTeamPaths();
   return { success: true };

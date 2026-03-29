@@ -69,14 +69,10 @@ export default async function NewSeriesPage() {
     bet_type: t.bet_type,
   }));
 
-  // Build logo map: subject → logo_url (prefer proxy URL from api_team_id)
+  // Build logo map: use logo_url directly (base64 data URI or URL)
   const logoMap: Record<string, string> = {};
   for (const m of teamMappings ?? []) {
-    if (m.api_team_id) {
-      logoMap[m.subject] = `/api/football/image?teamId=${m.api_team_id}`;
-    } else if (m.logo_url) {
-      logoMap[m.subject] = m.logo_url;
-    }
+    if (m.logo_url) logoMap[m.subject] = m.logo_url;
   }
 
   return (

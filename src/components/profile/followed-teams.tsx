@@ -7,6 +7,7 @@ import {
   unlinkTeamFromApi,
   addClub,
   deleteTeamMapping,
+  refreshClubLogo,
 } from "@/actions/teams";
 import type { TeamMapping } from "@/actions/teams";
 import { TeamLogo } from "@/components/ui/team-logo";
@@ -17,7 +18,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Star, Link2, Search, Loader2, Plus, X, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
+import { Star, Link2, Search, Loader2, Plus, X, ChevronDown, ChevronRight, Trash2, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FollowedTeamsProps {
@@ -49,6 +50,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
   const [linkUnlinkedSubject, setLinkUnlinkedSubject] = useState<string | null>(null);
 
   const [expandedClubs, setExpandedClubs] = useState<Set<string>>(new Set());
+  const [refreshingLogo, setRefreshingLogo] = useState<string | null>(null);
 
   // === Derived data ===
   // Clubs = records with is_club=true
@@ -214,7 +216,33 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
             return (
               <div key={club.id} className="rounded-xl bg-[#0f172a] overflow-hidden">
                 <div className="flex items-center gap-3 p-3">
-                  <TeamLogo logoUrl={club.api_team_id ? `/api/football/image?teamId=${club.api_team_id}` : club.logo_url} sport={club.sport} size="md" />
+                  {/* Logo + refresh button if missing */}
+                  <div className="relative flex-shrink-0">
+                    <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="md" />
+                    {club.api_team_id && (!club.logo_url || !club.logo_url.startsWith("data:")) && (
+                      <button
+                        onClick={async () => {
+                          setRefreshingLogo(club.id);
+                          const result = await refreshClubLogo(club.id);
+                          setRefreshingLogo(null);
+                          if (result.success) {
+                            setMappings((prev) =>
+                              prev.map((m) => m.id === club.id ? { ...m, logo_url: "refreshed" } : m)
+                            );
+                            window.location.reload();
+                          }
+                        }}
+                        disabled={refreshingLogo === club.id}
+                        className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-[#10b981] hover:bg-emerald-600 transition-colors"
+                        title="Recuperer le logo"
+                      >
+                        {refreshingLogo === club.id
+                          ? <Loader2 className="h-3 w-3 text-white animate-spin" />
+                          : <ImageIcon className="h-3 w-3 text-white" />
+                        }
+                      </button>
+                    )}
+                  </div>
 
                   <button
                     onClick={() => toggleClubExpand(club.id)}
@@ -452,7 +480,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                   onClick={() => handleLinkSubject(linkUnlinkedSubject!, club)}
                   className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#0f172a] transition-colors text-left"
                 >
-                  <TeamLogo logoUrl={club.api_team_id ? `/api/football/image?teamId=${club.api_team_id}` : club.logo_url} sport={club.sport} size="sm" />
+                  <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="sm" />
                   <span className="text-sm text-white">{club.subject}</span>
                 </button>
               ))
