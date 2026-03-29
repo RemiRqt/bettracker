@@ -558,8 +558,31 @@ interface SportApiEvent {
 }
 
 /**
+ * Fetch a logo via SportAPI7 and return as base64 data URI.
+ */
+async function fetchImageAsDataUri(
+  path: string,
+  apiKey: string
+): Promise<string> {
+  try {
+    const res = await fetch(`${SPORTAPI_BASE}${path}`, {
+      headers: {
+        "x-rapidapi-host": "sportapi7.p.rapidapi.com",
+        "x-rapidapi-key": apiKey,
+      },
+    });
+    if (!res.ok) return "";
+    const buffer = await res.arrayBuffer();
+    const contentType = res.headers.get("content-type") || "image/png";
+    return `data:${contentType};base64,${Buffer.from(buffer).toString("base64")}`;
+  } catch {
+    return "";
+  }
+}
+
+/**
  * Fetch upcoming fixtures for a single team via SportAPI7.
- * One API call per team — much more efficient than date-based scanning.
+ * Logos (teams + league) are fetched and stored as base64 data URIs.
  */
 async function fetchTeamNextEvents(
   teamId: number,
@@ -589,17 +612,50 @@ async function fetchTeamNextEvents(
 
     const json = await res.json();
     const events: SportApiEvent[] = json.events ?? [];
+    const sliced = events.slice(0, maxCount);
 
-    return events.slice(0, maxCount).map((event) => ({
+    // Collect unique IDs to fetch logos
+    const teamIds = new Set<number>();
+    const tournamentIds = new Set<number>();
+    for (const e of sliced) {
+      teamIds.add(e.homeTeam.id);
+      teamIds.add(e.awayTeam.id);
+      if (e.tournament.uniqueTournament?.id) {
+        tournamentIds.add(e.tournament.uniqueTournament.id);
+      }
+    }
+
+    // Fetch all logos in parallel
+    const logoCache = new Map<string, string>();
+    const fetches: Promise<void>[] = [];
+
+    for (const id of teamIds) {
+      fetches.push(
+        fetchImageAsDataUri(`/api/v1/team/${id}/image`, apiKey).then((uri) => {
+          logoCache.set(`team:${id}`, uri);
+        })
+      );
+    }
+    for (const id of tournamentIds) {
+      fetches.push(
+        fetchImageAsDataUri(`/api/v1/unique-tournament/${id}/image`, apiKey).then((uri) => {
+          logoCache.set(`tournament:${id}`, uri);
+        })
+      );
+    }
+
+    await Promise.all(fetches);
+
+    return sliced.map((event) => ({
       id: event.id,
       date: new Date(event.startTimestamp * 1000).toISOString(),
       homeTeam: event.homeTeam.name,
-      homeLogo: `/api/football/image?teamId=${event.homeTeam.id}`,
+      homeLogo: logoCache.get(`team:${event.homeTeam.id}`) ?? "",
       awayTeam: event.awayTeam.name,
-      awayLogo: `/api/football/image?teamId=${event.awayTeam.id}`,
+      awayLogo: logoCache.get(`team:${event.awayTeam.id}`) ?? "",
       league: event.tournament.uniqueTournament?.name ?? event.tournament.name,
       leagueLogo: event.tournament.uniqueTournament
-        ? `/api/football/image?teamId=${event.tournament.uniqueTournament.id}&type=tournament`
+        ? logoCache.get(`tournament:${event.tournament.uniqueTournament.id}`) ?? ""
         : "",
     }));
   } catch (error) {
