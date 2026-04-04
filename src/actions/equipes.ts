@@ -44,12 +44,12 @@ export async function getEquipesWithContext(): Promise<EquipeWithContext[]> {
   const [{ data: equipes }, { data: allSeries }] = await Promise.all([
     supabase
       .from("equipes")
-      .select("*")
+      .select("id, user_id, name, bet_type, created_at")
       .eq("user_id", user.id)
       .order("name", { ascending: true }),
     supabase
       .from("series")
-      .select("*, bets(*)")
+      .select("id, status, target_gain, bet_type, subject, created_at, bets(id, odds, stake, result, bet_number, potential_net, created_at)")
       .eq("user_id", user.id),
   ]);
 

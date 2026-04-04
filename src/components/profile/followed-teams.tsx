@@ -7,7 +7,6 @@ import {
   unlinkTeamFromApi,
   addClub,
   deleteTeamMapping,
-  refreshClubLogo,
 } from "@/actions/teams";
 import type { TeamMapping } from "@/actions/teams";
 import { TeamLogo } from "@/components/ui/team-logo";
@@ -18,8 +17,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Star, Link2, Search, Loader2, Plus, X, ChevronDown, ChevronRight, Trash2, ImageIcon } from "lucide-react";
+import { Star, Link2, Search, Loader2, Plus, X, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FOOTBALL_DATA_COMPETITIONS } from "@/lib/constants";
 
 interface FollowedTeamsProps {
   teamMappings: TeamMapping[];
@@ -38,10 +38,10 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
 
   // Add club dialog
   const [addClubOpen, setAddClubOpen] = useState(false);
-  const [clubSearch, setClubSearch] = useState("");
+  const [selectedCompetition, setSelectedCompetition] = useState("");
+  const [clubFilter, setClubFilter] = useState("");
   const [clubResults, setClubResults] = useState<ApiTeamResult[]>([]);
   const [isSearchingClub, setIsSearchingClub] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
   // Link subject to club dialog (from club expand)
   const [linkClubId, setLinkClubId] = useState<string | null>(null);
   const [linkSubjectSearch, setLinkSubjectSearch] = useState("");
@@ -50,7 +50,6 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
   const [linkUnlinkedSubject, setLinkUnlinkedSubject] = useState<string | null>(null);
 
   const [expandedClubs, setExpandedClubs] = useState<Set<string>>(new Set());
-  const [refreshingLogo, setRefreshingLogo] = useState<string | null>(null);
 
   // === Derived data ===
   // Clubs = records with is_club=true
@@ -66,26 +65,26 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
 
   // === Handlers ===
 
-  const handleClubSearchSubmit = useCallback(async () => {
-    const query = clubSearch.trim();
-    if (query.length < 3) return;
+  const loadCompetitionTeams = useCallback(async (code: string) => {
+    if (!code) return;
+    setSelectedCompetition(code);
     setIsSearchingClub(true);
-    setHasSearched(true);
     setClubResults([]);
+    setClubFilter("");
     try {
-      const res = await fetch(`/api/football/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/football/search?competition=${encodeURIComponent(code)}`);
       if (res.ok) {
         const data = await res.json();
         setClubResults(Array.isArray(data) ? data : []);
       }
     } catch { setClubResults([]); }
     finally { setIsSearchingClub(false); }
-  }, [clubSearch]);
+  }, []);
 
   const handleAddClub = useCallback((club: ApiTeamResult) => {
     // Check if already exists
     if (clubs.some((m) => m.api_team_id === club.id)) {
-      setAddClubOpen(false); setClubSearch(""); setClubResults([]); setHasSearched(false);
+      setAddClubOpen(false); setSelectedCompetition(""); setClubResults([]); setClubFilter("");
       return;
     }
 
@@ -111,7 +110,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
       await addClub(club.id, club.name, club.logo);
     });
 
-    setAddClubOpen(false); setClubSearch(""); setClubResults([]); setHasSearched(false);
+    setAddClubOpen(false); setSelectedCompetition(""); setClubResults([]); setClubFilter("");
   }, [clubs]);
 
   const handleDeleteClub = useCallback((club: TeamMapping) => {
@@ -216,33 +215,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
             return (
               <div key={club.id} className="rounded-xl bg-[#0f172a] overflow-hidden">
                 <div className="flex items-center gap-3 p-3">
-                  {/* Logo + refresh button if missing */}
-                  <div className="relative flex-shrink-0">
-                    <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="md" />
-                    {club.api_team_id && (!club.logo_url || !club.logo_url.startsWith("data:")) && (
-                      <button
-                        onClick={async () => {
-                          setRefreshingLogo(club.id);
-                          const result = await refreshClubLogo(club.id);
-                          setRefreshingLogo(null);
-                          if (result.success) {
-                            setMappings((prev) =>
-                              prev.map((m) => m.id === club.id ? { ...m, logo_url: "refreshed" } : m)
-                            );
-                            window.location.reload();
-                          }
-                        }}
-                        disabled={refreshingLogo === club.id}
-                        className="absolute -bottom-1 -right-1 p-0.5 rounded-full bg-[#10b981] hover:bg-emerald-600 transition-colors"
-                        title="Recuperer le logo"
-                      >
-                        {refreshingLogo === club.id
-                          ? <Loader2 className="h-3 w-3 text-white animate-spin" />
-                          : <ImageIcon className="h-3 w-3 text-white" />
-                        }
-                      </button>
-                    )}
-                  </div>
+                  <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="md" />
 
                   <button
                     onClick={() => toggleClubExpand(club.id)}
@@ -342,29 +315,37 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
             </DialogDescription>
           </DialogHeader>
 
-          <form
-            onSubmit={(e) => { e.preventDefault(); handleClubSearchSubmit(); }}
-            className="flex gap-2"
-          >
-            <div className="relative flex-1">
+          {/* Competition picker */}
+          <div className="flex flex-wrap gap-1.5">
+            {FOOTBALL_DATA_COMPETITIONS.map((comp) => (
+              <button
+                key={comp.code}
+                onClick={() => loadCompetitionTeams(comp.code)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                  selectedCompetition === comp.code
+                    ? "bg-[#10b981] text-white"
+                    : "bg-[#0f172a] text-slate-400 hover:text-white border border-slate-700"
+                )}
+              >
+                {comp.flag} {comp.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Filter within loaded teams */}
+          {clubResults.length > 0 && (
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
                 type="text"
-                value={clubSearch}
-                onChange={(e) => setClubSearch(e.target.value)}
-                placeholder="Ex: PSG, Bayern, France..."
+                value={clubFilter}
+                onChange={(e) => setClubFilter(e.target.value)}
+                placeholder="Filtrer..."
                 className="w-full bg-[#0f172a] border border-slate-600 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
-                autoFocus
               />
             </div>
-            <button
-              type="submit"
-              disabled={clubSearch.trim().length < 3 || isSearchingClub}
-              className="px-4 py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-medium hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSearchingClub ? <Loader2 className="h-4 w-4 animate-spin" /> : "Rechercher"}
-            </button>
-          </form>
+          )}
 
           <div className="max-h-72 overflow-y-auto space-y-1">
             {isSearchingClub && (
@@ -372,30 +353,33 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                 <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
               </div>
             )}
-            {!isSearchingClub && clubResults.length === 0 && hasSearched && (
-              <p className="text-sm text-slate-500 text-center py-6">Aucun resultat</p>
+            {!isSearchingClub && selectedCompetition && clubResults.length === 0 && (
+              <p className="text-sm text-slate-500 text-center py-6">Aucune equipe trouvee</p>
             )}
-            {clubResults.map((club) => {
-              const alreadyAdded = clubs.some((m) => m.api_team_id === club.id);
-              return (
-                <button
-                  key={club.id}
-                  onClick={() => handleAddClub(club)}
-                  disabled={alreadyAdded}
-                  className={cn(
-                    "w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors",
-                    alreadyAdded ? "opacity-50 cursor-not-allowed" : "hover:bg-[#0f172a]"
-                  )}
-                >
-                  <img src={club.logo} alt="" className="h-8 w-8 object-contain" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white truncate">{club.name}</p>
-                    {club.country && <p className="text-xs text-slate-500">{club.country}</p>}
-                  </div>
-                  {alreadyAdded && <span className="text-xs text-emerald-400">Ajoute</span>}
-                </button>
-              );
-            })}
+            {clubResults
+              .filter((club) =>
+                !clubFilter || club.name.toLowerCase().includes(clubFilter.toLowerCase())
+              )
+              .map((club) => {
+                const alreadyAdded = clubs.some((m) => m.api_team_id === club.id);
+                return (
+                  <button
+                    key={club.id}
+                    onClick={() => handleAddClub(club)}
+                    disabled={alreadyAdded}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors",
+                      alreadyAdded ? "opacity-50 cursor-not-allowed" : "hover:bg-[#0f172a]"
+                    )}
+                  >
+                    <img src={club.logo} alt="" className="h-8 w-8 object-contain rounded-full" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white truncate">{club.name}</p>
+                    </div>
+                    {alreadyAdded && <span className="text-xs text-emerald-400">Ajoutee</span>}
+                  </button>
+                );
+              })}
           </div>
         </DialogContent>
       </Dialog>

@@ -50,7 +50,7 @@ export async function getTeamMappings(): Promise<TeamMapping[]> {
 
   const { data, error } = await supabase
     .from("team_mappings")
-    .select("*")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id)
     .order("subject", { ascending: true });
 
@@ -75,7 +75,7 @@ export async function getFollowedTeams(): Promise<TeamMapping[]> {
 
   const { data, error } = await supabase
     .from("team_mappings")
-    .select("*")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id)
     .eq("is_followed", true)
     .order("subject", { ascending: true });
@@ -134,22 +134,13 @@ export async function upsertTeamMapping(
 }
 
 /**
- * Fetch a team logo: checks DB cache first, then RapidAPI.
- * Only 1 API call if not already cached, 0 if cached.
- */
-async function fetchLogoAsDataUri(teamId: number): Promise<string | null> {
-  const logos = await getLogos([`team:${teamId}`]);
-  return logos.get(`team:${teamId}`) ?? null;
-}
-
-/**
  * Add an API club as a separate record (is_club=true).
- * Auto-fetches the logo from SofaScore and stores as base64 data URI.
+ * Stores the direct crest URL from football-data.org.
  */
 export async function addClub(
   apiTeamId: number,
   name: string,
-  logoUrl: string
+  crestUrl: string
 ) {
   const supabase = await createClient();
 
@@ -162,7 +153,6 @@ export async function addClub(
     throw new Error("Vous devez etre connecte.");
   }
 
-  // Check if club already exists
   const { data: existing } = await supabase
     .from("team_mappings")
     .select("id")
@@ -175,16 +165,13 @@ export async function addClub(
     return { error: "Cette equipe est deja ajoutee." };
   }
 
-  // Auto-fetch logo as base64
-  const dataUri = await fetchLogoAsDataUri(apiTeamId);
-
   const { error } = await supabase
     .from("team_mappings")
     .insert({
       user_id: user.id,
       subject: name,
       api_team_id: apiTeamId,
-      logo_url: dataUri ?? logoUrl,
+      logo_url: crestUrl,
       sport: "football",
       is_club: true,
       is_followed: false,
@@ -193,46 +180,6 @@ export async function addClub(
   if (error) {
     return { error: `Erreur: ${error.message}` };
   }
-
-  revalidateTeamPaths();
-  return { success: true };
-}
-
-/**
- * Refresh logo for an existing club by re-fetching from SofaScore CDN.
- */
-export async function refreshClubLogo(clubId: string) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("Vous devez etre connecte.");
-  }
-
-  const { data: club } = await supabase
-    .from("team_mappings")
-    .select("id, api_team_id")
-    .eq("id", clubId)
-    .eq("user_id", user.id)
-    .single();
-
-  if (!club?.api_team_id) {
-    return { error: "Club introuvable ou sans ID API." };
-  }
-
-  const dataUri = await fetchLogoAsDataUri(club.api_team_id);
-  if (!dataUri) {
-    return { error: "Impossible de recuperer le logo." };
-  }
-
-  await supabase
-    .from("team_mappings")
-    .update({ logo_url: dataUri, updated_at: new Date().toISOString() })
-    .eq("id", clubId);
 
   revalidateTeamPaths();
   return { success: true };
@@ -442,7 +389,7 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
   // Get existing team mappings
   const { data: existingMappings } = await supabase
     .from("team_mappings")
-    .select("*")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id);
 
   const existingSubjects = new Set(
@@ -470,7 +417,7 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
   // Return the full updated list
   const { data: allMappings } = await supabase
     .from("team_mappings")
-    .select("*")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id)
     .order("subject", { ascending: true });
 
@@ -496,7 +443,7 @@ export async function getCalendarTeams(): Promise<TeamMapping[]> {
   // Get all team mappings
   const { data: allMappings } = await supabase
     .from("team_mappings")
-    .select("*")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id);
 
   if (!allMappings) return [];
@@ -509,165 +456,53 @@ export async function getCalendarTeams(): Promise<TeamMapping[]> {
       m.is_followed
   );
 
-  // Debug: log all clubs status
-  const clubs = (allMappings as TeamMapping[]).filter((m) => m.is_club);
-  console.log(
-    `[Calendar] ${allMappings.length} mappings total, ${clubs.length} clubs, ${filtered.length} eligible`
-  );
-  for (const c of clubs) {
-    console.log(
-      `[Calendar] Club: "${c.subject}" api_team_id=${c.api_team_id} is_followed=${c.is_followed} is_club=${c.is_club}`
-    );
-  }
-
   return filtered;
 }
 
-const SPORTAPI_BASE = "https://sportapi7.p.rapidapi.com";
+const FOOTBALL_DATA_BASE = "https://api.football-data.org/v4";
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 
-interface SportApiEvent {
-  id: number;
-  startTimestamp: number;
-  homeTeam: { id: number; name: string; shortName: string };
-  awayTeam: { id: number; name: string; shortName: string };
-  tournament: {
-    name: string;
-    uniqueTournament?: { id: number; name: string };
-  };
-}
-
 /**
- * Get logos from DB cache, fetch missing ones via RapidAPI, save to DB.
- * Only makes API calls for logos not already in the cache.
- */
-async function getLogos(
-  keys: string[] // e.g. ["team:1644", "tournament:34"]
-): Promise<Map<string, string>> {
-  const result = new Map<string, string>();
-  if (keys.length === 0) return result;
-
-  const supabase = await createClient();
-
-  // 1. Check DB cache
-  const { data: cached } = await supabase
-    .from("logo_cache")
-    .select("key, data_uri")
-    .in("key", keys);
-
-  for (const row of cached ?? []) {
-    result.set(row.key, row.data_uri);
-  }
-
-  // 2. Find missing keys
-  const missing = keys.filter((k) => !result.has(k));
-  if (missing.length === 0) return result;
-
-  const apiKey = process.env.RAPIDAPI_KEY;
-  if (!apiKey) return result;
-
-  // 3. Fetch missing logos via RapidAPI in parallel
-  const toInsert: { key: string; data_uri: string }[] = [];
-
-  await Promise.all(
-    missing.map(async (key) => {
-      const [type, id] = key.split(":");
-      const path =
-        type === "tournament"
-          ? `/api/v1/unique-tournament/${id}/image`
-          : `/api/v1/team/${id}/image`;
-
-      try {
-        const res = await fetch(`${SPORTAPI_BASE}${path}`, {
-          headers: {
-            "x-rapidapi-host": "sportapi7.p.rapidapi.com",
-            "x-rapidapi-key": apiKey,
-          },
-        });
-        if (!res.ok) return;
-        const buffer = await res.arrayBuffer();
-        const contentType = res.headers.get("content-type") || "image/png";
-        const dataUri = `data:${contentType};base64,${Buffer.from(buffer).toString("base64")}`;
-        result.set(key, dataUri);
-        toInsert.push({ key, data_uri: dataUri });
-      } catch {
-        // skip
-      }
-    })
-  );
-
-  // 4. Save new logos to DB cache (ignore conflicts)
-  if (toInsert.length > 0) {
-    await supabase
-      .from("logo_cache")
-      .upsert(toInsert, { onConflict: "key" });
-    console.log(`[Logos] Cached ${toInsert.length} new logos, ${cached?.length ?? 0} from DB`);
-  }
-
-  return result;
-}
-
-/**
- * Fetch upcoming fixtures for a single team via SportAPI7.
- * Logos are loaded from DB cache (0 API calls if already cached).
+ * Fetch upcoming fixtures for a single team via football-data.org.
+ * Logos are direct URLs from the API response (no proxy needed).
  */
 async function fetchTeamNextEvents(
   teamId: number,
   maxCount: number
 ): Promise<CachedFixture[]> {
-  const apiKey = process.env.RAPIDAPI_KEY;
-  if (!apiKey) {
-    console.error("[Calendar] RAPIDAPI_KEY is not set");
-    return [];
-  }
+  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
+  if (!apiKey) return [];
 
   try {
     const res = await fetch(
-      `${SPORTAPI_BASE}/api/v1/team/${teamId}/events/next/0`,
-      {
-        headers: {
-          "x-rapidapi-host": "sportapi7.p.rapidapi.com",
-          "x-rapidapi-key": apiKey,
-        },
-      }
+      `${FOOTBALL_DATA_BASE}/teams/${teamId}/matches?status=SCHEDULED&limit=${maxCount}`,
+      { headers: { "X-Auth-Token": apiKey } }
     );
 
-    if (!res.ok) {
-      console.error(`[Calendar] SportAPI error for team ${teamId}: ${res.status}`);
-      return [];
-    }
+    if (!res.ok) return [];
 
     const json = await res.json();
-    const events: SportApiEvent[] = json.events ?? [];
-    const sliced = events.slice(0, maxCount);
+    const matches = json.matches ?? [];
 
-    // Collect unique logo keys
-    const logoKeys: string[] = [];
-    for (const e of sliced) {
-      logoKeys.push(`team:${e.homeTeam.id}`, `team:${e.awayTeam.id}`);
-      if (e.tournament.uniqueTournament?.id) {
-        logoKeys.push(`tournament:${e.tournament.uniqueTournament.id}`);
-      }
-    }
-    const uniqueKeys = [...new Set(logoKeys)];
-
-    // Get logos (from DB cache first, API only for new ones)
-    const logos = await getLogos(uniqueKeys);
-
-    return sliced.map((event) => ({
-      id: event.id,
-      date: new Date(event.startTimestamp * 1000).toISOString(),
-      homeTeam: event.homeTeam.name,
-      homeLogo: logos.get(`team:${event.homeTeam.id}`) ?? "",
-      awayTeam: event.awayTeam.name,
-      awayLogo: logos.get(`team:${event.awayTeam.id}`) ?? "",
-      league: event.tournament.uniqueTournament?.name ?? event.tournament.name,
-      leagueLogo: event.tournament.uniqueTournament
-        ? logos.get(`tournament:${event.tournament.uniqueTournament.id}`) ?? ""
-        : "",
-    }));
-  } catch (error) {
-    console.error(`[Calendar] Failed to fetch events for team ${teamId}:`, error);
+    return matches.map(
+      (match: {
+        id: number;
+        utcDate: string;
+        homeTeam: { name: string; shortName: string; crest: string };
+        awayTeam: { name: string; shortName: string; crest: string };
+        competition: { name: string; emblem: string };
+      }) => ({
+        id: match.id,
+        date: match.utcDate,
+        homeTeam: match.homeTeam.shortName || match.homeTeam.name,
+        homeLogo: match.homeTeam.crest || "",
+        awayTeam: match.awayTeam.shortName || match.awayTeam.name,
+        awayLogo: match.awayTeam.crest || "",
+        league: match.competition.name,
+        leagueLogo: match.competition.emblem || "",
+      })
+    );
+  } catch {
     return [];
   }
 }
@@ -691,7 +526,6 @@ export async function getCalendarFixtures(): Promise<
   const cacheValid = mostRecentUpdate > 0 && Date.now() - mostRecentUpdate < CACHE_TTL_MS;
 
   if (cacheValid) {
-    console.log("[Calendar] Using cached fixtures");
     const results: { team: TeamMapping; fixtures: CachedFixture[] }[] = [];
     const seenFixtureIds = new Set<number>();
 
@@ -712,8 +546,6 @@ export async function getCalendarFixtures(): Promise<
   }
 
   // Fetch fresh data: one call per team (much more efficient than date scanning)
-  console.log(`[Calendar] Fetching fresh fixtures for ${teams.length} teams`);
-
   const supabase = await createClient();
   const results: { team: TeamMapping; fixtures: CachedFixture[] }[] = [];
   const seenFixtureIds = new Set<number>();
@@ -752,10 +584,6 @@ export async function getCalendarFixtures(): Promise<
       }
     }
   }
-
-  console.log(
-    `[Calendar] Found fixtures for ${results.length}/${teams.length} teams`
-  );
 
   return results;
 }

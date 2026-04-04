@@ -2,11 +2,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
-  // Skip middleware for auth routes and public API routes
   if (
     request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/auth") ||
-    request.nextUrl.pathname.startsWith("/api/football/image")
+    request.nextUrl.pathname.startsWith("/auth")
   ) {
     return NextResponse.next();
   }

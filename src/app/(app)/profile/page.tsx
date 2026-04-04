@@ -7,6 +7,10 @@ import { FollowedTeams } from "@/components/profile/followed-teams";
 import { SignOutButton } from "@/components/profile/sign-out-button";
 import { User } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
+export const metadata = { title: "Mon Profil | BetTracker" };
+
 export default async function ProfilePage() {
   const supabase = await createClient();
   const {

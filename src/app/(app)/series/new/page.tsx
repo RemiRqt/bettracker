@@ -2,6 +2,10 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { ParisPage } from "@/components/paris/paris-page";
 
+export const dynamic = "force-dynamic";
+
+export const metadata = { title: "Nouvelle Série | BetTracker" };
+
 export default async function NewSeriesPage() {
   const supabase = await createClient();
 

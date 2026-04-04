@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
-const SPORTAPI_BASE = "https://sportapi7.p.rapidapi.com";
+const FOOTBALL_DATA_BASE = "https://api.football-data.org/v4";
 
-// In-memory cache: key -> { data, timestamp }
+// In-memory cache: competition code -> { teams, timestamp }
 const cache = new Map<string, { data: unknown; timestamp: number }>();
-const CACHE_TTL = 1000 * 60 * 60; // 1 hour
+const CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hours (teams don't change often)
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -16,85 +16,63 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    return NextResponse.json(
-      { error: "Non authentifie." },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Non authentifie." }, { status: 401 });
   }
 
-  const q = request.nextUrl.searchParams.get("q");
+  const competition = request.nextUrl.searchParams.get("competition");
 
-  if (!q || !q.trim()) {
+  if (!competition || !competition.trim()) {
     return NextResponse.json(
-      { error: "Le parametre de recherche 'q' est requis." },
+      { error: "Le parametre 'competition' est requis." },
       { status: 400 }
     );
   }
 
-  const searchTerm = q.trim();
-  const cacheKey = `search:${searchTerm.toLowerCase()}`;
-
-  // Check cache
+  const cacheKey = `teams:${competition}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return NextResponse.json(cached.data);
   }
 
+  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "FOOTBALL_DATA_API_KEY non configuree." },
+      { status: 500 }
+    );
+  }
+
   try {
     const response = await fetch(
-      `${SPORTAPI_BASE}/api/v1/search/teams/${encodeURIComponent(searchTerm)}/0`,
-      {
-        headers: {
-          "x-rapidapi-host": "sportapi7.p.rapidapi.com",
-          "x-rapidapi-key": process.env.RAPIDAPI_KEY!,
-        },
-      }
+      `${FOOTBALL_DATA_BASE}/competitions/${encodeURIComponent(competition)}/teams`,
+      { headers: { "X-Auth-Token": apiKey } }
     );
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: "Erreur lors de la recherche SportAPI." },
+        { error: "Erreur football-data.org." },
         { status: response.status }
       );
     }
 
     const json = await response.json();
-    const results = json.teams ?? [];
-
-    const searchLower = searchTerm.toLowerCase();
-
-    const teams = results
-      .filter((team: { sport: { slug: string }; national: boolean; name: string; gender: string }) => {
-        // Only football teams
-        if (team.sport.slug !== "football") return false;
-        // Only male teams (skip women/youth unless searched)
-        if (team.gender !== "M") return false;
-        // Include national teams only if the search term matches
-        if (team.national) {
-          return team.name.toLowerCase().includes(searchLower);
-        }
-        return true;
+    const teams = (json.teams ?? []).map(
+      (team: { id: number; name: string; shortName: string; crest: string }) => ({
+        id: team.id,
+        name: team.name,
+        shortName: team.shortName,
+        logo: team.crest,
       })
-      .map(
-        (team: {
-          id: number;
-          name: string;
-          country?: { name: string } | null;
-        }) => ({
-          id: team.id,
-          name: team.name,
-          country: team.country?.name ?? null,
-          logo: `/api/football/image?teamId=${team.id}`,
-        })
-      );
+    );
 
-    // Store in cache
     cache.set(cacheKey, { data: teams, timestamp: Date.now() });
 
-    return NextResponse.json(teams);
+    return NextResponse.json(teams, {
+      headers: { "Cache-Control": "public, max-age=86400" },
+    });
   } catch {
     return NextResponse.json(
-      { error: "Erreur lors de la connexion a SportAPI." },
+      { error: "Erreur de connexion a football-data.org." },
       { status: 500 }
     );
   }

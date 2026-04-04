@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { EquipesPage } from "@/components/equipes/equipes-page";
 import type { SeriesWithBets } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
+export const metadata = { title: "Mes Séries | BetTracker" };
+
 export default async function EquipesRoute() {
   const supabase = await createClient();
 

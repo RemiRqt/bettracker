@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(sudo *)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | bash)",
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ],
+    "defaultMode": "bypassPermissions"
+  },
+  "model": "opus"
+}

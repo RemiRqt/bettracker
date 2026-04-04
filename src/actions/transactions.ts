@@ -59,9 +59,10 @@ export async function getTransactions() {
 
   const { data } = await supabase
     .from("transactions")
-    .select("*")
+    .select("id, type, amount, note, created_at")
     .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   return data ?? [];
 }

@@ -18,7 +18,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   // Fetch all user's series
   const { data: seriesList, error: seriesError } = await supabase
     .from("series")
-    .select("*")
+    .select("id, status, target_gain, bet_type, subject, created_at")
     .eq("user_id", user.id);
 
   if (seriesError) {
@@ -35,7 +35,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   if (seriesIds.length > 0) {
     const { data: betsData, error: betsError } = await supabase
       .from("bets")
-      .select("*")
+      .select("id, series_id, odds, stake, result, bet_number, potential_net, created_at")
       .in("series_id", seriesIds)
       .order("created_at", { ascending: true });
 
@@ -51,7 +51,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   // Fetch all transactions for the user
   const { data: transactions, error: transactionsError } = await supabase
     .from("transactions")
-    .select("*")
+    .select("id, type, amount, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
 

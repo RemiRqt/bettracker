@@ -7,6 +7,10 @@ import {
 } from "@/actions/teams";
 import { CalendarPage } from "@/components/calendar/calendar-page";
 
+export const dynamic = "force-dynamic";
+
+export const metadata = { title: "Calendrier | BetTracker" };
+
 export interface ActiveSeriesInfo {
   id: string;
   subject: string;

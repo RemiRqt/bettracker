@@ -7,6 +7,8 @@ import {
 } from "@/components/ui/card";
 import { LoginForm } from "@/components/auth/login-form";
 
+export const metadata = { title: "Connexion | BetTracker" };
+
 export default function LoginPage() {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] flex items-center justify-center p-4">

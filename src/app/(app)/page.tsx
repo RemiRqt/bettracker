@@ -1,6 +1,12 @@
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getDashboardStats } from "@/actions/stats";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { CapitalChart } from "@/components/dashboard/capital-chart";
+
+export const dynamic = "force-dynamic";
+
+export const metadata = { title: "Dashboard | BetTracker" };
 
 export default async function DashboardPage() {
   const stats = await getDashboardStats();
@@ -22,7 +28,11 @@ export default async function DashboardPage() {
           Évolution du capital
         </h3>
         <div className="flex-1 min-h-0">
-          <CapitalChart data={stats.capitalEvolution} />
+          <Suspense
+            fallback={<Skeleton className="h-64 w-full rounded-xl" />}
+          >
+            <CapitalChart data={stats.capitalEvolution} />
+          </Suspense>
         </div>
       </div>
     </div>
