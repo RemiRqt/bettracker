@@ -50,7 +50,7 @@ export async function getTeamMappings(): Promise<TeamMapping[]> {
 
   const { data, error } = await supabase
     .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, cached_fixtures, fixtures_updated_at")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id)
     .order("subject", { ascending: true });
 
@@ -75,7 +75,7 @@ export async function getFollowedTeams(): Promise<TeamMapping[]> {
 
   const { data, error } = await supabase
     .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, cached_fixtures, fixtures_updated_at")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id)
     .eq("is_followed", true)
     .order("subject", { ascending: true });
@@ -389,7 +389,7 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
   // Get existing team mappings
   const { data: existingMappings } = await supabase
     .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, cached_fixtures, fixtures_updated_at")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id);
 
   const existingSubjects = new Set(
@@ -417,7 +417,7 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
   // Return the full updated list
   const { data: allMappings } = await supabase
     .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, cached_fixtures, fixtures_updated_at")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id)
     .order("subject", { ascending: true });
 
@@ -443,7 +443,7 @@ export async function getCalendarTeams(): Promise<TeamMapping[]> {
   // Get all team mappings
   const { data: allMappings } = await supabase
     .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, cached_fixtures, fixtures_updated_at")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id);
 
   if (!allMappings) return [];
@@ -471,15 +471,20 @@ async function fetchTeamNextEvents(
   maxCount: number
 ): Promise<CachedFixture[]> {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
-  if (!apiKey) return [];
+  if (!apiKey) {
+    console.error("[Calendar] FOOTBALL_DATA_API_KEY is not set");
+    return [];
+  }
 
   try {
-    const res = await fetch(
-      `${FOOTBALL_DATA_BASE}/teams/${teamId}/matches?status=SCHEDULED&limit=${maxCount}`,
-      { headers: { "X-Auth-Token": apiKey } }
-    );
+    const url = `${FOOTBALL_DATA_BASE}/teams/${teamId}/matches?status=SCHEDULED&limit=${maxCount}`;
+    const res = await fetch(url, { headers: { "X-Auth-Token": apiKey } });
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(`[Calendar] football-data.org error ${res.status} for team ${teamId}:`, text);
+      return [];
+    }
 
     const json = await res.json();
     const matches = json.matches ?? [];
@@ -502,7 +507,8 @@ async function fetchTeamNextEvents(
         leagueLogo: match.competition.emblem || "",
       })
     );
-  } catch {
+  } catch (error) {
+    console.error(`[Calendar] Failed to fetch fixtures for team ${teamId}:`, error);
     return [];
   }
 }
