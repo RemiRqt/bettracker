@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, Ban } from "lucide-react";
 import { SeriesStatusBadge } from "@/components/series/series-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { formatEuros, formatPercent, cn } from "@/lib/utils";
-import { deleteSeries } from "@/actions/series";
+import { deleteSeries, abandonSeries } from "@/actions/series";
+import { canDeleteSeries } from "@/lib/series-utils";
 import type { EquipeSeries } from "@/components/series/equipes-list";
 import type { SeriesStatus } from "@/lib/types";
 
@@ -18,11 +19,26 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
   const [deleted, setDeleted] = useState(false);
   const [, startTransition] = useTransition();
 
+  const isDeletable = canDeleteSeries(series.status, series.bets);
+  const canAbandon = series.status === "en_cours";
+
   function handleDelete() {
-    if (!confirm(`Supprimer la série #${series.seriesNumber} et tous ses paris ?`)) return;
+    if (!confirm(`Supprimer la série #${series.seriesNumber} ?`)) return;
     setDeleted(true);
     startTransition(async () => {
-      await deleteSeries(series.id);
+      const result = await deleteSeries(series.id);
+      if (result?.error) {
+        setDeleted(false);
+        alert(result.error);
+      }
+    });
+  }
+
+  function handleAbandon() {
+    if (!confirm(`Abandonner la série #${series.seriesNumber} ? Les paris en attente seront marqués comme perdus.`)) return;
+    startTransition(async () => {
+      const result = await abandonSeries(series.id);
+      if (result?.error) alert(result.error);
     });
   }
 
@@ -52,12 +68,24 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
             </span>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-              className="text-slate-600 hover:text-red-400 transition-colors p-0.5"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            {canAbandon && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleAbandon(); }}
+                className="text-slate-600 hover:text-amber-400 transition-colors p-0.5"
+                title="Abandonner la série"
+              >
+                <Ban className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {isDeletable && (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+                className="text-slate-600 hover:text-red-400 transition-colors p-0.5"
+                title="Supprimer la série"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
             {expanded ? (
               <ChevronDown className="h-4 w-4 text-slate-500" />
             ) : (

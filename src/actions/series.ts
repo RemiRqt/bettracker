@@ -112,14 +112,43 @@ export async function deleteSeries(seriesId: string) {
     throw new Error("Vous devez etre connecte.");
   }
 
-  // Delete all bets first (foreign key constraint)
-  await supabase.from("bets").delete().eq("series_id", seriesId);
+  // Verify the series belongs to the user and is "en_cours"
+  const { data: series, error: seriesError } = await supabase
+    .from("series")
+    .select("id, status")
+    .eq("id", seriesId)
+    .eq("user_id", user.id)
+    .single();
 
+  if (seriesError || !series) {
+    return { error: "Serie introuvable." };
+  }
+
+  if (series.status !== "en_cours") {
+    return { error: "Seules les series en cours peuvent etre supprimees." };
+  }
+
+  // Verify the series has exactly 1 bet (bet #1) and it's not yet validated
+  const { data: bets, error: betsError } = await supabase
+    .from("bets")
+    .select("id, bet_number, result")
+    .eq("series_id", seriesId);
+
+  if (betsError) {
+    return { error: `Erreur: ${betsError.message}` };
+  }
+
+  if (!bets || bets.length !== 1 || bets[0].bet_number !== 1 || bets[0].result !== null) {
+    return {
+      error: "Seules les series avec uniquement le pari #1 en cours peuvent etre supprimees.",
+    };
+  }
+
+  // Delete the series (cascade will delete the bet)
   const { error } = await supabase
     .from("series")
     .delete()
-    .eq("id", seriesId)
-    .eq("user_id", user.id);
+    .eq("id", seriesId);
 
   if (error) {
     return { error: `Erreur: ${error.message}` };
@@ -127,6 +156,8 @@ export async function deleteSeries(seriesId: string) {
 
   revalidatePath("/series");
   revalidatePath("/series/new");
+  revalidatePath("/");
 
   return { success: true };
 }
+
