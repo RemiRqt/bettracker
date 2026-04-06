@@ -57,6 +57,18 @@ export async function createSeries(formData: FormData) {
     return { error: `Erreur lors de la creation de la serie: ${error.message}` };
   }
 
+  // Auto-create equipe entry if it doesn't exist (one per name+bet_type combination)
+  await supabase
+    .from("equipes")
+    .upsert(
+      {
+        user_id: user.id,
+        name: subject.trim(),
+        bet_type,
+      },
+      { onConflict: "user_id,name,bet_type", ignoreDuplicates: true }
+    );
+
   revalidatePath("/series");
   redirect(`/series/${data.id}`);
 }

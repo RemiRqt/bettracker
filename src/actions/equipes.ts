@@ -220,6 +220,14 @@ export async function placeBet(data: {
       return { error: `Erreur creation serie: ${seriesError.message}` };
     }
 
+    // Auto-create equipe entry if it doesn't exist
+    await supabase
+      .from("equipes")
+      .upsert(
+        { user_id: user.id, name: equipeName, bet_type: betType },
+        { onConflict: "user_id,name,bet_type", ignoreDuplicates: true }
+      );
+
     seriesId = newSeries.id;
     T = targetGain;
     n = 1;
