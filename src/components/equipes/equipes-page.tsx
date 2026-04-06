@@ -24,6 +24,7 @@ import {
   Inbox,
   Loader2,
   TrendingUp,
+  CalendarClock,
 } from "lucide-react";
 
 // === Types ===
@@ -79,9 +80,19 @@ const FILTER_OPTIONS: {
 interface EquipesPageProps {
   equipes: MergedEquipe[];
   logoMap: Record<string, string>;
+  nextFixtureMap?: Record<string, { date: string }>;
 }
 
-export function EquipesPage({ equipes: initialEquipes, logoMap }: EquipesPageProps) {
+function formatFixtureDateTime(iso: string): string {
+  const d = new Date(iso);
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${day}/${month} a ${hours}h${minutes}`;
+}
+
+export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap = {} }: EquipesPageProps) {
   const [equipes] = useState(initialEquipes);
   const [, startTransition] = useTransition();
 
@@ -305,8 +316,33 @@ export function EquipesPage({ equipes: initialEquipes, logoMap }: EquipesPagePro
             const lostPct = barTotal > 0 ? (eq.totalLostStake / barTotal) * 100 : 0;
             const pendingPct = barTotal > 0 ? (eq.potentialGains / barTotal) * 100 : 0;
 
+            const nextFixture = nextFixtureMap[eq.name];
+            const showFixtureBanner = !!(eq.activeSeries && nextFixture);
+            const canBetFromBanner = !!(eq.activeSeries && !eq.activeSeries.hasPendingBet);
+
             return (
               <div key={key} className="rounded-xl bg-[#1e293b] overflow-hidden">
+                {/* Next fixture banner (only when there's an active series + upcoming fixture) */}
+                {showFixtureBanner && (
+                  <div className="flex items-center justify-between px-3 py-2 bg-blue-500/10 border-b border-blue-500/20">
+                    <div className="flex items-center gap-1.5 text-xs text-blue-300">
+                      <CalendarClock className="h-3.5 w-3.5" />
+                      <span className="font-medium">
+                        Prochain match : {formatFixtureDateTime(nextFixture.date)}
+                      </span>
+                    </div>
+                    {canBetFromBanner && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openBetDialog(eq); }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors"
+                      >
+                        <Plus className="h-3 w-3" />
+                        Parier
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {/* Card header - clickable to expand */}
                 <button
                   onClick={() => toggleExpand(key)}

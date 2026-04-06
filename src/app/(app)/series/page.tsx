@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { EquipesPage } from "@/components/equipes/equipes-page";
 import type { SeriesWithBets } from "@/lib/types";
+import type { CachedFixture } from "@/actions/teams";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export default async function EquipesRoute() {
         .order("created_at", { ascending: false }),
       supabase
         .from("team_mappings")
-        .select("subject, logo_url, api_team_id, is_club"),
+        .select("subject, logo_url, api_team_id, is_club, cached_fixtures"),
     ]);
 
   const allSeries = (series ?? []) as SeriesWithBets[];
@@ -42,6 +43,27 @@ export default async function EquipesRoute() {
   for (const m of teamMappings ?? []) {
     if (!m.is_club && !logoMap[m.subject] && m.api_team_id && apiIdToLogo[m.api_team_id]) {
       logoMap[m.subject] = apiIdToLogo[m.api_team_id];
+    }
+  }
+
+  // Build map: subject → next fixture (earliest scheduled match in the future)
+  // Path: subject → api_team_id → club entry → cached_fixtures → first future fixture
+  const apiIdToNextFixture: Record<number, { date: string }> = {};
+  const nowMs = Date.now();
+  for (const m of teamMappings ?? []) {
+    if (!m.is_club || !m.api_team_id) continue;
+    const fixtures = (m.cached_fixtures as CachedFixture[] | null) ?? [];
+    const future = fixtures
+      .filter((f) => new Date(f.date).getTime() > nowMs)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    if (future.length > 0) {
+      apiIdToNextFixture[m.api_team_id] = { date: future[0].date };
+    }
+  }
+  const nextFixtureMap: Record<string, { date: string }> = {};
+  for (const m of teamMappings ?? []) {
+    if (m.api_team_id && apiIdToNextFixture[m.api_team_id]) {
+      nextFixtureMap[m.subject] = apiIdToNextFixture[m.api_team_id];
     }
   }
 
@@ -166,5 +188,5 @@ export default async function EquipesRoute() {
   // Sort by last bet date descending
   mergedEquipes.sort((a, b) => b.lastBetDate.localeCompare(a.lastBetDate));
 
-  return <EquipesPage equipes={mergedEquipes} logoMap={logoMap} />;
+  return <EquipesPage equipes={mergedEquipes} logoMap={logoMap} nextFixtureMap={nextFixtureMap} />;
 }
