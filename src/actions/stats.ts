@@ -93,21 +93,20 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   // --- Total Gains (sum of stake * odds for won bets) ---
   const totalGains = Math.round(totalWon * 100) / 100;
 
-  // --- Rendement = total gains / total mise ---
+  // --- Rendement = (total gains - total mise) / total mise * 100 ---
   const roi =
     totalStakes > 0
-      ? Math.round((totalGains / totalStakes) * 10000) / 100
+      ? Math.round(((totalGains - totalStakes) / totalStakes) * 10000) / 100
       : 0;
 
   // --- Mise en cours (pending stakes) ---
   const miseEnCours =
     Math.round(pendingBets.reduce((sum, b) => sum + b.stake, 0) * 100) / 100;
 
-  // --- Gains potentiels (for pending bets: stake * odds - stake) ---
+  // --- Gains potentiels (for pending bets: stake * odds) ---
   const gainsPotentiels =
     Math.round(
-      pendingBets.reduce((sum, b) => sum + (b.stake * b.odds - b.stake), 0) *
-        100
+      pendingBets.reduce((sum, b) => sum + b.stake * b.odds, 0) * 100
     ) / 100;
 
   // --- Series en cours ---
