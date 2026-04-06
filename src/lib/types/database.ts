@@ -197,6 +197,81 @@ export interface Database {
         };
         Relationships: [];
       };
+      user_settings: {
+        Row: {
+          user_id: string;
+          notifications_enabled: boolean;
+          notification_lead_minutes: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          notifications_enabled?: boolean;
+          notification_lead_minutes?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          notifications_enabled?: boolean;
+          notification_lead_minutes?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          endpoint?: string;
+          p256dh?: string;
+          auth?: string;
+          user_agent?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      sent_notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          fixture_id: number;
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          fixture_id: number;
+          sent_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          fixture_id?: number;
+          sent_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

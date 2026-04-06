@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { getTransactions } from "@/actions/transactions";
 import { ensureTeamMappings } from "@/actions/teams";
+import { getNotificationSettings } from "@/actions/notifications";
 import { TransactionForm } from "@/components/profile/transaction-form";
 import { TransactionList } from "@/components/profile/transaction-list";
 import { FollowedTeams } from "@/components/profile/followed-teams";
+import { NotificationSettings } from "@/components/profile/notification-settings";
 import { SignOutButton } from "@/components/profile/sign-out-button";
 import { User } from "lucide-react";
 
@@ -17,9 +19,10 @@ export default async function ProfilePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [transactions, teamMappings] = await Promise.all([
+  const [transactions, teamMappings, notifSettings] = await Promise.all([
     getTransactions(),
     ensureTeamMappings(),
+    getNotificationSettings(),
   ]);
 
   const totalDeposits = transactions
@@ -78,6 +81,12 @@ export default async function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Notifications */}
+      <NotificationSettings
+        initialEnabled={notifSettings.notifications_enabled}
+        initialLeadMinutes={notifSettings.notification_lead_minutes}
+      />
 
       {/* Followed teams section */}
       <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
