@@ -33,7 +33,7 @@ export interface DashboardStats {
   totalDeposits: number;
   totalWithdrawals: number;
   bettingProfit: number;
-  capitalEvolution: { date: string; capital: number }[];
+  capitalEvolution: { date: string; capital: number; invested: number }[];
   successByRank: { rank: number; won: number; total: number }[];
   distributionByType: { type: string; count: number; percentage: number }[];
 }

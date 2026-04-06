@@ -133,11 +133,12 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         ) / 100
       : 0;
 
-  // --- Capital evolution ---
-  // Merge transactions and settled bets into one timeline
+  // --- Capital evolution + Invested evolution ---
+  // Capital = bankroll (deposits - withdrawals + winnings - losses)
+  // Invested = net deposits (deposits - withdrawals only) — the money the user put in
   type TimelineEntry =
     | { kind: "transaction"; created_at: string; type: string; amount: number }
-    | { kind: "bet"; created_at: string; result: string; stake: number; odds: number };
+    | { kind: "bet_settled"; created_at: string; result: string; stake: number; odds: number };
 
   const timeline: TimelineEntry[] = [
     ...allTransactions.map((t) => ({
@@ -147,7 +148,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       amount: t.amount,
     })),
     ...settledBets.map((b) => ({
-      kind: "bet" as const,
+      kind: "bet_settled" as const,
       created_at: b.created_at,
       result: b.result as string,
       stake: b.stake,
@@ -158,16 +159,19 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
-  // Build daily capital map from timeline events
+  // Build daily snapshots from timeline events
   let runningCapital = 0;
-  const dailyCapital = new Map<string, number>();
+  let runningInvested = 0;
+  const dailySnapshot = new Map<string, { capital: number; invested: number }>();
 
   for (const entry of timeline) {
     if (entry.kind === "transaction") {
       if (entry.type === "depot") {
         runningCapital += entry.amount;
+        runningInvested += entry.amount;
       } else if (entry.type === "retrait") {
         runningCapital -= entry.amount;
+        runningInvested -= entry.amount;
       }
     } else {
       if (entry.result === "gagne") {
@@ -177,29 +181,36 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       }
     }
     const dayKey = entry.created_at.slice(0, 10);
-    dailyCapital.set(dayKey, Math.round(runningCapital * 100) / 100);
+    dailySnapshot.set(dayKey, {
+      capital: Math.round(runningCapital * 100) / 100,
+      invested: Math.round(runningInvested * 100) / 100,
+    });
   }
 
   // Fill every day from first event to today
-  const capitalEvolution: { date: string; capital: number }[] = [];
+  const capitalEvolution: { date: string; capital: number; invested: number }[] = [];
 
-  if (dailyCapital.size > 0) {
-    const sortedDays = [...dailyCapital.keys()].sort();
+  if (dailySnapshot.size > 0) {
+    const sortedDays = [...dailySnapshot.keys()].sort();
     const startDate = new Date(sortedDays[0]);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     let prevCapital = 0;
+    let prevInvested = 0;
     const current = new Date(startDate);
 
     while (current <= today) {
       const key = current.toISOString().slice(0, 10);
-      if (dailyCapital.has(key)) {
-        prevCapital = dailyCapital.get(key)!;
+      const snap = dailySnapshot.get(key);
+      if (snap) {
+        prevCapital = snap.capital;
+        prevInvested = snap.invested;
       }
       capitalEvolution.push({
         date: `${key}T12:00:00`,
         capital: prevCapital,
+        invested: prevInvested,
       });
       current.setDate(current.getDate() + 1);
     }

@@ -9,17 +9,17 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  Legend,
 } from "recharts";
 import { cn } from "@/lib/utils";
 
 interface CapitalChartProps {
-  data: { date: string; capital: number }[];
+  data: { date: string; capital: number; invested: number }[];
 }
 
-type Period = "1j" | "1s" | "1m" | "3m" | "tout";
+type Period = "1s" | "1m" | "3m" | "tout";
 
 const PERIODS: { key: Period; label: string }[] = [
-  { key: "1j", label: "1J" },
   { key: "1s", label: "1S" },
   { key: "1m", label: "1M" },
   { key: "3m", label: "3M" },
@@ -29,8 +29,6 @@ const PERIODS: { key: Period; label: string }[] = [
 function getPeriodStart(period: Period): Date | null {
   const now = new Date();
   switch (period) {
-    case "1j":
-      return new Date(now.getTime() - 24 * 60 * 60 * 1000);
     case "1s":
       return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     case "1m":
@@ -54,17 +52,23 @@ function CustomTooltip({
   payload,
 }: {
   active?: boolean;
-  payload?: { value: number; payload: { date: string; timestamp: number } }[];
+  payload?: {
+    value: number;
+    name: string;
+    color: string;
+    payload: { date: string; timestamp: number };
+  }[];
 }) {
   if (!active || !payload || !payload.length) return null;
 
-  const item = payload[0];
   return (
-    <div className="rounded-lg bg-[#1e293b] border border-slate-700 px-3 py-2 shadow-lg">
-      <p className="text-xs text-slate-400">{formatDate(item.payload.date)}</p>
-      <p className="text-sm font-bold text-emerald-400">
-        {item.value.toFixed(2)} €
-      </p>
+    <div className="rounded-lg bg-[#1e293b] border border-slate-700 px-3 py-2 shadow-lg space-y-1">
+      <p className="text-xs text-slate-400">{formatDate(payload[0].payload.date)}</p>
+      {payload.map((p) => (
+        <p key={p.name} className="text-sm font-bold" style={{ color: p.color }}>
+          {p.name === "capital" ? "Capital" : "Investi"} : {p.value.toFixed(2)} €
+        </p>
+      ))}
     </div>
   );
 }
@@ -84,8 +88,6 @@ export function CapitalChart({ data }: CapitalChartProps) {
     const startTs = start.getTime();
     const filtered = withTimestamp.filter((d) => d.timestamp >= startTs);
 
-    // If filtering removes all data, find the last point before the cutoff
-    // to show a starting value
     if (filtered.length === 0) {
       const before = withTimestamp.filter((d) => d.timestamp < startTs);
       if (before.length > 0) {
@@ -105,7 +107,7 @@ export function CapitalChart({ data }: CapitalChartProps) {
   return (
     <div className="flex flex-col h-full gap-2">
       {/* Period selector */}
-      <div className="grid grid-cols-5 gap-1">
+      <div className="grid grid-cols-4 gap-1">
         {PERIODS.map((p) => (
           <button
             key={p.key}
@@ -139,6 +141,10 @@ export function CapitalChart({ data }: CapitalChartProps) {
                   <stop offset="0%" stopColor="#10b981" stopOpacity={0.3} />
                   <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
                 </linearGradient>
+                <linearGradient id="investedGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
               <XAxis
@@ -149,6 +155,20 @@ export function CapitalChart({ data }: CapitalChartProps) {
               />
               <YAxis hide />
               <Tooltip content={<CustomTooltip />} />
+              <Legend
+                verticalAlign="top"
+                height={24}
+                iconType="line"
+                wrapperStyle={{ fontSize: "11px", color: "#94a3b8" }}
+                formatter={(value) => (value === "capital" ? "Capital" : "Investi")}
+              />
+              <Area
+                type="monotone"
+                dataKey="invested"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                fill="url(#investedGradient)"
+              />
               <Area
                 type="monotone"
                 dataKey="capital"
