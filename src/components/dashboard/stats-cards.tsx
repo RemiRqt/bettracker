@@ -100,7 +100,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
         />
         <StatCard
           label="Rendement"
-          value={formatPercent(stats.roi)}
+          value={formatPercent(stats.roi, 3)}
           color={roiPositive ? "text-emerald-400" : "text-red-400"}
           icon={
             roiPositive ? (

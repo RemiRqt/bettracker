@@ -96,7 +96,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   // --- Rendement = (total gains - total mise) / total mise * 100 ---
   const roi =
     totalStakes > 0
-      ? Math.round(((totalGains - totalStakes) / totalStakes) * 10000) / 100
+      ? Math.round(((totalGains - totalStakes) / totalStakes) * 100000) / 1000
       : 0;
 
   // --- Mise en cours (pending stakes) ---

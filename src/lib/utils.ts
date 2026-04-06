@@ -12,10 +12,10 @@ export function formatEuros(amount: number): string {
   }).format(amount);
 }
 
-export function formatPercent(value: number): string {
+export function formatPercent(value: number, digits: number = 1): string {
   return new Intl.NumberFormat("fr-FR", {
     style: "percent",
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
   }).format(value / 100);
 }
