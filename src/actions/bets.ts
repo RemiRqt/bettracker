@@ -154,10 +154,9 @@ export async function deleteBet(betId: string) {
     throw new Error("Vous devez etre connecte.");
   }
 
-  // Fetch the bet
   const { data: bet, error: betError } = await supabase
     .from("bets")
-    .select("id, series_id, result")
+    .select("id, series_id, bet_number")
     .eq("id", betId)
     .single();
 
@@ -165,18 +164,32 @@ export async function deleteBet(betId: string) {
     return { error: "Pari introuvable." };
   }
 
-  const { error: deleteError } = await supabase
-    .from("bets")
-    .delete()
-    .eq("id", betId);
+  // If this is the first bet of the series, delete the entire series
+  // (the bet will be deleted automatically via ON DELETE CASCADE)
+  if (bet.bet_number === 1) {
+    const { error: seriesDeleteError } = await supabase
+      .from("series")
+      .delete()
+      .eq("id", bet.series_id);
 
-  if (deleteError) {
-    return { error: `Erreur: ${deleteError.message}` };
+    if (seriesDeleteError) {
+      return { error: `Erreur: ${seriesDeleteError.message}` };
+    }
+  } else {
+    const { error: deleteError } = await supabase
+      .from("bets")
+      .delete()
+      .eq("id", betId);
+
+    if (deleteError) {
+      return { error: `Erreur: ${deleteError.message}` };
+    }
   }
 
   revalidatePath(`/series/${bet.series_id}`);
   revalidatePath("/series");
   revalidatePath("/series/new");
+  revalidatePath("/");
 
   return { success: true };
 }
