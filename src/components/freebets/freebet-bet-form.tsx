@@ -3,25 +3,21 @@
 import { useState } from "react";
 import { placeFreebetBet } from "@/actions/freebets";
 import { formatEuros } from "@/lib/utils";
-import type { Freebet } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CircleDollarSign } from "lucide-react";
 
 interface FreebetBetFormProps {
-  freebets: Freebet[];
+  totalBalance: number;
 }
 
-export function FreebetBetForm({ freebets }: FreebetBetFormProps) {
-  const [selectedId, setSelectedId] = useState(freebets[0]?.id ?? "");
+export function FreebetBetForm({ totalBalance }: FreebetBetFormProps) {
   const [subject, setSubject] = useState("");
   const [odds, setOdds] = useState("");
   const [stake, setStake] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const selected = freebets.find((f) => f.id === selectedId);
-  const maxStake = selected?.remaining_amount ?? 0;
   const numOdds = parseFloat(odds);
   const numStake = parseFloat(stake);
   const potentialProfit =
@@ -35,7 +31,6 @@ export function FreebetBetForm({ freebets }: FreebetBetFormProps) {
     setLoading(true);
 
     const result = await placeFreebetBet({
-      freebetId: selectedId,
       subject,
       odds: numOdds,
       stake: numStake,
@@ -53,22 +48,15 @@ export function FreebetBetForm({ freebets }: FreebetBetFormProps) {
 
   return (
     <div className="rounded-xl bg-[#1e293b] p-4">
-      <h2 className="text-sm font-semibold text-slate-200 mb-3">
-        Placer un pari freebet
-      </h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold text-slate-200">
+          Placer un pari freebet
+        </h2>
+        <span className="text-xs text-amber-400 font-medium">
+          Solde : {formatEuros(totalBalance)}
+        </span>
+      </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <select
-          value={selectedId}
-          onChange={(e) => setSelectedId(e.target.value)}
-          className="h-10 rounded-lg bg-[#0f172a] border border-slate-600 text-slate-100 px-3 text-sm"
-        >
-          {freebets.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.source} — {formatEuros(f.remaining_amount)} dispo
-            </option>
-          ))}
-        </select>
-
         <Input
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
@@ -94,8 +82,8 @@ export function FreebetBetForm({ freebets }: FreebetBetFormProps) {
             type="number"
             step="0.01"
             min="0.01"
-            max={maxStake}
-            placeholder={`Mise (max ${formatEuros(maxStake)})`}
+            max={totalBalance}
+            placeholder={`Mise (max ${formatEuros(totalBalance)})`}
             required
             className="h-10 rounded-lg bg-[#0f172a] border-slate-600 text-slate-100 placeholder:text-slate-500"
           />

@@ -10,24 +10,23 @@ export default async function FreebetsPage() {
     getFreebetBets(),
   ]);
 
-  const availableFreebets = freebets.filter((f) => f.remaining_amount > 0);
+  const totalBalance = freebets.reduce((s, f) => s + f.remaining_amount, 0);
 
   return (
     <div className="space-y-6 pb-24">
-      <div>
-        <h1 className="text-lg font-bold text-slate-100">Freebets</h1>
-        <p className="text-xs text-slate-400">
-          Gérez vos crédits freebet et placez des paris
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-bold text-slate-100">Freebets</h1>
+          <p className="text-xs text-slate-400">
+            Gérez vos crédits freebet et placez des paris
+          </p>
+        </div>
+        <FreebetForm />
       </div>
-
-      <FreebetForm />
 
       {freebets.length > 0 && <FreebetList freebets={freebets} />}
 
-      {availableFreebets.length > 0 && (
-        <FreebetBetForm freebets={availableFreebets} />
-      )}
+      {totalBalance > 0 && <FreebetBetForm totalBalance={totalBalance} />}
 
       {freebetBets.length > 0 && <FreebetBetsList bets={freebetBets} />}
     </div>

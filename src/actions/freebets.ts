@@ -92,12 +92,11 @@ export async function getFreebetBets(): Promise<(FreebetBet & { freebet_source: 
 }
 
 export async function placeFreebetBet(data: {
-  freebetId: string;
   subject: string;
   odds: number;
   stake: number;
 }) {
-  const { freebetId, subject, odds, stake } = data;
+  const { subject, odds, stake } = data;
 
   if (!subject?.trim()) return { error: "Le sujet est requis." };
   if (odds <= 1) return { error: "La cote doit être supérieure à 1." };
@@ -109,31 +108,58 @@ export async function placeFreebetBet(data: {
 
   const roundedStake = Math.round(stake * 100) / 100;
 
-  const { data: freebet } = await supabase
+  // Get freebets with remaining balance, oldest first (FIFO)
+  const { data: freebets } = await supabase
     .from("freebets")
-    .select("remaining_amount")
-    .eq("id", freebetId)
+    .select("id, remaining_amount")
     .eq("user_id", user.id)
-    .single();
+    .gt("remaining_amount", 0)
+    .order("created_at", { ascending: true });
 
-  if (!freebet) return { error: "Freebet introuvable." };
-  if (freebet.remaining_amount < roundedStake) {
-    return { error: `Solde insuffisant (${freebet.remaining_amount}€ disponible).` };
+  if (!freebets || freebets.length === 0) {
+    return { error: "Aucun freebet disponible." };
   }
 
-  const newRemaining = Math.round((freebet.remaining_amount - roundedStake) * 100) / 100;
+  const totalBalance = freebets.reduce((s, f) => s + f.remaining_amount, 0);
+  if (totalBalance < roundedStake) {
+    return { error: `Solde insuffisant (${Math.round(totalBalance * 100) / 100}€ disponible).` };
+  }
 
-  const { error: decError } = await supabase
-    .from("freebets")
-    .update({ remaining_amount: newRemaining })
-    .eq("id", freebetId)
-    .eq("user_id", user.id);
+  // Consume from oldest to newest
+  let remaining = roundedStake;
+  const consumptions: { id: string; oldAmount: number; deducted: number }[] = [];
 
-  if (decError) return { error: `Erreur: ${decError.message}` };
+  for (const fb of freebets) {
+    if (remaining <= 0) break;
+    const deducted = Math.min(fb.remaining_amount, remaining);
+    consumptions.push({ id: fb.id, oldAmount: fb.remaining_amount, deducted });
+    remaining = Math.round((remaining - deducted) * 100) / 100;
+  }
+
+  // Use the first consumed freebet as the freebet_id for the bet record
+  const primaryFreebetId = consumptions[0].id;
+
+  // Deduct from each freebet
+  for (const c of consumptions) {
+    const newAmount = Math.round((c.oldAmount - c.deducted) * 100) / 100;
+    const { error: decError } = await supabase
+      .from("freebets")
+      .update({ remaining_amount: newAmount })
+      .eq("id", c.id);
+
+    if (decError) {
+      // Rollback previous deductions
+      for (const prev of consumptions) {
+        if (prev.id === c.id) break;
+        await supabase.from("freebets").update({ remaining_amount: prev.oldAmount }).eq("id", prev.id);
+      }
+      return { error: `Erreur: ${decError.message}` };
+    }
+  }
 
   const { error: insertError } = await supabase.from("freebet_bets").insert({
     user_id: user.id,
-    freebet_id: freebetId,
+    freebet_id: primaryFreebetId,
     subject: subject.trim(),
     odds,
     stake: roundedStake,
@@ -141,11 +167,10 @@ export async function placeFreebetBet(data: {
   });
 
   if (insertError) {
-    // Rollback remaining_amount
-    await supabase
-      .from("freebets")
-      .update({ remaining_amount: freebet.remaining_amount })
-      .eq("id", freebetId);
+    // Rollback all deductions
+    for (const c of consumptions) {
+      await supabase.from("freebets").update({ remaining_amount: c.oldAmount }).eq("id", c.id);
+    }
     return { error: `Erreur: ${insertError.message}` };
   }
 
