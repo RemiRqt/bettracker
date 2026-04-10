@@ -186,8 +186,15 @@ export default async function EquipesRoute() {
     };
   });
 
-  // Sort by last bet date descending
-  mergedEquipes.sort((a, b) => b.lastBetDate.localeCompare(a.lastBetDate));
+  // Sort: equipes without series first (newest created), then by last bet date descending
+  mergedEquipes.sort((a, b) => {
+    const aEmpty = a.seriesCount === 0;
+    const bEmpty = b.seriesCount === 0;
+    if (aEmpty && !bEmpty) return -1;
+    if (!aEmpty && bEmpty) return 1;
+    if (aEmpty && bEmpty) return 0;
+    return b.lastBetDate.localeCompare(a.lastBetDate);
+  });
 
   return <EquipesPage equipes={mergedEquipes} logoMap={logoMap} nextFixtureMap={nextFixtureMap} />;
 }

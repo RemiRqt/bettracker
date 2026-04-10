@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useTransition, useCallback } from "react";
-import { createEquipe, deleteEquipe, placeBet } from "@/actions/equipes";
+import { createEquipe, deleteEquipe, placeBet, updateEquipeSport } from "@/actions/equipes";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { EquipeSeriesItem } from "@/components/series/equipe-series-item";
 import type { EquipeSeries } from "@/components/series/equipes-list";
@@ -151,6 +151,12 @@ export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap =
   });
 
   const sorted = [...filtered].sort((a, b) => {
+    // Equipes without series always first
+    const aEmpty = a.seriesCount === 0;
+    const bEmpty = b.seriesCount === 0;
+    if (aEmpty && !bEmpty) return -1;
+    if (!aEmpty && bEmpty) return 1;
+
     let cmp = 0;
     switch (sortBy) {
       case "date": cmp = b.lastBetDate.localeCompare(a.lastBetDate); break;
@@ -367,20 +373,26 @@ export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap =
                     </div>
                   </div>
 
-                  {/* Row 2: stats + ROI */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">
-                      {eq.seriesCount} serie{eq.seriesCount > 1 ? "s" : ""} · {eq.betsCount} pari{eq.betsCount > 1 ? "s" : ""}
-                      {eq.activeSeries && (
-                        <span className="text-blue-400 ml-2">
-                          <TrendingUp className="h-3 w-3 inline" /> en cours (#{eq.activeSeries.betCount})
-                        </span>
-                      )}
-                    </span>
-                    <span className={cn("text-xs font-medium", eq.roi >= 0 ? "text-emerald-400/70" : "text-red-400/70")}>
-                      ROI {formatPercent(eq.roi)}
-                    </span>
-                  </div>
+                  {/* Row 2: stats + ROI or empty alert */}
+                  {eq.seriesCount === 0 ? (
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <span className="text-xs text-amber-400">Pas de série créée</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-500">
+                        {eq.seriesCount} serie{eq.seriesCount > 1 ? "s" : ""} · {eq.betsCount} pari{eq.betsCount > 1 ? "s" : ""}
+                        {eq.activeSeries && (
+                          <span className="text-blue-400 ml-2">
+                            <TrendingUp className="h-3 w-3 inline" /> en cours (#{eq.activeSeries.betCount})
+                          </span>
+                        )}
+                      </span>
+                      <span className={cn("text-xs font-medium", eq.roi >= 0 ? "text-emerald-400/70" : "text-red-400/70")}>
+                        ROI {formatPercent(eq.roi)}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Row 3: progress bar */}
                   {barTotal > 0 && (
@@ -421,6 +433,31 @@ export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap =
                         Nouvelle serie
                       </button>
                     )}
+
+                    {/* Sport selector */}
+                    <div className="pt-2 border-t border-slate-700/30">
+                      <span className="text-[10px] text-slate-500 uppercase tracking-wide">Sport</span>
+                      <div className="flex gap-1.5 mt-1">
+                        {(Object.entries(SPORTS) as [string, string][]).map(([sKey, sLabel]) => (
+                          <button
+                            key={sKey}
+                            onClick={async () => {
+                              await updateEquipeSport(eq.equipeId, sKey);
+                              startTransition(() => { window.location.reload(); });
+                            }}
+                            className={cn(
+                              "flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors cursor-pointer",
+                              eq.sport === sKey
+                                ? "bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/30"
+                                : "bg-[#0f172a] text-slate-400 border border-slate-700 hover:border-slate-500"
+                            )}
+                          >
+                            <span>{SPORT_EMOJIS[sKey]}</span>
+                            <span className="hidden sm:inline">{sLabel}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
