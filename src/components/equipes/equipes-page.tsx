@@ -5,7 +5,7 @@ import { createEquipe, deleteEquipe, placeBet } from "@/actions/equipes";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { EquipeSeriesItem } from "@/components/series/equipe-series-item";
 import type { EquipeSeries } from "@/components/series/equipes-list";
-import { BET_TYPES } from "@/lib/constants";
+import { BET_TYPES, SPORTS, SPORT_EMOJIS } from "@/lib/constants";
 import { formatEuros, formatPercent, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -33,6 +33,7 @@ export interface MergedEquipe {
   equipeId: string;
   name: string;
   bet_type: string;
+  sport: string;
   totalStake: number;
   netProfit: number;
   roi: number;
@@ -107,6 +108,7 @@ export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap =
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newBetType, setNewBetType] = useState("victoire");
+  const [newSport, setNewSport] = useState("football");
   const [createError, setCreateError] = useState("");
 
   // Bet dialog
@@ -169,12 +171,12 @@ export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap =
   // === Create Equipe ===
   const handleCreate = useCallback(async () => {
     setCreateError("");
-    const result = await createEquipe(newName, newBetType);
+    const result = await createEquipe(newName, newBetType, newSport);
     if (result.error) { setCreateError(result.error); return; }
     setCreateOpen(false);
     setNewName("");
     startTransition(() => { window.location.reload(); });
-  }, [newName, newBetType]);
+  }, [newName, newBetType, newSport]);
 
   // === Open Bet Dialog ===
   const openBetDialog = useCallback((eq: MergedEquipe) => {
@@ -351,7 +353,7 @@ export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap =
                   {/* Row 1: logo + name + type + action buttons */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <TeamLogo logoUrl={logoMap[eq.name]} size="sm" className="flex-shrink-0" />
+                      <TeamLogo logoUrl={logoMap[eq.name]} sport={eq.sport} size="sm" className="flex-shrink-0" />
                       <span className="text-base font-bold text-slate-100 truncate">{eq.name}</span>
                       <Badge className="shrink-0 bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
                         {betTypeLabel}
@@ -463,6 +465,26 @@ export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap =
                     )}
                   >
                     {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 mb-1.5 block">Sport</label>
+              <div className="flex gap-2">
+                {(Object.entries(SPORTS) as [string, string][]).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setNewSport(key)}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors border flex items-center justify-center gap-1",
+                      newSport === key
+                        ? "bg-[#10b981] border-[#10b981] text-white"
+                        : "bg-[#0f172a] border-slate-600 text-slate-400 hover:border-slate-500"
+                    )}
+                  >
+                    <span>{SPORT_EMOJIS[key]}</span>
+                    <span className="hidden sm:inline">{label}</span>
                   </button>
                 ))}
               </div>

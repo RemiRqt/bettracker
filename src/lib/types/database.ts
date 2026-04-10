@@ -131,6 +131,7 @@ export interface Database {
           user_id: string;
           name: string;
           bet_type: string;
+          sport: string;
           created_at: string;
         };
         Insert: {
@@ -138,6 +139,7 @@ export interface Database {
           user_id: string;
           name: string;
           bet_type: string;
+          sport?: string;
           created_at?: string;
         };
         Update: {
@@ -145,9 +147,78 @@ export interface Database {
           user_id?: string;
           name?: string;
           bet_type?: string;
+          sport?: string;
           created_at?: string;
         };
         Relationships: [];
+      };
+      freebets: {
+        Row: {
+          id: string;
+          user_id: string;
+          source: string;
+          initial_amount: number;
+          remaining_amount: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          source: string;
+          initial_amount: number;
+          remaining_amount: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          source?: string;
+          initial_amount?: number;
+          remaining_amount?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      freebet_bets: {
+        Row: {
+          id: string;
+          user_id: string;
+          freebet_id: string;
+          subject: string;
+          odds: number;
+          stake: number;
+          result: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          freebet_id: string;
+          subject: string;
+          odds: number;
+          stake: number;
+          result?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          freebet_id?: string;
+          subject?: string;
+          odds?: number;
+          stake?: number;
+          result?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "freebet_bets_freebet_id_fkey";
+            columns: ["freebet_id"];
+            isOneToOne: false;
+            referencedRelation: "freebets";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       team_mappings: {
         Row: {

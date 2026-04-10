@@ -31,6 +31,7 @@ export type EquipeSeries = {
 export type Equipe = {
   subject: string;
   bet_type: string;
+  sport: string;
   totalStake: number;
   netProfit: number;
   roi: number;
@@ -228,7 +229,7 @@ export function EquipesList({ equipes, logoMap = {} }: EquipesListProps) {
                   {/* Row 1: logo + name + type + gain + chevron */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <TeamLogo logoUrl={logoMap[equipe.subject]} size="sm" className="flex-shrink-0" />
+                      <TeamLogo logoUrl={logoMap[equipe.subject]} sport={equipe.sport} size="sm" className="flex-shrink-0" />
                       <span className="text-base font-bold text-slate-100 truncate">
                         {equipe.subject}
                       </span>

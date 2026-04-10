@@ -48,12 +48,27 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     allBets = betsData ?? [];
   }
 
-  // Fetch all transactions for the user
-  const { data: transactions, error: transactionsError } = await supabase
-    .from("transactions")
-    .select("id, type, amount, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: true });
+  // Fetch transactions, freebets, and freebet_bets in parallel
+  const [
+    { data: transactions, error: transactionsError },
+    { data: freebetsData },
+    { data: freebetBetsData },
+  ] = await Promise.all([
+    supabase
+      .from("transactions")
+      .select("id, type, amount, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("freebets")
+      .select("id, remaining_amount")
+      .eq("user_id", user.id),
+    supabase
+      .from("freebet_bets")
+      .select("id, freebet_id, odds, stake, result, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true }),
+  ]);
 
   if (transactionsError) {
     throw new Error(
@@ -62,6 +77,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   }
 
   const allTransactions = transactions ?? [];
+  const allFreebets = freebetsData ?? [];
+  const allFreebetBets = freebetBetsData ?? [];
 
   // --- Transaction totals ---
   const totalDeposits = allTransactions
@@ -132,12 +149,42 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         ) / 100
       : 0;
 
+  // --- Freebet stats ---
+  const freebetBalance =
+    Math.round(allFreebets.reduce((sum, f) => sum + f.remaining_amount, 0) * 100) / 100;
+
+  const wonFreebetBets = allFreebetBets.filter((b) => b.result === "gagne");
+  const pendingFreebetBets = allFreebetBets.filter((b) => b.result === null);
+
+  const freebetProfit =
+    Math.round(
+      wonFreebetBets.reduce((sum, b) => sum + (b.stake * b.odds - b.stake), 0) * 100
+    ) / 100;
+
+  const freebetGainsPotentiels =
+    Math.round(
+      pendingFreebetBets.reduce((sum, b) => sum + (b.stake * b.odds - b.stake), 0) * 100
+    ) / 100;
+
+  // Capital including freebet profit
+  const capitalWithFreebets =
+    Math.round((totalDeposits - totalWithdrawals + bettingProfit + freebetProfit) * 100) / 100;
+
+  const capitalDisponible =
+    Math.round((capitalWithFreebets - miseEnCours) * 100) / 100;
+
+  const objectifDeGain =
+    Math.round((capitalDisponible + gainsPotentiels + freebetGainsPotentiels) * 100) / 100;
+
   // --- Capital evolution + Invested evolution ---
   // Capital = bankroll (deposits - withdrawals + winnings - losses)
   // Invested = net deposits (deposits - withdrawals only) — the money the user put in
   type TimelineEntry =
     | { kind: "transaction"; created_at: string; type: string; amount: number }
-    | { kind: "bet_settled"; created_at: string; result: string; stake: number; odds: number };
+    | { kind: "bet_settled"; created_at: string; result: string; stake: number; odds: number }
+    | { kind: "freebet_settled"; created_at: string; result: string; stake: number; odds: number };
+
+  const settledFreebetBets = allFreebetBets.filter((b) => b.result !== null);
 
   const timeline: TimelineEntry[] = [
     ...allTransactions.map((t) => ({
@@ -148,6 +195,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     })),
     ...settledBets.map((b) => ({
       kind: "bet_settled" as const,
+      created_at: b.created_at,
+      result: b.result as string,
+      stake: b.stake,
+      odds: b.odds,
+    })),
+    ...settledFreebetBets.map((b) => ({
+      kind: "freebet_settled" as const,
       created_at: b.created_at,
       result: b.result as string,
       stake: b.stake,
@@ -172,12 +226,18 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         runningCapital -= entry.amount;
         runningInvested -= entry.amount;
       }
-    } else {
+    } else if (entry.kind === "bet_settled") {
       if (entry.result === "gagne") {
         runningCapital += entry.stake * entry.odds - entry.stake;
       } else {
         runningCapital -= entry.stake;
       }
+    } else if (entry.kind === "freebet_settled") {
+      // Freebet wins add profit to capital (not invested)
+      if (entry.result === "gagne") {
+        runningCapital += entry.stake * entry.odds - entry.stake;
+      }
+      // Freebet losses don't affect real capital
     }
     const dayKey = entry.created_at.slice(0, 10);
     dailySnapshot.set(dayKey, {
@@ -251,7 +311,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   );
 
   return {
-    capital,
+    capital: capitalWithFreebets,
+    capitalDisponible,
     totalStakes,
     totalGains,
     roi,
@@ -266,6 +327,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     totalDeposits,
     totalWithdrawals,
     bettingProfit,
+    freebetBalance,
+    freebetProfit,
+    objectifDeGain,
     capitalEvolution,
     successByRank,
     distributionByType,

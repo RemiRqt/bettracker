@@ -159,6 +159,7 @@ export default async function EquipesRoute() {
       equipeId: eq.id,
       name: eq.name,
       bet_type: eq.bet_type,
+      sport: eq.sport,
       totalStake,
       netProfit,
       roi,

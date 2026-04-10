@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Users, CircleDollarSign, CalendarDays } from "lucide-react";
+import { BarChart3, Users, CircleDollarSign, CalendarDays, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/", icon: BarChart3, label: "Dashboard" },
   { href: "/series", icon: Users, label: "Équipes" },
   { href: "/series/new", icon: CircleDollarSign, label: "Paris" },
+  { href: "/freebets", icon: Ticket, label: "Freebets" },
   { href: "/calendar", icon: CalendarDays, label: "Calendrier" },
 ];
 
@@ -44,7 +45,9 @@ export function NavLinks({
               ? pathname === "/series"
               : href === "/calendar"
                 ? pathname === "/calendar"
-                : pathname.startsWith(href);
+                : href === "/freebets"
+                  ? pathname === "/freebets"
+                  : pathname.startsWith(href);
 
         return (
           <Link

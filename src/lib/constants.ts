@@ -25,10 +25,18 @@ export const SPORT_EMOJIS: Record<string, string> = {
   football: "\u26BD",
   tennis: "\uD83C\uDFBE",
   basketball: "\uD83C\uDFC0",
+  basket: "\uD83C\uDFC0",
   rugby: "\uD83C\uDFC9",
   handball: "\uD83E\uDD3E",
   default: "\uD83C\uDFC6",
 };
+
+export const SPORTS = {
+  football: "Football",
+  tennis: "Tennis",
+  rugby: "Rugby",
+  basket: "Basket",
+} as const;
 
 export const FOOTBALL_DATA_COMPETITIONS = [
   { code: "FL1", name: "Ligue 1", flag: "\uD83C\uDDEB\uD83C\uDDF7" },

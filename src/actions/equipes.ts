@@ -11,6 +11,7 @@ export interface Equipe {
   user_id: string;
   name: string;
   bet_type: string;
+  sport: string;
   created_at: string;
 }
 
@@ -44,7 +45,7 @@ export async function getEquipesWithContext(): Promise<EquipeWithContext[]> {
   const [{ data: equipes }, { data: allSeries }] = await Promise.all([
     supabase
       .from("equipes")
-      .select("id, user_id, name, bet_type, created_at")
+      .select("id, user_id, name, bet_type, sport, created_at")
       .eq("user_id", user.id)
       .order("name", { ascending: true }),
     supabase
@@ -105,7 +106,7 @@ export async function getEquipesWithContext(): Promise<EquipeWithContext[]> {
   });
 }
 
-export async function createEquipe(name: string, betType: string) {
+export async function createEquipe(name: string, betType: string, sport: string = "football") {
   if (!name || !name.trim()) {
     return { error: "Le nom est requis." };
   }
@@ -128,6 +129,7 @@ export async function createEquipe(name: string, betType: string) {
     user_id: user.id,
     name: name.trim(),
     bet_type: betType,
+    sport,
   });
 
   if (error) {
@@ -224,7 +226,7 @@ export async function placeBet(data: {
     await supabase
       .from("equipes")
       .upsert(
-        { user_id: user.id, name: equipeName, bet_type: betType },
+        { user_id: user.id, name: equipeName, bet_type: betType, sport: "football" },
         { onConflict: "user_id,name,bet_type", ignoreDuplicates: true }
       );
 
