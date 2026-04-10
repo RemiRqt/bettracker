@@ -88,8 +88,6 @@ function BetCard({
             <span>Cote {bet.odds.toFixed(2)}</span>
             <span>·</span>
             <span>Mise {formatEuros(bet.stake)}</span>
-            <span>·</span>
-            <span className="text-amber-400/70">{bet.freebet_source}</span>
           </div>
         </div>
         <div className="text-right ml-2">

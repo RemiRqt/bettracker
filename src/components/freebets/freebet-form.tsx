@@ -15,7 +15,6 @@ import { Plus } from "lucide-react";
 
 export function FreebetForm() {
   const [open, setOpen] = useState(false);
-  const [source, setSource] = useState("");
   const [amount, setAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -26,7 +25,6 @@ export function FreebetForm() {
     setLoading(true);
 
     const formData = new FormData();
-    formData.set("source", source);
     formData.set("amount", amount);
 
     const result = await addFreebet(formData);
@@ -36,7 +34,6 @@ export function FreebetForm() {
       setError(result.error);
     } else {
       setOpen(false);
-      setSource("");
       setAmount("");
     }
   }
@@ -61,14 +58,6 @@ export function FreebetForm() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <Input
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              placeholder="Source (ex: Unibet promo)"
-              required
-              autoFocus
-              className="h-10 rounded-lg bg-[#0f172a] border-slate-600 text-slate-100 placeholder:text-slate-500"
-            />
             <Input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}

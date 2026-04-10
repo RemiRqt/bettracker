@@ -35,17 +35,14 @@ export function FreebetList({ freebets }: FreebetListProps) {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Ticket className="h-4 w-4 text-amber-400" />
-                <span className="text-sm font-medium text-slate-200">
-                  {fb.source}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-amber-400">
                   {formatEuros(fb.remaining_amount)}
                 </span>
                 <span className="text-xs text-slate-500">
                   / {formatEuros(fb.initial_amount)}
                 </span>
+              </div>
+              <div className="flex items-center gap-2">
                 {confirmId === fb.id ? (
                   <div className="flex gap-1">
                     <button

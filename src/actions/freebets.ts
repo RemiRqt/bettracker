@@ -5,10 +5,8 @@ import { revalidatePath } from "next/cache";
 import type { Freebet, FreebetBet } from "@/lib/types";
 
 export async function addFreebet(formData: FormData) {
-  const source = formData.get("source") as string;
   const amount = parseFloat(formData.get("amount") as string);
 
-  if (!source?.trim()) return { error: "La source est requise." };
   if (!amount || amount <= 0) return { error: "Le montant doit être positif." };
 
   const supabase = await createClient();
@@ -17,7 +15,7 @@ export async function addFreebet(formData: FormData) {
 
   const { error } = await supabase.from("freebets").insert({
     user_id: user.id,
-    source: source.trim(),
+    source: "",
     initial_amount: Math.round(amount * 100) / 100,
     remaining_amount: Math.round(amount * 100) / 100,
   });
