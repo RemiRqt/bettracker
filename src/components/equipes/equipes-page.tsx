@@ -375,8 +375,18 @@ export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap =
 
                   {/* Row 2: stats + ROI or empty alert */}
                   {eq.seriesCount === 0 ? (
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
                       <span className="text-xs text-amber-400">Pas de série créée</span>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await deleteEquipe(eq.equipeId);
+                          startTransition(() => { window.location.reload(); });
+                        }}
+                        className="text-xs text-red-400 hover:text-red-300 cursor-pointer"
+                      >
+                        Supprimer
+                      </button>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
