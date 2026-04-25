@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useTransition, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { createEquipe, deleteEquipe, placeBet, updateEquipeSport } from "@/actions/equipes";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { EquipeSeriesItem } from "@/components/series/equipe-series-item";
@@ -93,9 +94,9 @@ function formatFixtureDateTime(iso: string): string {
   return `${day}/${month} a ${hours}h${minutes}`;
 }
 
-export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap = {} }: EquipesPageProps) {
-  const [equipes] = useState(initialEquipes);
+export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPageProps) {
   const [, startTransition] = useTransition();
+  const router = useRouter();
 
   // Filters & sort
   const [search, setSearch] = useState("");
@@ -181,8 +182,8 @@ export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap =
     if (result.error) { setCreateError(result.error); return; }
     setCreateOpen(false);
     setNewName("");
-    startTransition(() => { window.location.reload(); });
-  }, [newName, newBetType, newSport]);
+    startTransition(() => { router.refresh(); });
+  }, [newName, newBetType, newSport, router]);
 
   // === Open Bet Dialog ===
   const openBetDialog = useCallback((eq: MergedEquipe) => {
@@ -232,8 +233,8 @@ export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap =
     setIsBetting(false);
     if (result.error) { setBetError(result.error); return; }
     setBetEquipe(null);
-    startTransition(() => { window.location.reload(); });
-  }, [betEquipe, odds, stakeOverride, targetGain]);
+    startTransition(() => { router.refresh(); });
+  }, [betEquipe, odds, stakeOverride, targetGain, router]);
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -381,7 +382,7 @@ export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap =
                         onClick={async (e) => {
                           e.stopPropagation();
                           await deleteEquipe(eq.equipeId);
-                          startTransition(() => { window.location.reload(); });
+                          startTransition(() => { router.refresh(); });
                         }}
                         className="text-xs text-red-400 hover:text-red-300 cursor-pointer"
                       >
@@ -453,7 +454,7 @@ export function EquipesPage({ equipes: initialEquipes, logoMap, nextFixtureMap =
                             key={sKey}
                             onClick={async () => {
                               await updateEquipeSport(eq.equipeId, sKey);
-                              startTransition(() => { window.location.reload(); });
+                              startTransition(() => { router.refresh(); });
                             }}
                             className={cn(
                               "flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors cursor-pointer",

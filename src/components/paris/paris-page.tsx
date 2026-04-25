@@ -7,6 +7,7 @@ import { validateResult, deleteBet, updateBet } from "@/actions/bets";
 import { BET_TYPES } from "@/lib/constants";
 import { formatEuros, cn } from "@/lib/utils";
 import { TeamLogo } from "@/components/ui/team-logo";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -69,6 +70,7 @@ export function ParisPage({
 }: ParisPageProps) {
   const searchParams = useSearchParams();
   const initialFilter = (searchParams.get("filter") as FilterKey) || null;
+  const confirm = useConfirm();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -136,8 +138,14 @@ export function ParisPage({
     });
   }
 
-  function handleDelete(betId: string) {
-    if (!confirm("Supprimer ce pari ?")) return;
+  async function handleDelete(betId: string) {
+    const ok = await confirm({
+      title: "Supprimer ce pari ?",
+      description: "Cette action est irréversible.",
+      confirmLabel: "Supprimer",
+      variant: "destructive",
+    });
+    if (!ok) return;
     startTransition(async () => {
       await deleteBet(betId);
     });

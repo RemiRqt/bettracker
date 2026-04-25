@@ -20,6 +20,7 @@ import {
 import { Star, Link2, Search, Loader2, Plus, X, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FOOTBALL_DATA_COMPETITIONS } from "@/lib/constants";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 interface FollowedTeamsProps {
   teamMappings: TeamMapping[];
@@ -35,6 +36,7 @@ interface ApiTeamResult {
 export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsProps) {
   const [mappings, setMappings] = useState(initialMappings);
   const [, startTransition] = useTransition();
+  const confirm = useConfirm();
 
   // Add club dialog
   const [addClubOpen, setAddClubOpen] = useState(false);
@@ -113,9 +115,14 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     setAddClubOpen(false); setSelectedCompetition(""); setClubResults([]); setClubFilter("");
   }, [clubs]);
 
-  const handleDeleteClub = useCallback((club: TeamMapping) => {
-    if (!confirm(`Supprimer ${club.subject} ?`)) return;
-    // Remove club and unlink all subjects linked to it
+  const handleDeleteClub = useCallback(async (club: TeamMapping) => {
+    const ok = await confirm({
+      title: `Supprimer ${club.subject} ?`,
+      description: "Le club sera dissocié des paris qui y sont liés.",
+      confirmLabel: "Supprimer",
+      variant: "destructive",
+    });
+    if (!ok) return;
     setMappings((prev) =>
       prev
         .filter((m) => m.id !== club.id)
@@ -128,7 +135,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     startTransition(async () => {
       await deleteTeamMapping(club.id);
     });
-  }, []);
+  }, [confirm]);
 
   const handleToggleFollow = useCallback((clubId: string) => {
     const club = mappings.find((m) => m.id === clubId);

@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatEuros, formatPercent, cn } from "@/lib/utils";
 import { deleteSeries, abandonSeries } from "@/actions/series";
 import { canDeleteSeries } from "@/lib/series-utils";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/hooks/use-toast";
 import type { EquipeSeries } from "@/components/series/equipes-list";
 import type { SeriesStatus } from "@/lib/types";
 
@@ -18,27 +20,43 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
   const [expanded, setExpanded] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [, startTransition] = useTransition();
+  const confirm = useConfirm();
+  const { toast } = useToast();
 
   const isDeletable = canDeleteSeries(series.status, series.bets);
   const canAbandon = series.status === "en_cours";
 
-  function handleDelete() {
-    if (!confirm(`Supprimer la série #${series.seriesNumber} ?`)) return;
+  async function handleDelete() {
+    const ok = await confirm({
+      title: `Supprimer la série #${series.seriesNumber} ?`,
+      description: "Cette action est irréversible.",
+      confirmLabel: "Supprimer",
+      variant: "destructive",
+    });
+    if (!ok) return;
     setDeleted(true);
     startTransition(async () => {
       const result = await deleteSeries(series.id);
       if (result?.error) {
         setDeleted(false);
-        alert(result.error);
+        toast({ title: "Erreur", description: result.error, variant: "destructive" });
       }
     });
   }
 
-  function handleAbandon() {
-    if (!confirm(`Abandonner la série #${series.seriesNumber} ? Les paris en attente seront marqués comme perdus.`)) return;
+  async function handleAbandon() {
+    const ok = await confirm({
+      title: `Abandonner la série #${series.seriesNumber} ?`,
+      description: "Les paris en attente seront marqués comme perdus.",
+      confirmLabel: "Abandonner",
+      variant: "destructive",
+    });
+    if (!ok) return;
     startTransition(async () => {
       const result = await abandonSeries(series.id);
-      if (result?.error) alert(result.error);
+      if (result?.error) {
+        toast({ title: "Erreur", description: result.error, variant: "destructive" });
+      }
     });
   }
 
