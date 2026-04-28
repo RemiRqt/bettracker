@@ -61,15 +61,14 @@ export async function GET(request: NextRequest) {
     // We notify when the fixture is within the user's lead window
     const windowEnd = nowMs + leadMs;
 
-    // Fetch active series subjects for this user
-    const { data: activeSeries } = await supabase
-      .from("series")
-      .select("subject")
-      .eq("user_id", userId)
-      .eq("status", "en_cours");
+    // Fetch all followed equipes for this user (regardless of series status)
+    const { data: followedEquipes } = await supabase
+      .from("equipes")
+      .select("name")
+      .eq("user_id", userId);
 
-    const activeSubjects = new Set((activeSeries ?? []).map((s) => s.subject));
-    if (activeSubjects.size === 0) continue;
+    const followedSubjects = new Set((followedEquipes ?? []).map((e) => e.name));
+    if (followedSubjects.size === 0) continue;
 
     // Fetch all team mappings for this user (need both subject and club entries)
     const { data: mappings } = await supabase
@@ -99,7 +98,7 @@ export async function GET(request: NextRequest) {
     const notifications: { fixture: CachedFixture; subject: string }[] = [];
     for (const m of mappings) {
       if (m.is_club || !m.api_team_id) continue;
-      if (!activeSubjects.has(m.subject)) continue;
+      if (!followedSubjects.has(m.subject)) continue;
       const fixture = apiIdToFixture[m.api_team_id];
       if (fixture) {
         notifications.push({ fixture, subject: m.subject });
