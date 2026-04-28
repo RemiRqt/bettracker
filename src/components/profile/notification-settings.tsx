@@ -53,6 +53,13 @@ export function NotificationSettings({ initialEnabled, initialLeadMinutes }: Pro
 
   async function handleEnable() {
     setError("");
+    console.log("[push] handleEnable called", {
+      supported,
+      installed,
+      hasVapid: Boolean(VAPID_PUBLIC_KEY),
+      currentPermission: typeof Notification !== "undefined" ? Notification.permission : "n/a",
+      ua: navigator.userAgent,
+    });
     if (!supported) {
       setError("Les notifications ne sont pas supportees par ce navigateur.");
       return;
@@ -67,22 +74,24 @@ export function NotificationSettings({ initialEnabled, initialLeadMinutes }: Pro
     }
 
     try {
-      // Request permission
+      // iOS: requestPermission() MUST be the first await (user-gesture chain)
       const perm = await Notification.requestPermission();
+      console.log("[push] Permission:", perm);
       setPermission(perm);
       if (perm !== "granted") {
         setError("Permission refusee. Active les notifications dans les reglages iOS.");
         return;
       }
 
-      // Register SW and subscribe
       const registration = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
+      console.log("[push] SW ready", registration.scope);
 
       const sub = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
+      console.log("[push] Subscribed", sub.endpoint);
 
       const subJson = sub.toJSON();
       if (!subJson.endpoint || !subJson.keys?.p256dh || !subJson.keys?.auth) {
@@ -108,6 +117,7 @@ export function NotificationSettings({ initialEnabled, initialLeadMinutes }: Pro
         setEnabled(true);
       });
     } catch (e) {
+      console.error("[push] enable error:", e);
       setError(e instanceof Error ? e.message : "Erreur inconnue");
     }
   }
