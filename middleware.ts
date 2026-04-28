@@ -4,7 +4,8 @@ import { updateSession } from "@/lib/supabase/middleware";
 export async function middleware(request: NextRequest) {
   if (
     request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/auth")
+    request.nextUrl.pathname.startsWith("/auth") ||
+    request.nextUrl.pathname.startsWith("/api/cron")
   ) {
     return NextResponse.next();
   }
