@@ -7,6 +7,8 @@ interface CachedFixture {
   date: string;
   homeTeam: string;
   awayTeam: string;
+  homeLogo?: string;
+  awayLogo?: string;
   league: string;
 }
 
@@ -37,7 +39,9 @@ async function fetchTeamNextEvents(
       id: m.id,
       date: m.utcDate,
       homeTeam: m.homeTeam.shortName || m.homeTeam.name,
+      homeLogo: m.homeTeam.crest || "",
       awayTeam: m.awayTeam.shortName || m.awayTeam.name,
+      awayLogo: m.awayTeam.crest || "",
       league: m.competition.name,
     }));
   } catch {
@@ -161,7 +165,7 @@ export async function GET(request: NextRequest) {
     // User's starred clubs
     const { data: userClubs } = await supabase
       .from("team_mappings")
-      .select("api_team_id, cached_fixtures")
+      .select("subject, api_team_id, cached_fixtures")
       .eq("user_id", userId)
       .eq("is_followed", true)
       .eq("is_club", true)
@@ -192,18 +196,28 @@ export async function GET(request: NextRequest) {
 
     // Collect today's fixtures for the user, deduplicated
     const seen = new Set<number>();
-    const todays: { fixture: CachedFixture; hasActiveSeries: boolean }[] = [];
+    const todays: {
+      fixture: CachedFixture;
+      hasActiveSeries: boolean;
+      clubLogo: string;
+    }[] = [];
 
     for (const club of userClubs) {
       const apiId = club.api_team_id as number;
+      const subject = (club.subject as string) ?? "";
       const fixtures =
         refreshedFixtures.get(apiId) ??
         ((club.cached_fixtures as CachedFixture[] | null) ?? []);
       for (const f of fixtures) {
         const t = new Date(f.date).getTime();
         if (t < windowStart || t >= windowEnd) continue;
+        const clubLogo =
+          subject && f.homeTeam.toLowerCase().includes(subject.toLowerCase())
+            ? f.homeLogo ?? ""
+            : subject && f.awayTeam.toLowerCase().includes(subject.toLowerCase())
+              ? f.awayLogo ?? ""
+              : f.homeLogo ?? "";
         if (seen.has(f.id)) {
-          // Update marker if this club brings active-series flag
           if (apiIdsWithActiveSeries.has(apiId)) {
             const entry = todays.find((x) => x.fixture.id === f.id);
             if (entry) entry.hasActiveSeries = true;
@@ -211,7 +225,11 @@ export async function GET(request: NextRequest) {
           continue;
         }
         seen.add(f.id);
-        todays.push({ fixture: f, hasActiveSeries: apiIdsWithActiveSeries.has(apiId) });
+        todays.push({
+          fixture: f,
+          hasActiveSeries: apiIdsWithActiveSeries.has(apiId),
+          clubLogo,
+        });
       }
     }
 
@@ -226,11 +244,9 @@ export async function GET(request: NextRequest) {
         }`,
     );
 
-    const title =
-      todays.length === 1
-        ? "1 match aujourd'hui"
-        : `${todays.length} matchs aujourd'hui`;
+    const title = "⚽ Suivi de match du jour";
     const body = lines.join("\n");
+    const icon = todays.length === 1 ? todays[0].clubLogo || undefined : undefined;
 
     // Get push subs
     const { data: subs } = await supabase
@@ -242,6 +258,7 @@ export async function GET(request: NextRequest) {
     const payload = JSON.stringify({
       title,
       body,
+      icon,
       url: "/calendar",
       tag: `daily-summary-${new Date(nowMs).toISOString().slice(0, 10)}`,
     });

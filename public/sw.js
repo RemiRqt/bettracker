@@ -21,7 +21,7 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "BetTracker";
   const options = {
     body: payload.body || "",
-    icon: "/icons/icon.svg",
+    icon: payload.icon || "/icons/icon.svg",
     badge: "/icons/icon.svg",
     tag: payload.tag || "bettracker-notification",
     data: {
