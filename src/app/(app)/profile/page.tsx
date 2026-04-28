@@ -85,7 +85,6 @@ export default async function ProfilePage() {
       {/* Notifications */}
       <NotificationSettings
         initialEnabled={notifSettings.notifications_enabled}
-        initialLeadMinutes={notifSettings.notification_lead_minutes}
       />
 
       {/* Followed teams section */}

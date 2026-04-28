@@ -10,7 +10,6 @@ import {
 
 interface Props {
   initialEnabled: boolean;
-  initialLeadMinutes: number;
 }
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
@@ -27,9 +26,8 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   return buffer;
 }
 
-export function NotificationSettings({ initialEnabled, initialLeadMinutes }: Props) {
+export function NotificationSettings({ initialEnabled }: Props) {
   const [enabled, setEnabled] = useState(initialEnabled);
-  const [leadMinutes, setLeadMinutes] = useState(initialLeadMinutes);
   const [permission, setPermission] = useState<NotificationPermission | "default">("default");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -109,7 +107,7 @@ export function NotificationSettings({ initialEnabled, initialLeadMinutes }: Pro
           setError(subResult.error);
           return;
         }
-        const settingsResult = await saveNotificationSettings(true, leadMinutes);
+        const settingsResult = await saveNotificationSettings(true);
         if (settingsResult.error) {
           setError(settingsResult.error);
           return;
@@ -134,21 +132,11 @@ export function NotificationSettings({ initialEnabled, initialLeadMinutes }: Pro
         });
       }
       startTransition(async () => {
-        await saveNotificationSettings(false, leadMinutes);
+        await saveNotificationSettings(false);
         setEnabled(false);
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur inconnue");
-    }
-  }
-
-  function handleSaveDelay(value: number) {
-    setLeadMinutes(value);
-    if (enabled) {
-      startTransition(async () => {
-        const result = await saveNotificationSettings(true, value);
-        if (result.error) setError(result.error);
-      });
     }
   }
 
@@ -183,7 +171,7 @@ export function NotificationSettings({ initialEnabled, initialLeadMinutes }: Pro
       </div>
 
       <p className="text-xs text-slate-400">
-        Recevoir une notification avant les matchs des equipes avec une serie en cours.
+        Recevoir chaque jour a 15h30 le resume des matchs du jour de tes equipes favorites.
       </p>
 
       {!installed && (
@@ -205,30 +193,6 @@ export function NotificationSettings({ initialEnabled, initialLeadMinutes }: Pro
       )}
 
       {error && <p className="text-xs text-red-400">{error}</p>}
-
-      <div className="space-y-1.5">
-        <label className="text-xs text-slate-400">
-          Delai avant le match : <span className="text-white font-medium">
-            {leadMinutes >= 60
-              ? `${Math.floor(leadMinutes / 60)}h${leadMinutes % 60 > 0 ? ` ${leadMinutes % 60}min` : ""}`
-              : `${leadMinutes} min`}
-          </span>
-        </label>
-        <input
-          type="range"
-          min="5"
-          max="240"
-          step="5"
-          value={leadMinutes}
-          onChange={(e) => handleSaveDelay(parseInt(e.target.value, 10))}
-          disabled={isPending}
-          className="w-full accent-emerald-500"
-        />
-        <div className="flex justify-between text-[10px] text-slate-600">
-          <span>5 min</span>
-          <span>4h</span>
-        </div>
-      </div>
     </div>
   );
 }

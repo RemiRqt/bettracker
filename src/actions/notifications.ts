@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 
 export interface UserNotificationSettings {
   notifications_enabled: boolean;
-  notification_lead_minutes: number;
 }
 
 export async function getNotificationSettings(): Promise<UserNotificationSettings> {
@@ -15,22 +14,19 @@ export async function getNotificationSettings(): Promise<UserNotificationSetting
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { notifications_enabled: false, notification_lead_minutes: 60 };
+    return { notifications_enabled: false };
   }
 
   const { data } = await supabase
     .from("user_settings")
-    .select("notifications_enabled, notification_lead_minutes")
+    .select("notifications_enabled")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  return data ?? { notifications_enabled: false, notification_lead_minutes: 60 };
+  return data ?? { notifications_enabled: false };
 }
 
-export async function saveNotificationSettings(
-  enabled: boolean,
-  leadMinutes: number
-) {
+export async function saveNotificationSettings(enabled: boolean) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -41,18 +37,13 @@ export async function saveNotificationSettings(
     return { error: "Non connecte." };
   }
 
-  if (leadMinutes < 5 || leadMinutes > 1440) {
-    return { error: "Le delai doit etre entre 5 minutes et 24 heures." };
-  }
-
   const { error } = await supabase.from("user_settings").upsert(
     {
       user_id: user.id,
       notifications_enabled: enabled,
-      notification_lead_minutes: leadMinutes,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: "user_id" }
+    { onConflict: "user_id" },
   );
 
   if (error) {
