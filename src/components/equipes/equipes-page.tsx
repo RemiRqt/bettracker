@@ -246,10 +246,10 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
         </h1>
         <button
           onClick={() => { setCreateOpen(true); setCreateError(""); setNewName(""); setNewBetType("victoire"); }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          aria-label="Nouvelle équipe"
+          className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
         >
-          <Plus className="h-4 w-4" />
-          Nouvelle
+          <Plus className="h-5 w-5" />
         </button>
       </div>
 

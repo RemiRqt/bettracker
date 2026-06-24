@@ -188,7 +188,7 @@ export function ParisPage({
         <h1 className="text-xl font-bold text-white">Paris</h1>
         <button
           onClick={() => setModalOpen(true)}
-          className="h-9 w-9 rounded-full bg-primary hover:bg-primary/90 flex items-center justify-center transition-colors"
+          className="h-9 w-9 rounded-lg bg-primary hover:bg-primary/90 flex items-center justify-center transition-colors"
         >
           <Plus className="h-5 w-5 text-primary-foreground" />
         </button>
