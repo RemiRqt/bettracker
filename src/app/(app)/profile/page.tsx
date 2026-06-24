@@ -38,42 +38,44 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Profile header */}
-      <div className="rounded-xl bg-[#1e293b] p-4 md:p-6 flex items-center gap-4">
-        <div className="h-12 w-12 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center">
-          <User className="h-6 w-6 text-emerald-400/80" />
+      {/* Profile header + compact balance */}
+      <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center">
+            <User className="h-6 w-6 text-emerald-400/80" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-lg font-semibold text-white font-[family-name:var(--font-poppins)]">
+              Mon profil
+            </h1>
+            <p className="truncate text-sm text-slate-400">{user?.email}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-lg font-semibold text-white font-[family-name:var(--font-poppins)]">
-            Mon profil
-          </h1>
-          <p className="text-sm text-slate-400">{user?.email}</p>
-        </div>
-      </div>
 
-      {/* Balance card */}
-      <div className="rounded-xl bg-[#1e293b] p-4 md:p-6 shadow-hard border border-emerald-500/15">
-        <h2 className="text-sm uppercase tracking-wide text-slate-400 mb-4">
-          Solde du compte
-        </h2>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-700/50 pt-3">
           <div className="text-center">
-            <p className="text-xs text-slate-400 mb-1">Depots</p>
-            <p className="text-lg font-semibold text-[#10b981]">
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">
+              Dépôts
+            </p>
+            <p className="text-sm font-bold text-emerald-400">
               +<RollingNumber value={totalDeposits} format="euros" />
             </p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-slate-400 mb-1">Retraits</p>
-            <p className="text-lg font-semibold text-red-400">
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">
+              Retraits
+            </p>
+            <p className="text-sm font-bold text-red-400">
               -<RollingNumber value={totalWithdrawals} format="euros" />
             </p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-slate-400 mb-1">Solde net</p>
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">
+              Solde
+            </p>
             <p
-              className={`text-lg font-semibold ${
-                balance >= 0 ? "text-[#10b981]" : "text-red-400"
+              className={`text-sm font-bold ${
+                balance >= 0 ? "text-emerald-400" : "text-red-400"
               }`}
             >
               {balance >= 0 ? "+" : ""}
@@ -88,15 +90,12 @@ export default async function ProfilePage() {
         initialEnabled={notifSettings.notifications_enabled}
       />
 
-      {/* Followed teams section */}
+      {/* Mes équipes */}
       <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
-        <h2 className="text-sm uppercase tracking-wide text-slate-400 mb-4">
-          Equipes suivies
-        </h2>
         <FollowedTeams teamMappings={teamMappings} />
       </div>
 
-      {/* Transaction form */}
+      {/* Add transaction (popup) */}
       <TransactionForm />
 
       {/* Transaction history */}

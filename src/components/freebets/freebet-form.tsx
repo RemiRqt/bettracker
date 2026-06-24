@@ -44,13 +44,13 @@ export function FreebetForm() {
         onClick={() => setOpen(true)}
         size="icon"
         aria-label="Ajouter un freebet"
-        className="h-8 w-8 rounded-lg bg-amber-600 hover:bg-amber-500 text-white cursor-pointer"
+        className="h-9 w-9 rounded-lg bg-amber-600 hover:bg-amber-500 text-white cursor-pointer"
       >
-        <Plus className="h-4 w-4" />
+        <Plus className="h-5 w-5" />
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="bg-[#1e293b] border-slate-700 text-white max-w-md mx-auto">
+        <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-white">Nouveau freebet</DialogTitle>
             <DialogDescription className="text-slate-400">

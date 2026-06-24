@@ -105,11 +105,15 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
   const [sortAsc, setSortAsc] = useState(false);
   const [filterBy, setFilterBy] = useState<FilterKey>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [editEquipe, setEditEquipe] = useState<MergedEquipe | null>(null);
+  const [seriesShowAll, setSeriesShowAll] = useState<Set<string>>(new Set());
 
   // Create equipe dialog
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newBetType, setNewBetType] = useState("victoire");
+  const [newBetTypeCustom, setNewBetTypeCustom] = useState("");
   const [newSport, setNewSport] = useState("football");
   const [createError, setCreateError] = useState("");
 
@@ -176,15 +180,26 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
     });
   }
 
+  function toggleSeriesShowAll(key: string) {
+    setSeriesShowAll((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
+
   // === Create Equipe ===
   const handleCreate = useCallback(async () => {
     setCreateError("");
-    const result = await createEquipe(newName, newBetType, newSport);
+    const betType =
+      newBetType === "autre" ? newBetTypeCustom.trim() : newBetType;
+    if (!betType) { setCreateError("Précise le type de pari."); return; }
+    const result = await createEquipe(newName, betType, newSport);
     if (result.error) { setCreateError(result.error); return; }
     setCreateOpen(false);
     setNewName("");
     startTransition(() => { router.refresh(); });
-  }, [newName, newBetType, newSport, router]);
+  }, [newName, newBetType, newBetTypeCustom, newSport, router]);
 
   // === Open Bet Dialog ===
   const openBetDialog = useCallback((eq: MergedEquipe) => {
@@ -244,25 +259,42 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
         <h1 className="text-xl md:text-2xl font-bold text-slate-100 font-[family-name:var(--font-poppins)]">
           Equipes
         </h1>
-        <button
-          onClick={() => { setCreateOpen(true); setCreateError(""); setNewName(""); setNewBetType("victoire"); }}
-          aria-label="Nouvelle équipe"
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSearchOpen((o) => !o)}
+            aria-label="Rechercher"
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-lg border transition-colors",
+              searchOpen
+                ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
+                : "bg-[#1e293b] border-slate-700 text-slate-300 hover:text-white"
+            )}
+          >
+            <Search className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => { setCreateOpen(true); setCreateError(""); setNewName(""); setNewBetType("victoire"); setNewBetTypeCustom(""); }}
+            aria-label="Nouvelle équipe"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-        <input
-          placeholder="Rechercher..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#1e293b] border border-slate-700 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
-        />
-      </div>
+      {/* Search (toggle) */}
+      {searchOpen && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <input
+            placeholder="Rechercher..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            autoFocus
+            className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#1e293b] border border-slate-700 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+      )}
 
       {/* Filter tabs */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
@@ -359,27 +391,38 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                   </div>
                 )}
 
-                {/* Card header - clickable to expand */}
-                <button
-                  onClick={() => toggleExpand(key)}
-                  className="w-full text-left p-3 space-y-2 hover:bg-white/[0.02] transition-colors cursor-pointer"
-                >
-                  {/* Row 1: logo + name + type + action buttons */}
+                {/* Card header */}
+                <div className="p-3 space-y-2">
+                  {/* Row 1: logo (edit) + name+type (expand) + profit (expand) */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <TeamLogo logoUrl={logoMap[eq.name]} sport={eq.sport} size="sm" className="flex-shrink-0" />
-                      <span className="text-base font-bold text-slate-100 truncate">{eq.name}</span>
-                      <Badge className="shrink-0 bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
-                        {betTypeLabel}
-                      </Badge>
+                      <button
+                        onClick={() => setEditEquipe(eq)}
+                        aria-label="Modifier l'équipe"
+                        className="shrink-0 transition-transform active:scale-95"
+                      >
+                        <TeamLogo logoUrl={logoMap[eq.name]} sport={eq.sport} size="sm" />
+                      </button>
+                      <button
+                        onClick={() => toggleExpand(key)}
+                        className="flex items-center gap-2 min-w-0 text-left"
+                      >
+                        <span className="text-base font-bold text-slate-100 truncate">{eq.name}</span>
+                        <Badge className="shrink-0 bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
+                          {betTypeLabel}
+                        </Badge>
+                      </button>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => toggleExpand(key)}
+                      className="flex items-center gap-2 shrink-0"
+                    >
                       <span className={cn("font-bold text-sm", eq.netProfit >= 0 ? "text-emerald-400" : "text-red-400")}>
                         {eq.netProfit >= 0 ? "+" : ""}
                         <RollingNumber value={eq.netProfit} format="euros" />
                       </span>
                       {isExpanded ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
-                    </div>
+                    </button>
                   </div>
 
                   {/* Row 2: stats + ROI or empty alert */}
@@ -387,8 +430,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                     <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
                       <span className="text-xs text-amber-400">Pas de série créée</span>
                       <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
+                        onClick={async () => {
                           await deleteEquipe(eq.equipeId);
                           startTransition(() => { router.refresh(); });
                         }}
@@ -421,28 +463,11 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                       {pendingPct > 0 && <div className="bg-blue-500" style={{ width: `${pendingPct}%` }} />}
                     </div>
                   )}
-                </button>
+                </div>
 
-                {/* Expanded: series list + action buttons */}
+                {/* Expanded: nouvelle série (top) + séries (récente + voir plus) */}
                 {isExpanded && (
                   <div className="border-t border-slate-700/50 px-3 pb-3 pt-2 space-y-1.5">
-                    {eq.series.map((s) => (
-                      <div key={s.id}>
-                        <EquipeSeriesItem series={s} />
-                        {/* "Parier" button below the active series */}
-                        {s.status === "en_cours" && !eq.activeSeries?.hasPendingBet && (
-                          <button
-                            onClick={() => openBetDialog(eq)}
-                            className="w-full mt-1.5 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                            Parier
-                          </button>
-                        )}
-                      </div>
-                    ))}
-
-                    {/* "Nouvelle série" button at the bottom */}
                     {!eq.activeSeries && (
                       <button
                         onClick={() => openBetDialog(eq)}
@@ -453,30 +478,39 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                       </button>
                     )}
 
-                    {/* Sport selector */}
-                    <div className="pt-2 border-t border-slate-700/30">
-                      <span className="text-[10px] text-slate-500 uppercase tracking-wide">Sport</span>
-                      <div className="flex gap-1.5 mt-1">
-                        {(Object.entries(SPORTS) as [string, string][]).map(([sKey, sLabel]) => (
-                          <button
-                            key={sKey}
-                            onClick={async () => {
-                              await updateEquipeSport(eq.equipeId, sKey);
-                              startTransition(() => { router.refresh(); });
-                            }}
-                            className={cn(
-                              "flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors cursor-pointer",
-                              eq.sport === sKey
-                                ? "bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/30"
-                                : "bg-[#0f172a] text-slate-400 border border-slate-700 hover:border-slate-500"
-                            )}
-                          >
-                            <span>{SPORT_EMOJIS[sKey]}</span>
-                            <span className="hidden sm:inline">{sLabel}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    {(() => {
+                      const ordered = [...eq.series].sort((a, b) =>
+                        b.created_at.localeCompare(a.created_at)
+                      );
+                      const showAll = seriesShowAll.has(key);
+                      const visible = showAll ? ordered : ordered.slice(0, 1);
+                      return (
+                        <>
+                          {visible.map((s) => (
+                            <div key={s.id}>
+                              <EquipeSeriesItem series={s} />
+                              {s.status === "en_cours" && !eq.activeSeries?.hasPendingBet && (
+                                <button
+                                  onClick={() => openBetDialog(eq)}
+                                  className="w-full mt-1.5 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+                                >
+                                  <Plus className="h-3.5 w-3.5" />
+                                  Parier
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          {ordered.length > 1 && (
+                            <button
+                              onClick={() => toggleSeriesShowAll(key)}
+                              className="w-full py-1 text-center text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                            >
+                              {showAll ? "Voir moins" : `Voir plus (${ordered.length - 1})`}
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -487,7 +521,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
 
       {/* === Create Equipe Dialog === */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="bg-[#1e293b] border-slate-700 text-white max-w-md mx-auto">
+        <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-white">Nouvelle equipe</DialogTitle>
             <DialogDescription className="text-slate-400">
@@ -508,13 +542,13 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
             </div>
             <div>
               <label className="text-xs text-slate-400 mb-1.5 block">Type de pari</label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {(Object.entries(BET_TYPES) as [string, string][]).map(([key, label]) => (
                   <button
                     key={key}
                     onClick={() => setNewBetType(key)}
                     className={cn(
-                      "flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors border",
+                      "py-2.5 rounded-xl text-sm font-medium transition-colors border",
                       newBetType === key
                         ? "bg-[#10b981] border-[#10b981] text-white"
                         : "bg-[#0f172a] border-slate-600 text-slate-400 hover:border-slate-500"
@@ -524,6 +558,16 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                   </button>
                 ))}
               </div>
+              {newBetType === "autre" && (
+                <input
+                  type="text"
+                  value={newBetTypeCustom}
+                  onChange={(e) => setNewBetTypeCustom(e.target.value)}
+                  placeholder="Type de pari personnalisé"
+                  className="mt-2 w-full bg-[#0f172a] border border-slate-600 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+                  autoFocus
+                />
+              )}
             </div>
             <div>
               <label className="text-xs text-slate-400 mb-1.5 block">Sport</label>
@@ -557,9 +601,49 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
         </DialogContent>
       </Dialog>
 
+      {/* === Edit Equipe Dialog (sport) === */}
+      <Dialog open={editEquipe !== null} onOpenChange={(open) => { if (!open) setEditEquipe(null); }}>
+        <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white">
+              Modifier {editEquipe?.name}
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Sport de l&apos;équipe
+            </DialogDescription>
+          </DialogHeader>
+          {editEquipe && (
+            <div>
+              <label className="text-xs text-slate-400 mb-1.5 block">Sport</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(Object.entries(SPORTS) as [string, string][]).map(([sKey, sLabel]) => (
+                  <button
+                    key={sKey}
+                    onClick={async () => {
+                      await updateEquipeSport(editEquipe.equipeId, sKey);
+                      setEditEquipe(null);
+                      startTransition(() => { router.refresh(); });
+                    }}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium transition-colors border",
+                      editEquipe.sport === sKey
+                        ? "bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30"
+                        : "bg-[#0f172a] text-slate-400 border-slate-700 hover:border-slate-500"
+                    )}
+                  >
+                    <span>{SPORT_EMOJIS[sKey]}</span>
+                    {sLabel}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* === Bet Creation Dialog === */}
       <Dialog open={betEquipe !== null} onOpenChange={(open) => { if (!open) setBetEquipe(null); }}>
-        <DialogContent className="bg-[#1e293b] border-slate-700 text-white max-w-md mx-auto">
+        <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-white">
               {betEquipe?.activeSeries

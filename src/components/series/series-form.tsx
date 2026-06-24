@@ -3,7 +3,7 @@
 import { useActionState, useState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { createSeries } from "@/actions/series";
-import { Trophy, ThumbsDown, Target, Search, ChevronDown } from "lucide-react";
+import { Trophy, ThumbsDown, Target, Search, ChevronDown, Pencil } from "lucide-react";
 import { BET_TYPES } from "@/lib/constants";
 import type { BetType } from "@/lib/types";
 
@@ -20,6 +20,7 @@ const BET_TYPE_OPTIONS: {
   { value: "victoire", label: "Victoire", icon: Trophy },
   { value: "defaite", label: "Défaite", icon: ThumbsDown },
   { value: "buteur", label: "Buteur", icon: Target },
+  { value: "autre", label: "Autre", icon: Pencil },
 ];
 
 const STATUS_DOT_COLORS: Record<string, string> = {
@@ -60,6 +61,7 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
   const [state, formAction] = useActionState(createSeriesAction, null);
   const [subject, setSubject] = useState("");
   const [betType, setBetType] = useState<BetType | "">("");
+  const [betTypeCustom, setBetTypeCustom] = useState("");
   const [targetGain, setTargetGain] = useState(1.0);
   const [selectedTeamKey, setSelectedTeamKey] = useState<string | null>(null);
   const [teamSearch, setTeamSearch] = useState("");
@@ -217,7 +219,11 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
         <label className="text-sm font-medium text-slate-300">
           Type de pari
         </label>
-        <input type="hidden" name="bet_type" value={betType} />
+        <input
+          type="hidden"
+          name="bet_type"
+          value={betType === "autre" ? betTypeCustom : betType}
+        />
         <div className="grid grid-cols-3 gap-2">
           {BET_TYPE_OPTIONS.map(({ value, label, icon: Icon }) => {
             const isSelected = betType === value;
@@ -241,6 +247,16 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
             );
           })}
         </div>
+        {betType === "autre" && (
+          <input
+            type="text"
+            value={betTypeCustom}
+            onChange={(e) => setBetTypeCustom(e.target.value)}
+            placeholder="Type de pari personnalisé"
+            className="w-full h-12 rounded-xl bg-[#1e293b] border border-slate-600 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-colors"
+            autoFocus
+          />
+        )}
       </div>
 
       {/* Target gain slider */}

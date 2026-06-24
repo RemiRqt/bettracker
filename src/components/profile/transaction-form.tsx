@@ -1,82 +1,120 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { addTransaction } from "@/actions/transactions";
-
-async function transactionAction(
-  _prevState: { error?: string } | null,
-  formData: FormData
-) {
-  const result = await addTransaction(formData);
-  return result ?? null;
-}
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function TransactionForm() {
+  const [open, setOpen] = useState(false);
   const [type, setType] = useState<"depot" | "retrait">("depot");
-  const [state, formAction, pending] = useActionState(transactionAction, null);
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const fd = new FormData();
+    fd.set("type", type);
+    fd.set("amount", amount);
+    fd.set("note", note);
+
+    const result = await addTransaction(fd);
+    setLoading(false);
+
+    if (result?.error) {
+      setError(result.error);
+      return;
+    }
+    setAmount("");
+    setNote("");
+    setType("depot");
+    setOpen(false);
+  }
 
   return (
-    <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
-      <h2 className="text-sm uppercase tracking-wide text-slate-400 mb-4">
-        Nouvelle transaction
-      </h2>
-      <form action={formAction} className="space-y-3">
-        <input type="hidden" name="type" value={type} />
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="h-11 w-full rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 cursor-pointer">
+          <Plus className="mr-1 h-4 w-4" />
+          Ajouter une transaction
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-white">Nouvelle transaction</DialogTitle>
+        </DialogHeader>
 
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setType("depot")}
-            className={`flex-1 h-10 rounded-xl text-sm font-medium transition-colors ${
-              type === "depot"
-                ? "bg-[#10b981] text-white"
-                : "bg-[#0f172a] text-slate-400 border border-slate-600"
-            }`}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setType("depot")}
+              className={cn(
+                "flex-1 h-10 rounded-xl text-sm font-medium transition-colors",
+                type === "depot"
+                  ? "bg-[#10b981] text-white"
+                  : "bg-[#0f172a] text-slate-400 border border-slate-600"
+              )}
+            >
+              Dépôt
+            </button>
+            <button
+              type="button"
+              onClick={() => setType("retrait")}
+              className={cn(
+                "flex-1 h-10 rounded-xl text-sm font-medium transition-colors",
+                type === "retrait"
+                  ? "bg-red-500 text-white"
+                  : "bg-[#0f172a] text-slate-400 border border-slate-600"
+              )}
+            >
+              Retrait
+            </button>
+          </div>
+
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            step="0.01"
+            min="0.01"
+            placeholder="Montant (€)"
+            required
+            className="h-10 w-full rounded-lg bg-[#0f172a] border border-slate-600 px-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#10b981]"
+          />
+
+          <input
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Note (optionnel)"
+            className="h-10 w-full rounded-lg bg-[#0f172a] border border-slate-600 px-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#10b981]"
+          />
+
+          {error && <p className="text-sm text-red-400">{error}</p>}
+
+          <Button
+            type="submit"
+            disabled={loading}
+            className="h-10 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 cursor-pointer"
           >
-            Dépôt
-          </button>
-          <button
-            type="button"
-            onClick={() => setType("retrait")}
-            className={`flex-1 h-10 rounded-xl text-sm font-medium transition-colors ${
-              type === "retrait"
-                ? "bg-red-500 text-white"
-                : "bg-[#0f172a] text-slate-400 border border-slate-600"
-            }`}
-          >
-            Retrait
-          </button>
-        </div>
-
-        <input
-          type="number"
-          name="amount"
-          step="0.01"
-          min="0.01"
-          placeholder="Montant (€)"
-          required
-          className="w-full h-12 rounded-xl bg-[#0f172a] border border-slate-600 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:border-[#10b981]"
-        />
-
-        <input
-          type="text"
-          name="note"
-          placeholder="Note (optionnel)"
-          className="w-full h-12 rounded-xl bg-[#0f172a] border border-slate-600 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:border-[#10b981]"
-        />
-
-        {state?.error && (
-          <p className="text-sm text-red-400">{state.error}</p>
-        )}
-
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-        >
-          {pending ? "..." : "Ajouter"}
-        </button>
-      </form>
-    </div>
+            {loading ? "..." : "Ajouter"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

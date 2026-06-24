@@ -78,40 +78,26 @@ export function CalendarPage({
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
+      <div>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <CalendarDays className="h-5 w-5 text-[#10b981]" />
-            <h1 className="text-lg font-semibold text-white font-[family-name:var(--font-poppins)]">
-              Calendrier
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-slate-400">
-              {fixtures.length} match{fixtures.length !== 1 ? "s" : ""}
-            </p>
-            <button
-              onClick={handleRefresh}
-              disabled={isPending}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors disabled:opacity-50"
-              title="Rechercher les matchs"
-            >
-              <RefreshCw
-                className={cn(
-                  "h-4 w-4 text-slate-400",
-                  isPending && "animate-spin"
-                )}
-              />
-            </button>
-          </div>
+          <h1 className="text-xl font-bold text-white font-[family-name:var(--font-poppins)]">
+            Calendrier
+          </h1>
+          <button
+            onClick={handleRefresh}
+            disabled={isPending}
+            aria-label="Rechercher les matchs"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+          >
+            <RefreshCw className={cn("h-5 w-5", isPending && "animate-spin")} />
+          </button>
         </div>
 
-        {/* Last updated */}
         {formattedLastUpdated && (
-          <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-slate-700">
+          <div className="mt-1 flex items-center gap-1.5">
             <Clock className="h-3 w-3 text-slate-500" />
             <p className="text-xs text-slate-500">
-              Derniere mise a jour : {formattedLastUpdated}
+              Dernière mise à jour : {formattedLastUpdated}
             </p>
           </div>
         )}
@@ -150,7 +136,7 @@ export function CalendarPage({
           <div key={date} className="space-y-2">
             <h2
               className={cn(
-                "px-1 text-xs uppercase tracking-wide font-[family-name:var(--font-poppins)]",
+                "text-center text-xs uppercase tracking-wide font-[family-name:var(--font-poppins)]",
                 isToday ? "font-semibold text-emerald-400" : "text-slate-400"
               )}
             >
@@ -196,11 +182,13 @@ function FixtureCard({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {fixture.leagueLogo && (
-            <img
-              src={fixture.leagueLogo}
-              alt=""
-              className="h-4 w-4 object-contain"
-            />
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-white/10 p-0.5">
+              <img
+                src={fixture.leagueLogo}
+                alt=""
+                className="h-full w-full object-contain"
+              />
+            </div>
           )}
           <span className="text-xs text-slate-400 truncate max-w-[180px]">
             {fixture.league}
@@ -210,22 +198,22 @@ function FixtureCard({
       </div>
 
       {/* Teams */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-around gap-2">
         {/* Home */}
-        <div className="flex-1 flex items-center gap-2 justify-end">
-          <span className="text-sm text-white truncate text-right">
+        <div className="flex flex-1 flex-col items-center gap-1 text-center">
+          <TeamLogo logoUrl={fixture.homeLogo} size="lg" />
+          <span className="text-xs text-white line-clamp-2">
             {fixture.homeTeam}
           </span>
-          <TeamLogo logoUrl={fixture.homeLogo} size="sm" />
         </div>
 
         {/* VS */}
-        <span className="text-xs font-bold text-slate-500 px-1">VS</span>
+        <span className="shrink-0 text-xs font-bold text-slate-500">VS</span>
 
         {/* Away */}
-        <div className="flex-1 flex items-center gap-2">
-          <TeamLogo logoUrl={fixture.awayLogo} size="sm" />
-          <span className="text-sm text-white truncate">
+        <div className="flex flex-1 flex-col items-center gap-1 text-center">
+          <TeamLogo logoUrl={fixture.awayLogo} size="lg" />
+          <span className="text-xs text-white line-clamp-2">
             {fixture.awayTeam}
           </span>
         </div>

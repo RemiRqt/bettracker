@@ -157,7 +157,7 @@ export function NotificationSettings({ initialEnabled }: Props) {
           className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${
             enabled
               ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
-              : "bg-emerald-500 text-white hover:bg-emerald-600"
+              : "bg-primary text-primary-foreground hover:bg-primary/90"
           }`}
         >
           {isPending ? (
@@ -169,10 +169,6 @@ export function NotificationSettings({ initialEnabled }: Props) {
           )}
         </button>
       </div>
-
-      <p className="text-xs text-slate-400">
-        Recevoir chaque jour a 15h30 le resume des matchs du jour de tes equipes favorites.
-      </p>
 
       {!installed && (
         <p className="text-xs text-amber-400">

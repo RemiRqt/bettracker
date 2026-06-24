@@ -38,8 +38,10 @@ export function RollingNumber({
   durationMs = 700,
   className,
 }: RollingNumberProps) {
-  const [shown, setShown] = useState(value);
-  const prev = useRef(value);
+  // Start from 0 so the count-up replays on every mount (page load / nav),
+  // not only when the value changes.
+  const [shown, setShown] = useState(0);
+  const prev = useRef(0);
   const raf = useRef<number | null>(null);
 
   useEffect(() => {

@@ -6,6 +6,7 @@ export const BET_TYPES = {
   victoire: "Victoire",
   defaite: "Défaite",
   buteur: "Buteur",
+  autre: "Autre",
 } as const;
 
 export const SERIES_STATUSES = {

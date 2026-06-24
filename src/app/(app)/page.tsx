@@ -1,22 +1,17 @@
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDashboardStats } from "@/actions/stats";
-import { StatsCards } from "@/components/dashboard/stats-cards";
+import { StatsHero } from "@/components/dashboard/stats-cards";
+import { MoreStats } from "@/components/dashboard/more-stats";
 import { CapitalChartLazy } from "@/components/dashboard/capital-chart-lazy";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Dashboard | BetTracker" };
 
-const CONTENT_HEIGHT =
-  "calc(100dvh - 3.5rem - 3.75rem - env(safe-area-inset-bottom, 0px))";
-
 export default function DashboardPage() {
   return (
-    <div
-      className="flex flex-col gap-2 overflow-hidden"
-      style={{ height: CONTENT_HEIGHT }}
-    >
+    <div className="space-y-3">
       <Suspense fallback={<DashboardSkeleton />}>
         <DashboardContent />
       </Suspense>
@@ -29,18 +24,18 @@ async function DashboardContent() {
 
   return (
     <>
-      <div className="flex-shrink-0">
-        <StatsCards stats={stats} />
-      </div>
+      <StatsHero stats={stats} />
 
-      <div className="flex-1 min-h-0 rounded-xl bg-[#1e293b] p-3 flex flex-col">
-        <h3 className="text-[10px] uppercase tracking-wide text-slate-400 mb-2 flex-shrink-0">
+      <div className="flex h-[22rem] flex-col rounded-xl bg-[#1e293b] p-3">
+        <h3 className="mb-2 flex-shrink-0 text-[10px] uppercase tracking-wide text-slate-400">
           Évolution du capital
         </h3>
-        <div className="flex-1 min-h-0">
+        <div className="min-h-0 flex-1">
           <CapitalChartLazy data={stats.capitalEvolution} />
         </div>
       </div>
+
+      <MoreStats stats={stats} />
     </>
   );
 }
@@ -48,12 +43,9 @@ async function DashboardContent() {
 function DashboardSkeleton() {
   return (
     <>
-      <div className="flex-shrink-0">
-        <Skeleton className="h-24 w-full rounded-xl" />
-      </div>
-      <div className="flex-1 min-h-0 rounded-xl bg-[#1e293b] p-3">
-        <Skeleton className="h-full w-full rounded-xl" />
-      </div>
+      <Skeleton className="h-24 w-full rounded-xl" />
+      <Skeleton className="h-[22rem] w-full rounded-xl" />
+      <Skeleton className="h-9 w-full rounded-xl" />
     </>
   );
 }

@@ -12,7 +12,7 @@ export type BetInsert = Database["public"]["Tables"]["bets"]["Insert"];
 export type SeriesWithBets = Series & { bets: Bet[] };
 
 // Domain enums
-export type BetType = "victoire" | "defaite" | "buteur";
+export type BetType = "victoire" | "defaite" | "buteur" | "autre";
 export type SeriesStatus = "en_cours" | "gagnee" | "abandonnee";
 export type BetResult = "gagne" | "perdu" | null;
 export type SportType = "football" | "tennis" | "rugby" | "basket";

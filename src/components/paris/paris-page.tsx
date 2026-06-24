@@ -370,7 +370,7 @@ export function ParisPage({
 
       {/* Edit bet dialog */}
       <Dialog open={editBet !== null} onOpenChange={(open) => { if (!open) setEditBet(null); }}>
-        <DialogContent className="bg-[#0f172a] border-slate-700 max-w-sm mx-auto">
+        <DialogContent className="bg-[#1e293b] border border-slate-700 max-w-sm mx-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-white">Modifier le pari</DialogTitle>
             <DialogDescription className="text-slate-400">
@@ -411,7 +411,7 @@ export function ParisPage({
 
       {/* Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="bg-[#0f172a] border-slate-700 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-[#1e293b] border border-slate-700 max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-white">Nouvelle série</DialogTitle>
             <DialogDescription className="text-slate-400">
