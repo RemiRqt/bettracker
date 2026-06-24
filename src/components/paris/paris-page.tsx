@@ -6,6 +6,7 @@ import { Plus, CheckCircle, XCircle, Trash2, ChevronUp, ChevronDown, Pencil } fr
 import { validateResult, deleteBet, updateBet } from "@/actions/bets";
 import { BET_TYPES } from "@/lib/constants";
 import { formatEuros, cn } from "@/lib/utils";
+import { fireConfetti } from "@/lib/confetti";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
@@ -134,7 +135,10 @@ export function ParisPage({
 
   function handleValidate(betId: string, result: "gagne" | "perdu") {
     startTransition(async () => {
-      await validateResult(betId, result);
+      const res = await validateResult(betId, result);
+      if (result === "gagne" && !res?.error) {
+        fireConfetti();
+      }
     });
   }
 
@@ -184,9 +188,9 @@ export function ParisPage({
         <h1 className="text-xl font-bold text-white">Paris</h1>
         <button
           onClick={() => setModalOpen(true)}
-          className="h-9 w-9 rounded-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center transition-colors"
+          className="h-9 w-9 rounded-full bg-primary hover:bg-primary/90 flex items-center justify-center transition-colors"
         >
-          <Plus className="h-5 w-5 text-white" />
+          <Plus className="h-5 w-5 text-primary-foreground" />
         </button>
       </div>
 
@@ -383,7 +387,7 @@ export function ParisPage({
             <button
               onClick={handleEditSave}
               disabled={isPending}
-              className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+              className="w-full py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors disabled:opacity-50"
             >
               Enregistrer
             </button>

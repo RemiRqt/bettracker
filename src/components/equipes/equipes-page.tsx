@@ -245,7 +245,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
         </h1>
         <button
           onClick={() => { setCreateOpen(true); setCreateError(""); setNewName(""); setNewBetType("victoire"); }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#10b981] text-white text-sm font-medium hover:bg-emerald-600 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" />
           Nouvelle
@@ -343,7 +343,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                     {canBetFromBanner && (
                       <button
                         onClick={(e) => { e.stopPropagation(); openBetDialog(eq); }}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors"
                       >
                         <Plus className="h-3 w-3" />
                         Parier
@@ -425,7 +425,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                         {s.status === "en_cours" && !eq.activeSeries?.hasPendingBet && (
                           <button
                             onClick={() => openBetDialog(eq)}
-                            className="w-full mt-1.5 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#10b981] text-white text-xs font-medium hover:bg-emerald-600 transition-colors"
+                            className="w-full mt-1.5 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             Parier
@@ -541,7 +541,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
             <button
               onClick={handleCreate}
               disabled={!newName.trim()}
-              className="w-full py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-medium hover:bg-emerald-600 transition-colors disabled:opacity-50"
+              className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               Creer
             </button>
@@ -586,7 +586,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                   <button
                     onClick={() => { if (parseFloat(targetGain) > 0) setBetStep("odds"); }}
                     disabled={!targetGain || parseFloat(targetGain) <= 0}
-                    className="w-full py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-medium hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                    className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     Suivant
                   </button>
@@ -662,7 +662,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                       <button
                         onClick={handlePlaceBet}
                         disabled={isBetting}
-                        className="w-full py-2.5 rounded-xl bg-[#10b981] text-white text-sm font-medium hover:bg-emerald-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         {isBetting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Valider le pari"}
                       </button>

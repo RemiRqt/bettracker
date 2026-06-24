@@ -72,7 +72,7 @@ export function TransactionForm() {
         <button
           type="submit"
           disabled={pending}
-          className="w-full h-12 rounded-xl bg-[#10b981] text-white font-medium hover:bg-[#059669] transition-colors disabled:opacity-50"
+          className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           {pending ? "..." : "Ajouter"}
         </button>

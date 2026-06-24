@@ -80,7 +80,7 @@ export function AddBetForm({ seriesId }: AddBetFormProps) {
         <Button
           type="submit"
           disabled={isPending}
-          className="w-full h-11 md:h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm md:text-base"
+          className="w-full h-11 md:h-12 font-medium text-sm md:text-base"
         >
           {isPending ? (
             <>

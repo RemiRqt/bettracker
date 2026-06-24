@@ -41,7 +41,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full h-12 rounded-xl bg-[#10b981] hover:bg-[#059669] text-white font-semibold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {pending ? "Création en cours..." : "Lancer la série"}
     </button>

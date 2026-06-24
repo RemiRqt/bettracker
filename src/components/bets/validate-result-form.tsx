@@ -51,7 +51,7 @@ export function ValidateResultForm({
         <Button
           onClick={() => handleValidate("gagne")}
           disabled={isPending}
-          className="h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm md:text-base"
+          className="h-12 font-medium text-sm md:text-base"
         >
           {isPending ? (
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
