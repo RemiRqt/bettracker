@@ -367,7 +367,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                 key={key}
                 className={cn(
                   "rounded-xl bg-[#1e293b] overflow-hidden",
-                  eq.activeSeries && "border border-emerald-500/30 shadow-hard-sm"
+                  eq.activeSeries && "border border-emerald-500/30"
                 )}
               >
                 {/* Next fixture banner (only when there's an active series + upcoming fixture) */}

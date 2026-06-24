@@ -61,7 +61,7 @@ export function SeriesDetail({ series }: SeriesDetailProps) {
       {/* Hero serie */}
       <div
         className={cn(
-          "rounded-2xl bg-[#1e293b] p-4 md:p-5 shadow-hard border",
+          "rounded-2xl bg-[#1e293b] p-4 md:p-5 border",
           STATUS_BORDER[status]
         )}
       >
@@ -116,7 +116,7 @@ export function SeriesDetail({ series }: SeriesDetailProps) {
       </div>
 
       {/* Paris */}
-      <div className="rounded-2xl bg-[#1e293b] p-4 md:p-5 shadow-hard-sm border border-slate-700/50">
+      <div className="rounded-2xl bg-[#1e293b] p-4 md:p-5 border border-slate-700/50">
         <h2 className="mb-3 text-base md:text-lg font-bold text-slate-100">
           Paris
         </h2>

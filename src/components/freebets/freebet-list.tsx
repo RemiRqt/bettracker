@@ -72,7 +72,7 @@ export function FreebetList({ freebets }: FreebetListProps) {
         return (
           <div
             key={fb.id}
-            className="rounded-xl bg-[#1e293b] p-3 border border-amber-500/20 shadow-[3px_3px_0_0_rgb(245_158_11_/_0.18)]"
+            className="rounded-xl bg-[#1e293b] p-3 border border-amber-500/20"
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">

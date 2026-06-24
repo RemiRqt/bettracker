@@ -50,7 +50,7 @@ export function StatsHero({ stats }: StatsProps) {
   const capitalDispoPositive = stats.capitalDisponible >= 0;
 
   return (
-    <div className="rounded-xl bg-[#1e293b] px-4 py-3 shadow-hard border border-emerald-500/15">
+    <div className="rounded-xl bg-[#1e293b] px-4 py-3 border border-emerald-500/15">
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">

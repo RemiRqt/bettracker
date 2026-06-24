@@ -50,7 +50,7 @@ export function BottomNav() {
               key={l.href}
               href={l.href}
               aria-current={isActive ? "page" : undefined}
-              className="relative z-10 flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-transform active:scale-95"
+              className="relative z-10 flex flex-1 flex-col items-center justify-center gap-1 py-3 transition-transform active:scale-95"
             >
               <Icon
                 className={cn(

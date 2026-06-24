@@ -26,6 +26,8 @@ async function DashboardContent() {
     <>
       <StatsHero stats={stats} />
 
+      <MoreStats stats={stats} />
+
       <div className="flex h-[22rem] flex-col rounded-xl bg-[#1e293b] p-3">
         <h3 className="mb-2 flex-shrink-0 text-[10px] uppercase tracking-wide text-slate-400">
           Évolution du capital
@@ -34,8 +36,6 @@ async function DashboardContent() {
           <CapitalChartLazy data={stats.capitalEvolution} />
         </div>
       </div>
-
-      <MoreStats stats={stats} />
     </>
   );
 }

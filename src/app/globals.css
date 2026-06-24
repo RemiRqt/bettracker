@@ -70,17 +70,13 @@
   button:not(:disabled):not([role="tab"]):active {
     transform: scale(0.97);
   }
-  /* Hard "sticker" shadow on solid action buttons (app-level, not the shadcn
-     primitive). Rest = small offset, hover = full offset. Transform is left to
-     the press rule above so the scale(0.97) tap stays intact. */
-  button:not(:disabled):not([role="tab"]).bg-primary,
-  button:not(:disabled):not([role="tab"]).bg-secondary,
-  button:not(:disabled):not([role="tab"]).bg-destructive {
+  /* Sticker shadow on every action button (cards stay flat — the shadow is a
+     button signature now). Rest = small offset, hover = full. Transform stays
+     on the press rule above. Amber buttons get an amber variant below. */
+  button:not(:disabled):not([role="tab"]) {
     box-shadow: var(--shadow-hard-sm);
   }
-  button:not(:disabled):not([role="tab"]).bg-primary:hover,
-  button:not(:disabled):not([role="tab"]).bg-secondary:hover,
-  button:not(:disabled):not([role="tab"]).bg-destructive:hover {
+  button:not(:disabled):not([role="tab"]):hover {
     box-shadow: var(--shadow-hard);
   }
   /* Amber action buttons (freebets) get an amber-tinted sticker shadow to

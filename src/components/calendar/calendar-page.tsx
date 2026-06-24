@@ -175,7 +175,7 @@ function FixtureCard({
     <div
       className={cn(
         "rounded-xl bg-[#1e293b] p-3 space-y-2.5",
-        hasSeries && "border border-emerald-500/30 shadow-hard-sm"
+        hasSeries && "border border-emerald-500/30"
       )}
     >
       {/* League + Time */}

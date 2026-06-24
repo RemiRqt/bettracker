@@ -11,7 +11,7 @@ export function FreebetStatsCard({ balance, used, realGains }: FreebetStatsCardP
   const conversionRate = used > 0 ? (realGains / used) * 100 : 0;
 
   return (
-    <div className="rounded-xl bg-[#1e293b] p-4 space-y-3 border border-amber-500/15 shadow-[4px_4px_0_0_rgb(245_158_11_/_0.18)]">
+    <div className="rounded-xl bg-[#1e293b] p-4 space-y-3 border border-amber-500/15">
       {/* Main: balance */}
       <div className="flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20">

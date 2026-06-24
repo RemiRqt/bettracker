@@ -71,7 +71,7 @@ export default async function ProfilePage() {
           </div>
           <div className="text-center">
             <p className="text-[10px] uppercase tracking-wide text-slate-500">
-              Solde
+              Solde en cours
             </p>
             <p
               className={`text-sm font-bold ${
@@ -85,6 +85,9 @@ export default async function ProfilePage() {
         </div>
       </div>
 
+      {/* Add transaction (popup) */}
+      <TransactionForm />
+
       {/* Notifications */}
       <NotificationSettings
         initialEnabled={notifSettings.notifications_enabled}
@@ -94,9 +97,6 @@ export default async function ProfilePage() {
       <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
         <FollowedTeams teamMappings={teamMappings} />
       </div>
-
-      {/* Add transaction (popup) */}
-      <TransactionForm />
 
       {/* Transaction history */}
       <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">

@@ -7,6 +7,7 @@ import { validateResult, deleteBet, updateBet } from "@/actions/bets";
 import { BET_TYPES } from "@/lib/constants";
 import { formatEuros, cn } from "@/lib/utils";
 import { fireConfetti } from "@/lib/confetti";
+import { RollingNumber } from "@/components/ui/rolling-number";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
@@ -81,6 +82,7 @@ export function ParisPage({
 
   // Edit bet dialog
   const [editBet, setEditBet] = useState<Bet | null>(null);
+  const [winBet, setWinBet] = useState<Bet | null>(null);
   const [editOdds, setEditOdds] = useState("");
   const [editStake, setEditStake] = useState("");
 
@@ -138,6 +140,16 @@ export function ParisPage({
       const res = await validateResult(betId, result);
       if (result === "gagne" && !res?.error) {
         fireConfetti();
+      }
+    });
+  }
+
+  function handleWin(bet: Bet) {
+    startTransition(async () => {
+      const res = await validateResult(bet.id, "gagne");
+      if (!res?.error) {
+        fireConfetti();
+        setWinBet(bet);
       }
     });
   }
@@ -264,78 +276,46 @@ export function ParisPage({
               <div
                 key={bet.id}
                 className={cn(
-                  "bg-[#1e293b] rounded-xl p-3 flex items-center justify-between gap-3 border",
+                  "bg-[#1e293b] rounded-xl p-3 border",
                   bet.result === null
                     ? "border-blue-500/20"
                     : "border-transparent"
                 )}
               >
-                {/* Left */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <TeamLogo logoUrl={logoMap[bet.series.subject]} size="sm" className="flex-shrink-0" />
-                    <span className="font-semibold text-white text-sm truncate">
-                      {bet.series.subject}
-                    </span>
-                    <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-700 text-slate-300">
-                      {typeLabel}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-slate-500">
-                      {formatDate(bet.created_at)}
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      Pari #{bet.bet_number}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Right */}
-                <div className="flex-shrink-0 text-right">
-                  <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <span>
-                      <span className="text-white">{formatEuros(bet.stake)}</span>
-                    </span>
-                    <span>
-                      ×<span className="text-white ml-0.5">{bet.odds.toFixed(2)}</span>
-                    </span>
+                <div className="flex items-center justify-between gap-3">
+                  {/* Left */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <TeamLogo logoUrl={logoMap[bet.series.subject]} size="sm" className="flex-shrink-0" />
+                      <span className="font-semibold text-white text-sm truncate">
+                        {bet.series.subject}
+                      </span>
+                      <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-700 text-slate-300">
+                        {typeLabel}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-slate-500">
+                        {formatDate(bet.created_at)}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        Pari #{bet.bet_number}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="mt-1.5 flex items-center justify-end gap-1.5">
-                    {bet.result === null ? (
-                      <>
-                        <button
-                          onClick={() => handleValidate(bet.id, "gagne")}
-                          disabled={isPending}
-                          className="text-emerald-500 hover:text-emerald-400 transition-colors disabled:opacity-50"
-                        >
-                          <CheckCircle className="h-7 w-7" />
-                        </button>
-                        <button
-                          onClick={() => handleValidate(bet.id, "perdu")}
-                          disabled={isPending}
-                          className="text-red-500 hover:text-red-400 transition-colors disabled:opacity-50"
-                        >
-                          <XCircle className="h-7 w-7" />
-                        </button>
-                        <button
-                          onClick={() => openEdit(bet)}
-                          disabled={isPending}
-                          className="text-slate-500 hover:text-slate-400 transition-colors disabled:opacity-50"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(bet.id)}
-                          disabled={isPending}
-                          className="text-slate-500 hover:text-slate-400 transition-colors disabled:opacity-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </>
-                    ) : (
-                      <div className="flex items-center gap-1.5">
+                  {/* Right */}
+                  <div className="flex-shrink-0 text-right">
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <span>
+                        <span className="text-white">{formatEuros(bet.stake)}</span>
+                      </span>
+                      <span>
+                        ×<span className="text-white ml-0.5">{bet.odds.toFixed(2)}</span>
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex items-center justify-end gap-1.5">
+                      {bet.result !== null && (
                         <span className={cn(
                           "px-2 py-0.5 rounded-full text-xs font-medium",
                           bet.result === "gagne"
@@ -344,29 +324,73 @@ export function ParisPage({
                         )}>
                           {bet.result === "gagne" ? "Gagne" : "Perdu"}
                         </span>
-                        <button
-                          onClick={() => openEdit(bet)}
-                          disabled={isPending}
-                          className="text-slate-600 hover:text-slate-400 transition-colors disabled:opacity-50"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(bet.id)}
-                          disabled={isPending}
-                          className="text-slate-600 hover:text-red-400 transition-colors disabled:opacity-50"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    )}
+                      )}
+                      <button
+                        onClick={() => openEdit(bet)}
+                        disabled={isPending}
+                        className="text-slate-500 hover:text-slate-400 transition-colors disabled:opacity-50"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(bet.id)}
+                        disabled={isPending}
+                        className="text-slate-500 hover:text-red-400 transition-colors disabled:opacity-50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
+
+                {/* Pending: Gagné / Perdu below the card */}
+                {bet.result === null && (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => handleWin(bet)}
+                      disabled={isPending}
+                      className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-emerald-500/15 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
+                    >
+                      <CheckCircle className="h-4 w-4" /> Gagné
+                    </button>
+                    <button
+                      onClick={() => handleValidate(bet.id, "perdu")}
+                      disabled={isPending}
+                      className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-red-500/15 text-red-400 text-sm font-semibold hover:bg-red-500/25 transition-colors disabled:opacity-50"
+                    >
+                      <XCircle className="h-4 w-4" /> Perdu
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       )}
+
+      {/* Win celebration popup */}
+      <Dialog open={winBet !== null} onOpenChange={(open) => { if (!open) setWinBet(null); }}>
+        <DialogContent className="bg-[#1e293b] border border-emerald-500/30 max-w-xs mx-auto rounded-2xl">
+          <DialogHeader className="items-center text-center">
+            <div className="text-5xl animate-bounce">🎉</div>
+            <DialogTitle className="text-lg text-emerald-400">
+              Pari gagné !
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              {winBet?.series.subject} · Pari #{winBet?.bet_number} · cote{" "}
+              {winBet?.odds.toFixed(2)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-xl bg-emerald-500/10 px-4 py-3 text-center">
+            <p className="text-[10px] uppercase tracking-wide text-slate-400">
+              Bénéfice net
+            </p>
+            <p className="text-2xl font-bold text-emerald-400">
+              +<RollingNumber value={winBet?.potential_net ?? 0} format="euros" />
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit bet dialog */}
       <Dialog open={editBet !== null} onOpenChange={(open) => { if (!open) setEditBet(null); }}>
