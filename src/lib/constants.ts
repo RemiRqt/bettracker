@@ -1,3 +1,7 @@
+// Comptes autorisés à voir les pages outils/dev (ex. /styleguide).
+// Gate pragmatique par email — page de référence design, pas une feature produit.
+export const ADMIN_EMAILS: string[] = ["rranquet@gmail.com"];
+
 export const BET_TYPES = {
   victoire: "Victoire",
   defaite: "Défaite",
