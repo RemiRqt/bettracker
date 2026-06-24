@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, CheckCircle, XCircle, Trash2, ChevronUp, ChevronDown, Pencil } from "lucide-react";
+import { Plus, CheckCircle, XCircle, Trash2, ChevronUp, ChevronDown, Pencil, Inbox } from "lucide-react";
 import { validateResult, deleteBet, updateBet } from "@/actions/bets";
 import { BET_TYPES } from "@/lib/constants";
 import { formatEuros, cn } from "@/lib/utils";
@@ -241,8 +241,17 @@ export function ParisPage({
 
       {/* Bets list */}
       {sorted.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-slate-500 text-sm">Aucun pari</p>
+        <div className="flex flex-col items-center justify-center py-16 text-slate-500">
+          <Inbox className="h-10 w-10 mb-3 text-slate-600" />
+          <p className="text-sm">Aucun pari{filter ? " pour ce filtre" : ""}.</p>
+          {!filter && (
+            <button
+              onClick={() => setModalOpen(true)}
+              className="mt-3 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+            >
+              Créer un pari
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
@@ -254,7 +263,12 @@ export function ParisPage({
             return (
               <div
                 key={bet.id}
-                className="bg-[#1e293b] rounded-xl p-3 flex items-center justify-between gap-3"
+                className={cn(
+                  "bg-[#1e293b] rounded-xl p-3 flex items-center justify-between gap-3 border",
+                  bet.result === null
+                    ? "border-blue-500/20"
+                    : "border-transparent"
+                )}
               >
                 {/* Left */}
                 <div className="min-w-0 flex-1">
