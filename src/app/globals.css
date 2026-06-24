@@ -70,13 +70,17 @@
   button:not(:disabled):not([role="tab"]):active {
     transform: scale(0.97);
   }
-  /* Sticker shadow on every action button (cards stay flat — the shadow is a
-     button signature now). Rest = small offset, hover = full. Transform stays
-     on the press rule above. Amber buttons get an amber variant below. */
-  button:not(:disabled):not([role="tab"]) {
+  /* Sticker shadow on filled action buttons only (not bare icon buttons).
+     Rest = small offset, hover = full. Transform stays on the press rule above.
+     Amber buttons get an amber variant below. */
+  button:not(:disabled):not([role="tab"]).bg-primary,
+  button:not(:disabled):not([role="tab"]).bg-secondary,
+  button:not(:disabled):not([role="tab"]).bg-destructive {
     box-shadow: var(--shadow-hard-sm);
   }
-  button:not(:disabled):not([role="tab"]):hover {
+  button:not(:disabled):not([role="tab"]).bg-primary:hover,
+  button:not(:disabled):not([role="tab"]).bg-secondary:hover,
+  button:not(:disabled):not([role="tab"]).bg-destructive:hover {
     box-shadow: var(--shadow-hard);
   }
   /* Amber action buttons (freebets) get an amber-tinted sticker shadow to
