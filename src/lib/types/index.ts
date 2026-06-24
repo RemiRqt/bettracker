@@ -42,7 +42,11 @@ export interface DashboardStats {
   freebetBalance: number;
   freebetProfit: number;
   objectifDeGain: number;
-  capitalEvolution: { date: string; capital: number; invested: number }[];
-  successByRank: { rank: number; won: number; total: number }[];
-  distributionByType: { type: string; count: number; percentage: number }[];
+  capitalEvolution: {
+    date: string;
+    capital: number;
+    deposits: number;
+    valeur: number;
+    encaisse: number;
+  }[];
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { formatEuros, formatPercent } from "@/lib/utils";
+import { formatEuros } from "@/lib/utils";
+import { RollingNumber } from "@/components/ui/rolling-number";
 import type { DashboardStats } from "@/lib/types";
 import {
   Wallet,
@@ -28,12 +29,12 @@ function StatCard({
   icon,
 }: {
   label: string;
-  value: string | number;
+  value: React.ReactNode;
   color?: string;
   icon?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl bg-[#1e293b] px-3 py-2">
+    <div className="rounded-xl bg-[#1e293b] px-3 py-2 h-full">
       <div className="flex items-center gap-1.5 mb-0.5">
         {icon}
         <span className="text-[10px] uppercase tracking-wide text-slate-400 leading-tight">
@@ -52,7 +53,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
   return (
     <div className="space-y-1.5">
       {/* Capital disponible + Objectif de gain - hero card */}
-      <div className="rounded-xl bg-[#1e293b] px-4 py-3">
+      <div className="rounded-xl bg-[#1e293b] px-4 py-3 shadow-hard border border-emerald-500/15">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -72,13 +73,13 @@ export function StatsCards({ stats }: StatsCardsProps) {
               </span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span
+              <RollingNumber
+                value={stats.capitalDisponible}
+                format="euros"
                 className={`text-xl font-bold ${
                   capitalDispoPositive ? "text-emerald-400" : "text-red-400"
                 }`}
-              >
-                {formatEuros(stats.capitalDisponible)}
-              </span>
+              />
               <span
                 className={`text-xs font-semibold ${
                   stats.bettingProfit >= 0 ? "text-emerald-400/70" : "text-red-400/70"
@@ -96,9 +97,11 @@ export function StatsCards({ stats }: StatsCardsProps) {
                   Objectif
                 </span>
               </div>
-              <span className="text-lg font-bold text-blue-400">
-                {formatEuros(stats.objectifDeGain)}
-              </span>
+              <RollingNumber
+                value={stats.objectifDeGain}
+                format="euros"
+                className="text-lg font-bold text-blue-400"
+              />
               <p className="text-[10px] text-slate-500">si tout gagné</p>
             </div>
           )}
@@ -122,18 +125,20 @@ export function StatsCards({ stats }: StatsCardsProps) {
       <div className="grid grid-cols-3 gap-1.5">
         <StatCard
           label="Total Mise"
-          value={formatEuros(stats.totalStakes)}
+          value={<RollingNumber value={stats.totalStakes} format="euros" />}
           icon={<Banknote className="h-3.5 w-3.5 text-slate-400" />}
         />
         <StatCard
           label="Total Gains"
-          value={formatEuros(stats.totalGains)}
+          value={<RollingNumber value={stats.totalGains} format="euros" />}
           color="text-emerald-400"
           icon={<TrendingUp className="h-3.5 w-3.5 text-emerald-400" />}
         />
         <StatCard
           label="Rendement"
-          value={formatPercent(stats.roi, 3)}
+          value={
+            <RollingNumber value={stats.roi} format="percent" digits={3} />
+          }
           color={roiPositive ? "text-emerald-400" : "text-red-400"}
           icon={
             roiPositive ? (
@@ -149,13 +154,13 @@ export function StatsCards({ stats }: StatsCardsProps) {
       <div className="grid grid-cols-2 gap-1.5">
         <StatCard
           label="Mise en cours"
-          value={formatEuros(stats.miseEnCours)}
+          value={<RollingNumber value={stats.miseEnCours} format="euros" />}
           icon={<Clock className="h-3.5 w-3.5 text-amber-400" />}
           color="text-amber-400"
         />
         <StatCard
           label="Gains potentiels"
-          value={formatEuros(stats.gainsPotentiels)}
+          value={<RollingNumber value={stats.gainsPotentiels} format="euros" />}
           icon={<Sparkles className="h-3.5 w-3.5 text-emerald-400" />}
           color="text-emerald-400"
         />
@@ -163,26 +168,35 @@ export function StatsCards({ stats }: StatsCardsProps) {
 
       {/* Row 3: En cours / Gagné / Perdu */}
       <div className="grid grid-cols-3 gap-1.5">
-        <Link href="/series/new?filter=en_cours">
+        <Link
+          href="/series/new?filter=en_cours"
+          className="block transition-transform active:scale-95"
+        >
           <StatCard
             label="En cours"
-            value={stats.parisEnCours}
+            value={<RollingNumber value={stats.parisEnCours} format="int" />}
             icon={<Activity className="h-3.5 w-3.5 text-blue-400" />}
             color="text-blue-400"
           />
         </Link>
-        <Link href="/series/new?filter=gagne">
+        <Link
+          href="/series/new?filter=gagne"
+          className="block transition-transform active:scale-95"
+        >
           <StatCard
             label="Gagné"
-            value={stats.parisGagnes}
+            value={<RollingNumber value={stats.parisGagnes} format="int" />}
             icon={<CheckCircle className="h-3.5 w-3.5 text-emerald-400" />}
             color="text-emerald-400"
           />
         </Link>
-        <Link href="/series/new?filter=perdu">
+        <Link
+          href="/series/new?filter=perdu"
+          className="block transition-transform active:scale-95"
+        >
           <StatCard
             label="Perdu"
-            value={stats.parisPerdu}
+            value={<RollingNumber value={stats.parisPerdu} format="int" />}
             icon={<XCircle className="h-3.5 w-3.5 text-red-400" />}
             color="text-red-400"
           />
@@ -193,12 +207,18 @@ export function StatsCards({ stats }: StatsCardsProps) {
       <div className="grid grid-cols-2 gap-1.5">
         <StatCard
           label="Cote moyenne"
-          value={stats.coteMoyenne.toFixed(2)}
+          value={
+            <RollingNumber
+              value={stats.coteMoyenne}
+              format="decimal"
+              digits={2}
+            />
+          }
           icon={<BarChart3 className="h-3.5 w-3.5 text-slate-400" />}
         />
         <StatCard
           label="Mise moyenne"
-          value={formatEuros(stats.miseMoyenne)}
+          value={<RollingNumber value={stats.miseMoyenne} format="euros" />}
           icon={<Coins className="h-3.5 w-3.5 text-slate-400" />}
         />
       </div>

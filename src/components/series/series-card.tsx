@@ -35,6 +35,7 @@ export function SeriesCard({ series }: SeriesCardProps) {
         className={`
           rounded-lg border-0 border-l-4 bg-[#1e293b] p-3 md:p-4 shadow-lg
           transition-all duration-200 hover:translate-y-[-2px] hover:shadow-xl hover:bg-[#253348]
+          active:scale-[0.98]
           ${statusBorderColor(series.status)}
         `}
       >

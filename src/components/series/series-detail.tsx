@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { SeriesStatusBadge } from "@/components/series/series-status-badge";
 import { AbandonDialog } from "@/components/series/abandon-dialog";
+import { DeleteSeriesButton } from "@/components/series/delete-series-button";
 import { BetsTable } from "@/components/bets/bets-table";
 import { AddBetForm } from "@/components/bets/add-bet-form";
 import { ValidateResultForm } from "@/components/bets/validate-result-form";
@@ -66,9 +67,12 @@ export function SeriesDetail({ series }: SeriesDetailProps) {
             </span>
           </div>
 
-          {isEnCours && (
-            <AbandonDialog seriesId={series.id} />
-          )}
+          {isEnCours &&
+            (bets.length === 0 ? (
+              <DeleteSeriesButton seriesId={series.id} />
+            ) : (
+              <AbandonDialog seriesId={series.id} />
+            ))}
         </CardContent>
       </Card>
 

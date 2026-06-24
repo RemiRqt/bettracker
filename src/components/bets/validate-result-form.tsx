@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { validateResult } from "@/actions/bets";
 import { formatEuros } from "@/lib/utils";
+import { fireConfetti } from "@/lib/confetti";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 
@@ -21,7 +22,10 @@ export function ValidateResultForm({
 
   function handleValidate(result: "gagne" | "perdu") {
     startTransition(async () => {
-      await validateResult(betId, result);
+      const res = await validateResult(betId, result);
+      if (result === "gagne" && !res?.error) {
+        fireConfetti();
+      }
     });
   }
 

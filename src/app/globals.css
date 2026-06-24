@@ -39,6 +39,9 @@
   --radius-lg: 0.75rem;
   --radius-md: calc(var(--radius-lg) - 2px);
   --radius-sm: calc(var(--radius-lg) - 4px);
+  /* Hard offset "sticker" shadows (ported from Olympiades), emerald-tinted */
+  --shadow-hard: 4px 4px 0 0 rgb(16 185 129 / 0.22);
+  --shadow-hard-sm: 3px 3px 0 0 rgb(16 185 129 / 0.18);
   --text-base: 1rem;
   --text-sm: 0.9375rem;
   --text-xs: 0.8125rem;
@@ -61,5 +64,10 @@
     @apply bg-background text-foreground antialiased;
     font-size: 1rem;
     line-height: 1.6;
+  }
+  /* Tactile press on action buttons (app-level, not the shadcn primitive).
+     Tabs are excluded to keep tab switching steady. */
+  button:not(:disabled):not([role="tab"]):active {
+    transform: scale(0.97);
   }
 }

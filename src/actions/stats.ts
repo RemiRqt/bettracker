@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { DashboardStats, Bet, BetType } from "@/lib/types";
+import type { DashboardStats, Bet } from "@/lib/types";
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = await createClient();
@@ -15,45 +15,17 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     throw new Error("Vous devez etre connecte.");
   }
 
-  // Fetch all user's series
-  const { data: seriesList, error: seriesError } = await supabase
-    .from("series")
-    .select("id, status, target_gain, bet_type, subject, created_at")
-    .eq("user_id", user.id);
-
-  if (seriesError) {
-    throw new Error(
-      `Erreur lors de la recuperation des series: ${seriesError.message}`
-    );
-  }
-
-  const series = seriesList ?? [];
-  const seriesIds = series.map((s) => s.id);
-
-  // Fetch all bets for these series
-  let allBets: Bet[] = [];
-  if (seriesIds.length > 0) {
-    const { data: betsData, error: betsError } = await supabase
-      .from("bets")
-      .select("id, series_id, odds, stake, result, bet_number, potential_net, created_at")
-      .in("series_id", seriesIds)
-      .order("created_at", { ascending: true });
-
-    if (betsError) {
-      throw new Error(
-        `Erreur lors de la recuperation des paris: ${betsError.message}`
-      );
-    }
-
-    allBets = betsData ?? [];
-  }
-
-  // Fetch transactions, freebets, and freebet_bets in parallel
+  // Round 1: everything that does not depend on the series ids, in parallel.
   const [
+    { data: seriesList, error: seriesError },
     { data: transactions, error: transactionsError },
     { data: freebetsData },
     { data: freebetBetsData },
   ] = await Promise.all([
+    supabase
+      .from("series")
+      .select("id, status, target_gain, bet_type, subject, created_at")
+      .eq("user_id", user.id),
     supabase
       .from("transactions")
       .select("id, type, amount, created_at")
@@ -70,10 +42,37 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .order("created_at", { ascending: true }),
   ]);
 
+  if (seriesError) {
+    throw new Error(
+      `Erreur lors de la recuperation des series: ${seriesError.message}`
+    );
+  }
+
   if (transactionsError) {
     throw new Error(
       `Erreur lors de la recuperation des transactions: ${transactionsError.message}`
     );
+  }
+
+  const series = seriesList ?? [];
+  const seriesIds = series.map((s) => s.id);
+
+  // Round 2: bets depend on the series ids fetched above.
+  let allBets: Bet[] = [];
+  if (seriesIds.length > 0) {
+    const { data: betsData, error: betsError } = await supabase
+      .from("bets")
+      .select("id, series_id, odds, stake, result, bet_number, potential_net, created_at")
+      .in("series_id", seriesIds)
+      .order("created_at", { ascending: true });
+
+    if (betsError) {
+      throw new Error(
+        `Erreur lors de la recuperation des paris: ${betsError.message}`
+      );
+    }
+
+    allBets = betsData ?? [];
   }
 
   const allTransactions = transactions ?? [];
@@ -212,19 +211,32 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
-  // Build daily snapshots from timeline events
+  // Build daily snapshots from timeline events.
+  // capital  = bankroll currently in the account
+  // deposits = gross cumulative deposits (only grows)
+  // encaisse = cumulative withdrawals (banked profit)
+  // valeur   = capital + encaisse → unaffected by a withdrawal (money just
+  //            moves from the account to "banked"), so the gap valeur - deposits
+  //            reads as total lifetime winnings.
   let runningCapital = 0;
-  let runningInvested = 0;
-  const dailySnapshot = new Map<string, { capital: number; invested: number }>();
+  let runningDeposits = 0;
+  let runningWithdrawals = 0;
+  type Snapshot = {
+    capital: number;
+    deposits: number;
+    valeur: number;
+    encaisse: number;
+  };
+  const dailySnapshot = new Map<string, Snapshot>();
 
   for (const entry of timeline) {
     if (entry.kind === "transaction") {
       if (entry.type === "depot") {
         runningCapital += entry.amount;
-        runningInvested += entry.amount;
+        runningDeposits += entry.amount;
       } else if (entry.type === "retrait") {
         runningCapital -= entry.amount;
-        runningInvested -= entry.amount;
+        runningWithdrawals += entry.amount;
       }
     } else if (entry.kind === "bet_settled") {
       if (entry.result === "gagne") {
@@ -233,7 +245,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         runningCapital -= entry.stake;
       }
     } else if (entry.kind === "freebet_settled") {
-      // Freebet wins add profit to capital (not invested)
+      // Freebet wins add profit to capital (not deposits)
       if (entry.result === "gagne") {
         runningCapital += entry.stake * entry.odds - entry.stake;
       }
@@ -242,12 +254,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     const dayKey = entry.created_at.slice(0, 10);
     dailySnapshot.set(dayKey, {
       capital: Math.round(runningCapital * 100) / 100,
-      invested: Math.round(runningInvested * 100) / 100,
+      deposits: Math.round(runningDeposits * 100) / 100,
+      valeur: Math.round((runningCapital + runningWithdrawals) * 100) / 100,
+      encaisse: Math.round(runningWithdrawals * 100) / 100,
     });
   }
 
   // Fill every day from first event to today
-  const capitalEvolution: { date: string; capital: number; invested: number }[] = [];
+  const capitalEvolution: ({ date: string } & Snapshot)[] = [];
 
   if (dailySnapshot.size > 0) {
     const sortedDays = [...dailySnapshot.keys()].sort();
@@ -255,60 +269,19 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let prevCapital = 0;
-    let prevInvested = 0;
+    let prev: Snapshot = { capital: 0, deposits: 0, valeur: 0, encaisse: 0 };
     const current = new Date(startDate);
 
     while (current <= today) {
       const key = current.toISOString().slice(0, 10);
       const snap = dailySnapshot.get(key);
       if (snap) {
-        prevCapital = snap.capital;
-        prevInvested = snap.invested;
+        prev = snap;
       }
-      capitalEvolution.push({
-        date: `${key}T12:00:00`,
-        capital: prevCapital,
-        invested: prevInvested,
-      });
+      capitalEvolution.push({ date: `${key}T12:00:00`, ...prev });
       current.setDate(current.getDate() + 1);
     }
   }
-
-  // --- successByRank (kept for equipes page) ---
-  const rankMap = new Map<number, { won: number; total: number }>();
-  for (const bet of settledBets) {
-    const rank = bet.bet_number;
-    const entry = rankMap.get(rank) ?? { won: 0, total: 0 };
-    entry.total += 1;
-    if (bet.result === "gagne") {
-      entry.won += 1;
-    }
-    rankMap.set(rank, entry);
-  }
-
-  const successByRank = Array.from(rankMap.entries())
-    .sort(([a], [b]) => a - b)
-    .map(([rank, data]) => ({ rank, ...data }));
-
-  // --- distributionByType (kept for equipes page) ---
-  const typeCount = new Map<string, number>();
-  for (const s of series) {
-    const bt = s.bet_type as BetType;
-    typeCount.set(bt, (typeCount.get(bt) ?? 0) + 1);
-  }
-
-  const totalSeries = series.length;
-  const distributionByType = Array.from(typeCount.entries()).map(
-    ([type, count]) => ({
-      type,
-      count,
-      percentage:
-        totalSeries > 0
-          ? Math.round((count / totalSeries) * 10000) / 100
-          : 0,
-    })
-  );
 
   return {
     capital: capitalWithFreebets,
@@ -331,7 +304,5 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     freebetProfit,
     objectifDeGain,
     capitalEvolution,
-    successByRank,
-    distributionByType,
   };
 }

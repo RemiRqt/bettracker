@@ -140,7 +140,8 @@ export async function deleteSeries(seriesId: string) {
     return { error: "Seules les series en cours peuvent etre supprimees." };
   }
 
-  // Verify the series has exactly 1 bet (bet #1) and it's not yet validated
+  // A series is deletable when it is empty (no bets) or holds only the
+  // first bet, still pending.
   const { data: bets, error: betsError } = await supabase
     .from("bets")
     .select("id, bet_number, result")
@@ -150,9 +151,17 @@ export async function deleteSeries(seriesId: string) {
     return { error: `Erreur: ${betsError.message}` };
   }
 
-  if (!bets || bets.length !== 1 || bets[0].bet_number !== 1 || bets[0].result !== null) {
+  const isEmpty = !bets || bets.length === 0;
+  const isSinglePending =
+    !!bets &&
+    bets.length === 1 &&
+    bets[0].bet_number === 1 &&
+    bets[0].result === null;
+
+  if (!isEmpty && !isSinglePending) {
     return {
-      error: "Seules les series avec uniquement le pari #1 en cours peuvent etre supprimees.",
+      error:
+        "Seules les series vides ou avec uniquement le pari #1 en cours peuvent etre supprimees.",
     };
   }
 

@@ -7,6 +7,7 @@ import { TransactionList } from "@/components/profile/transaction-list";
 import { FollowedTeams } from "@/components/profile/followed-teams";
 import { NotificationSettings } from "@/components/profile/notification-settings";
 import { SignOutButton } from "@/components/profile/sign-out-button";
+import { RollingNumber } from "@/components/ui/rolling-number";
 import { User } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -51,7 +52,7 @@ export default async function ProfilePage() {
       </div>
 
       {/* Balance card */}
-      <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
+      <div className="rounded-xl bg-[#1e293b] p-4 md:p-6 shadow-hard border border-emerald-500/15">
         <h2 className="text-sm uppercase tracking-wide text-slate-400 mb-4">
           Solde du compte
         </h2>
@@ -59,13 +60,13 @@ export default async function ProfilePage() {
           <div className="text-center">
             <p className="text-xs text-slate-400 mb-1">Depots</p>
             <p className="text-lg font-semibold text-[#10b981]">
-              +{totalDeposits.toFixed(2)} &euro;
+              +<RollingNumber value={totalDeposits} format="euros" />
             </p>
           </div>
           <div className="text-center">
             <p className="text-xs text-slate-400 mb-1">Retraits</p>
             <p className="text-lg font-semibold text-red-400">
-              -{totalWithdrawals.toFixed(2)} &euro;
+              -<RollingNumber value={totalWithdrawals} format="euros" />
             </p>
           </div>
           <div className="text-center">
@@ -76,7 +77,7 @@ export default async function ProfilePage() {
               }`}
             >
               {balance >= 0 ? "+" : ""}
-              {balance.toFixed(2)} &euro;
+              <RollingNumber value={balance} format="euros" />
             </p>
           </div>
         </div>

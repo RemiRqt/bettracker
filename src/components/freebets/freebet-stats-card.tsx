@@ -1,4 +1,4 @@
-import { formatEuros, formatPercent } from "@/lib/utils";
+import { RollingNumber } from "@/components/ui/rolling-number";
 import { Ticket, TrendingUp, CircleDollarSign, BarChart3 } from "lucide-react";
 
 interface FreebetStatsCardProps {
@@ -11,7 +11,7 @@ export function FreebetStatsCard({ balance, used, realGains }: FreebetStatsCardP
   const conversionRate = used > 0 ? (realGains / used) * 100 : 0;
 
   return (
-    <div className="rounded-xl bg-[#1e293b] p-4 space-y-3">
+    <div className="rounded-xl bg-[#1e293b] p-4 space-y-3 border border-amber-500/15 shadow-[4px_4px_0_0_rgb(245_158_11_/_0.18)]">
       {/* Main: balance */}
       <div className="flex items-center gap-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20">
@@ -21,9 +21,11 @@ export function FreebetStatsCard({ balance, used, realGains }: FreebetStatsCardP
           <span className="text-[10px] uppercase tracking-wide text-slate-400">
             Freebets disponibles
           </span>
-          <p className="text-xl font-bold text-amber-400">
-            {formatEuros(balance)}
-          </p>
+          <RollingNumber
+            value={balance}
+            format="euros"
+            className="block text-xl font-bold text-amber-400"
+          />
         </div>
       </div>
 
@@ -36,9 +38,11 @@ export function FreebetStatsCard({ balance, used, realGains }: FreebetStatsCardP
               Utilisé
             </span>
           </div>
-          <p className="text-sm font-bold text-slate-100">
-            {formatEuros(used)}
-          </p>
+          <RollingNumber
+            value={used}
+            format="euros"
+            className="block text-sm font-bold text-slate-100"
+          />
         </div>
         <div className="rounded-lg bg-[#0f172a] px-2.5 py-2">
           <div className="flex items-center gap-1 mb-0.5">
@@ -47,9 +51,11 @@ export function FreebetStatsCard({ balance, used, realGains }: FreebetStatsCardP
               Gagné
             </span>
           </div>
-          <p className="text-sm font-bold text-emerald-400">
-            {formatEuros(realGains)}
-          </p>
+          <RollingNumber
+            value={realGains}
+            format="euros"
+            className="block text-sm font-bold text-emerald-400"
+          />
         </div>
         <div className="rounded-lg bg-[#0f172a] px-2.5 py-2">
           <div className="flex items-center gap-1 mb-0.5">
@@ -58,9 +64,11 @@ export function FreebetStatsCard({ balance, used, realGains }: FreebetStatsCardP
               Conversion
             </span>
           </div>
-          <p className="text-sm font-bold text-blue-400">
-            {formatPercent(conversionRate)}
-          </p>
+          <RollingNumber
+            value={conversionRate}
+            format="percent"
+            className="block text-sm font-bold text-blue-400"
+          />
         </div>
       </div>
     </div>
