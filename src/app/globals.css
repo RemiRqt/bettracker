@@ -70,4 +70,17 @@
   button:not(:disabled):not([role="tab"]):active {
     transform: scale(0.97);
   }
+  /* Hard "sticker" shadow on solid action buttons (app-level, not the shadcn
+     primitive). Rest = small offset, hover = full offset. Transform is left to
+     the press rule above so the scale(0.97) tap stays intact. */
+  button:not(:disabled):not([role="tab"]).bg-primary,
+  button:not(:disabled):not([role="tab"]).bg-secondary,
+  button:not(:disabled):not([role="tab"]).bg-destructive {
+    box-shadow: var(--shadow-hard-sm);
+  }
+  button:not(:disabled):not([role="tab"]).bg-primary:hover,
+  button:not(:disabled):not([role="tab"]).bg-secondary:hover,
+  button:not(:disabled):not([role="tab"]).bg-destructive:hover {
+    box-shadow: var(--shadow-hard);
+  }
 }
