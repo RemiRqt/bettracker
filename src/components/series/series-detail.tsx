@@ -1,12 +1,7 @@
 import type { SeriesWithBets, BetType, SeriesStatus } from "@/lib/types";
 import { BET_TYPES } from "@/lib/constants";
-import { formatEuros } from "@/lib/utils";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { RollingNumber } from "@/components/ui/rolling-number";
 import { SeriesStatusBadge } from "@/components/series/series-status-badge";
 import { AbandonDialog } from "@/components/series/abandon-dialog";
 import { DeleteSeriesButton } from "@/components/series/delete-series-button";
@@ -18,9 +13,33 @@ interface SeriesDetailProps {
   series: SeriesWithBets;
 }
 
+const STATUS_BORDER: Record<SeriesStatus, string> = {
+  en_cours: "border-blue-500/30",
+  gagnee: "border-emerald-500/30",
+  abandonnee: "border-red-500/30",
+};
+
+function StatTile({
+  label,
+  value,
+  color = "text-slate-100",
+}: {
+  label: string;
+  value: React.ReactNode;
+  color?: string;
+}) {
+  return (
+    <div className="rounded-xl bg-[#0f172a] px-3 py-2">
+      <p className="text-[10px] uppercase tracking-wide text-slate-500">
+        {label}
+      </p>
+      <p className={cn("text-sm md:text-base font-bold", color)}>{value}</p>
+    </div>
+  );
+}
+
 export function SeriesDetail({ series }: SeriesDetailProps) {
-  const betTypeLabel =
-    BET_TYPES[series.bet_type as BetType] ?? series.bet_type;
+  const betTypeLabel = BET_TYPES[series.bet_type as BetType] ?? series.bet_type;
   const createdAt = new Date(series.created_at).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "long",
@@ -31,6 +50,7 @@ export function SeriesDetail({ series }: SeriesDetailProps) {
   const bets = series.bets;
   const lastBet = bets.length > 0 ? bets[bets.length - 1] : null;
   const lastBetHasResult = lastBet !== null && lastBet.result !== null;
+  const miseCumulee = bets.reduce((sum, b) => sum + b.stake, 0);
 
   const showAddBetForm = isEnCours && (bets.length === 0 || lastBetHasResult);
   const showValidateForm =
@@ -38,53 +58,69 @@ export function SeriesDetail({ series }: SeriesDetailProps) {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* En-tete de la serie */}
-      <Card className="border-0 bg-[#1e293b] shadow-lg">
-        <CardHeader className="p-4 md:p-6">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <CardTitle className="text-lg md:text-2xl text-slate-100 leading-tight">
-                {series.subject}
-              </CardTitle>
-            </div>
-            <SeriesStatusBadge status={status} />
-          </div>
-        </CardHeader>
-        <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
-          {/* Info pills */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            <span className="inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-xs md:text-sm text-slate-300">
-              {betTypeLabel}
-            </span>
-            <span className="inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-xs md:text-sm text-slate-300">
-              Objectif : <span className="ml-1 text-emerald-400 font-medium">{formatEuros(series.target_gain)}</span>
-            </span>
-            <span className="inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-xs md:text-sm text-slate-300">
-              Créée le {createdAt}
-            </span>
-            <span className="inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-xs md:text-sm text-slate-300">
-              {bets.length} pari{bets.length !== 1 ? "s" : ""}
-            </span>
-          </div>
+      {/* Hero serie */}
+      <div
+        className={cn(
+          "rounded-2xl bg-[#1e293b] p-4 md:p-5 shadow-hard border",
+          STATUS_BORDER[status]
+        )}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="min-w-0 text-xl md:text-2xl font-bold text-slate-100 leading-tight">
+            {series.subject}
+          </h1>
+          <SeriesStatusBadge status={status} />
+        </div>
+        <p className="mt-1 text-xs text-slate-500">
+          {betTypeLabel} · Créée le {createdAt}
+        </p>
 
-          {isEnCours &&
-            (bets.length === 0 ? (
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <StatTile
+            label="Objectif/pari"
+            value={<RollingNumber value={series.target_gain} format="euros" />}
+            color="text-emerald-400"
+          />
+          <StatTile
+            label="Mise cumulée"
+            value={<RollingNumber value={miseCumulee} format="euros" />}
+          />
+          <StatTile
+            label="Paris"
+            value={<RollingNumber value={bets.length} format="int" />}
+          />
+        </div>
+
+        {showValidateForm && lastBet && (
+          <div className="mt-2 flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2">
+            <span className="text-xs text-slate-300">
+              Gain potentiel net si gagné
+            </span>
+            <RollingNumber
+              value={lastBet.potential_net}
+              format="euros"
+              className="text-base font-bold text-emerald-400"
+            />
+          </div>
+        )}
+
+        {isEnCours && (
+          <div className="mt-3">
+            {bets.length === 0 ? (
               <DeleteSeriesButton seriesId={series.id} />
             ) : (
               <AbandonDialog seriesId={series.id} />
-            ))}
-        </CardContent>
-      </Card>
+            )}
+          </div>
+        )}
+      </div>
 
-      {/* Section paris */}
-      <Card className="border-0 bg-[#1e293b] shadow-lg overflow-hidden">
-        <div className="h-1 bg-emerald-500" />
-        <CardHeader className="p-4 md:p-6">
-          <CardTitle className="text-base md:text-lg text-slate-100">
-            Paris
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 pt-0 md:p-6 md:pt-0 space-y-5">
+      {/* Paris */}
+      <div className="rounded-2xl bg-[#1e293b] p-4 md:p-5 shadow-hard-sm border border-slate-700/50">
+        <h2 className="mb-3 text-base md:text-lg font-bold text-slate-100">
+          Paris
+        </h2>
+        <div className="space-y-5">
           <BetsTable bets={bets} />
 
           {showAddBetForm && <AddBetForm seriesId={series.id} />}
@@ -96,8 +132,8 @@ export function SeriesDetail({ series }: SeriesDetailProps) {
               potentialNet={lastBet.potential_net}
             />
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
