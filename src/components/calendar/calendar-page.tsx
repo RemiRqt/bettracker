@@ -67,6 +67,14 @@ export function CalendarPage({
       })
     : null;
 
+  const today = new Date().toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const todayLabel = today.charAt(0).toUpperCase() + today.slice(1);
+
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Header */}
@@ -85,7 +93,7 @@ export function CalendarPage({
             <button
               onClick={handleRefresh}
               disabled={isPending}
-              className="p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors disabled:opacity-50"
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors disabled:opacity-50"
               title="Rechercher les matchs"
             >
               <RefreshCw
@@ -136,17 +144,25 @@ export function CalendarPage({
       )}
 
       {/* Grouped fixtures */}
-      {Object.entries(grouped).map(([date, dateFixtures]) => (
-        <div key={date} className="space-y-2">
-          <h2 className="text-xs uppercase tracking-wide text-slate-400 px-1 font-[family-name:var(--font-poppins)]">
-            {date}
-          </h2>
+      {Object.entries(grouped).map(([date, dateFixtures]) => {
+        const isToday = date === todayLabel;
+        return (
+          <div key={date} className="space-y-2">
+            <h2
+              className={cn(
+                "px-1 text-xs uppercase tracking-wide font-[family-name:var(--font-poppins)]",
+                isToday ? "font-semibold text-emerald-400" : "text-slate-400"
+              )}
+            >
+              {isToday ? `Aujourd'hui · ${date}` : date}
+            </h2>
 
-          {dateFixtures.map((item) => (
-            <FixtureCard key={item.fixture.id} item={item} />
-          ))}
-        </div>
-      ))}
+            {dateFixtures.map((item) => (
+              <FixtureCard key={item.fixture.id} item={item} />
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -163,13 +179,19 @@ function FixtureCard({
   };
 }) {
   const { fixture, activeSeries } = item;
+  const hasSeries = activeSeries.length > 0;
   const time = new Date(fixture.date).toLocaleTimeString("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
   });
 
   return (
-    <div className="rounded-xl bg-[#1e293b] p-3 space-y-2.5">
+    <div
+      className={cn(
+        "rounded-xl bg-[#1e293b] p-3 space-y-2.5",
+        hasSeries && "border border-emerald-500/30 shadow-hard-sm"
+      )}
+    >
       {/* League + Time */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
