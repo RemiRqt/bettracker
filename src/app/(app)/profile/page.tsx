@@ -40,8 +40,8 @@ export default async function ProfilePage() {
     <div className="space-y-4 md:space-y-6">
       {/* Profile header */}
       <div className="rounded-xl bg-[#1e293b] p-4 md:p-6 flex items-center gap-4">
-        <div className="h-12 w-12 rounded-full bg-[#0f172a] border border-slate-600 flex items-center justify-center">
-          <User className="h-6 w-6 text-slate-400" />
+        <div className="h-12 w-12 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center">
+          <User className="h-6 w-6 text-emerald-400/80" />
         </div>
         <div>
           <h1 className="text-lg font-semibold text-white font-[family-name:var(--font-poppins)]">

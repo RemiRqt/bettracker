@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { validateFreebetResult, deleteFreebetBet } from "@/actions/freebets";
 import { formatEuros } from "@/lib/utils";
+import { fireConfetti } from "@/lib/confetti";
 import type { FreebetBet } from "@/lib/types";
 import { Ticket, CheckCircle, XCircle, Trash2 } from "lucide-react";
 
@@ -17,6 +18,7 @@ export function FreebetBetsList({ bets }: FreebetBetsListProps) {
     setLoadingId(betId);
     await validateFreebetResult(betId, result);
     setLoadingId(null);
+    if (result === "gagne") fireConfetti();
   }
 
   async function handleDelete(betId: string) {

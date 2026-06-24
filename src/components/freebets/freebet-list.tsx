@@ -70,7 +70,10 @@ export function FreebetList({ freebets }: FreebetListProps) {
             : 0;
 
         return (
-          <div key={fb.id} className="rounded-xl bg-[#1e293b] p-3">
+          <div
+            key={fb.id}
+            className="rounded-xl bg-[#1e293b] p-3 border border-amber-500/20 shadow-[3px_3px_0_0_rgb(245_158_11_/_0.18)]"
+          >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Ticket className="h-4 w-4 text-amber-400" />
@@ -102,7 +105,10 @@ export function FreebetList({ freebets }: FreebetListProps) {
       })}
 
       {active.length === 0 && (
-        <p className="text-xs text-slate-500">Aucun freebet disponible.</p>
+        <div className="flex flex-col items-center justify-center py-8 text-slate-500">
+          <Ticket className="h-8 w-8 mb-2 text-slate-600" />
+          <p className="text-xs">Aucun freebet disponible.</p>
+        </div>
       )}
 
       {/* Used freebets — collapsible section, compact cards */}
