@@ -4,10 +4,11 @@ import { useState, useMemo, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createEquipe, deleteEquipe, placeBet, updateEquipeSport } from "@/actions/equipes";
 import { TeamLogo } from "@/components/ui/team-logo";
+import { RollingNumber } from "@/components/ui/rolling-number";
 import { EquipeSeriesItem } from "@/components/series/equipe-series-item";
 import type { EquipeSeries } from "@/components/series/equipes-list";
 import { BET_TYPES, SPORTS, SPORT_EMOJIS } from "@/lib/constants";
-import { formatEuros, formatPercent, cn } from "@/lib/utils";
+import { formatPercent, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -330,7 +331,13 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
             const canBetFromBanner = !!(eq.activeSeries && !eq.activeSeries.hasPendingBet);
 
             return (
-              <div key={key} className="rounded-xl bg-[#1e293b] overflow-hidden">
+              <div
+                key={key}
+                className={cn(
+                  "rounded-xl bg-[#1e293b] overflow-hidden",
+                  eq.activeSeries && "border border-emerald-500/30 shadow-hard-sm"
+                )}
+              >
                 {/* Next fixture banner (only when there's an active series + upcoming fixture) */}
                 {showFixtureBanner && (
                   <div className="flex items-center justify-between px-3 py-2 bg-blue-500/10 border-b border-blue-500/20">
@@ -368,7 +375,8 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className={cn("font-bold text-sm", eq.netProfit >= 0 ? "text-emerald-400" : "text-red-400")}>
-                        {eq.netProfit >= 0 ? "+" : ""}{formatEuros(eq.netProfit)}
+                        {eq.netProfit >= 0 ? "+" : ""}
+                        <RollingNumber value={eq.netProfit} format="euros" />
                       </span>
                       {isExpanded ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
                     </div>
