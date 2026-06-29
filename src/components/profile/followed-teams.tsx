@@ -155,15 +155,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
       variant: "destructive",
     });
     if (!ok) return;
-    setMappings((prev) =>
-      prev
-        .filter((m) => m.id !== club.id)
-        .map((m) =>
-          !m.is_club && m.api_team_id === club.api_team_id
-            ? { ...m, api_team_id: null, logo_url: null }
-            : m
-        )
-    );
+    setMappings((prev) => prev.filter((m) => m.id !== club.id));
     // Also remove any subject_links pointing to this club
     setSubjectLinks((prev) => prev.filter((l) => l.team_mapping_id !== club.id));
     startTransition(async () => {
