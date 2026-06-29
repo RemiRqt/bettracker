@@ -6,6 +6,7 @@ import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
 import { Toaster } from "@/components/ui/toaster";
 import { RouteTransition } from "@/components/layout/route-transition";
 import { SplashScreen } from "@/components/layout/splash-screen";
+import { RoutePrefetcher } from "@/components/layout/route-prefetcher";
 
 export default async function AppLayout({
   children,
@@ -25,6 +26,7 @@ export default async function AppLayout({
     <ConfirmDialogProvider>
       <div className="min-h-screen bg-background">
         <SplashScreen />
+        <RoutePrefetcher />
         <AppHeader email={user.email!} />
         <RouteTransition />
         <main
