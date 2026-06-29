@@ -1,5 +1,3 @@
-import { cookies } from "next/headers";
-
 export type Theme = "actuel" | "turf" | "creme";
 
 export const THEME_COOKIE = "bt-theme";
@@ -13,10 +11,4 @@ export const THEMES: { id: Theme; label: string; hint: string }[] = [
 
 export function isTheme(v: string | undefined): v is Theme {
   return v === "actuel" || v === "turf" || v === "creme";
-}
-
-export async function getServerTheme(): Promise<Theme> {
-  const store = await cookies();
-  const v = store.get(THEME_COOKIE)?.value;
-  return isTheme(v) ? v : DEFAULT_THEME;
 }

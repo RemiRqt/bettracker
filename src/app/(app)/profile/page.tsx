@@ -7,7 +7,9 @@ import { TransactionList } from "@/components/profile/transaction-list";
 import { FollowedTeams } from "@/components/profile/followed-teams";
 import { NotificationSettings } from "@/components/profile/notification-settings";
 import { SignOutButton } from "@/components/profile/sign-out-button";
+import { ThemeSelector } from "@/components/profile/theme-selector";
 import { RollingNumber } from "@/components/ui/rolling-number";
+import { getServerTheme } from "@/lib/theme.server";
 import { User } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +21,8 @@ export default async function ProfilePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const theme = await getServerTheme();
 
   const [transactions, teamMappings, notifSettings] = await Promise.all([
     getTransactions(),
@@ -104,6 +108,14 @@ export default async function ProfilePage() {
           Historique des transactions
         </h2>
         <TransactionList transactions={transactions} />
+      </div>
+
+      {/* Apparence */}
+      <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
+        <h2 className="text-sm uppercase tracking-wide text-slate-400 mb-4">
+          Apparence
+        </h2>
+        <ThemeSelector current={theme} />
       </div>
 
       {/* Sign out */}
