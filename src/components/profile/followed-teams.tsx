@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useEffect, useMemo } from "react";
 import {
   toggleFollow,
-  linkTeamToApi,
-  unlinkTeamFromApi,
+  linkSubject,
+  unlinkSubject,
+  getSubjectLinks,
   addClub,
   deleteTeamMapping,
 } from "@/actions/teams";
-import type { TeamMapping } from "@/actions/teams";
+import type { TeamMapping, SubjectLink } from "@/actions/teams";
 import { TeamLogo } from "@/components/ui/team-logo";
 import {
   Dialog,
@@ -35,8 +36,14 @@ interface ApiTeamResult {
 
 export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsProps) {
   const [mappings, setMappings] = useState(initialMappings);
+  const [subjectLinks, setSubjectLinks] = useState<SubjectLink[]>([]);
   const [, startTransition] = useTransition();
   const confirm = useConfirm();
+
+  // Load subject links on mount
+  useEffect(() => {
+    getSubjectLinks().then(setSubjectLinks).catch(() => {});
+  }, []);
 
   // Add club dialog
   const [addClubOpen, setAddClubOpen] = useState(false);
@@ -48,14 +55,14 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
   const [linkClubId, setLinkClubId] = useState<string | null>(null);
   const [linkSubjectSearch, setLinkSubjectSearch] = useState("");
 
-  // Link unlinked subject to existing club dialog
+  // Link unlinked subject to existing club/national dialog
   const [linkUnlinkedSubject, setLinkUnlinkedSubject] = useState<string | null>(null);
 
   const [expandedClubs, setExpandedClubs] = useState<Set<string>>(new Set());
   const [showMore, setShowMore] = useState(false);
 
   // === Derived data ===
-  // Clubs = records with is_club=true
+  // Clubs = records with is_club=true (includes nationals added with is_club=true)
   const clubs = mappings
     .filter((m) => m.is_club)
     .sort((a, b) => {
@@ -63,8 +70,27 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
       return a.subject.localeCompare(b.subject);
     });
 
-  // Unlinked subjects = records with is_club=false AND api_team_id=null
-  const subjects = mappings.filter((m) => !m.is_club && m.api_team_id === null);
+  // Unlinked subjects = non-club records with NO entries in subject_links
+  const linkedSubjectNameSet = useMemo(
+    () => new Set(subjectLinks.map((l) => l.subject)),
+    [subjectLinks]
+  );
+  const subjects = mappings.filter((m) => !m.is_club && !linkedSubjectNameSet.has(m.subject));
+
+  // Subjects available for the "link from club" dialog: all non-club records not yet linked to linkClubId
+  const availableSubjectsForLinkDialog = useMemo(() => {
+    if (!linkClubId) return [];
+    const alreadyLinked = new Set(
+      subjectLinks.filter((l) => l.team_mapping_id === linkClubId).map((l) => l.subject)
+    );
+    return mappings.filter((m) => !m.is_club && !alreadyLinked.has(m.subject));
+  }, [linkClubId, subjectLinks, mappings]);
+
+  const filteredSubjects = linkSubjectSearch
+    ? availableSubjectsForLinkDialog.filter((s) =>
+        s.subject.toLowerCase().includes(linkSubjectSearch.toLowerCase())
+      )
+    : availableSubjectsForLinkDialog;
 
   // === Handlers ===
 
@@ -119,7 +145,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     });
 
     setAddClubOpen(false); setSelectedCompetition(""); setClubResults([]); setClubFilter("");
-  }, [clubs]);
+  }, [clubs, selectedCompetition]);
 
   const handleDeleteClub = useCallback(async (club: TeamMapping) => {
     const ok = await confirm({
@@ -138,6 +164,8 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
             : m
         )
     );
+    // Also remove any subject_links pointing to this club
+    setSubjectLinks((prev) => prev.filter((l) => l.team_mapping_id !== club.id));
     startTransition(async () => {
       await deleteTeamMapping(club.id);
     });
@@ -160,33 +188,34 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     });
   }, [mappings]);
 
-  // Link a subject to a club
+  // Link a subject to a club/national (N:N via subject_links)
   const handleLinkSubject = useCallback((subjectName: string, club: TeamMapping) => {
-    setMappings((prev) =>
-      prev.map((m) =>
-        m.subject === subjectName && !m.is_club
-          ? { ...m, api_team_id: club.api_team_id, logo_url: club.logo_url }
-          : m
-      )
-    );
+    // Optimistic update
+    const optimisticLink: SubjectLink = {
+      id: crypto.randomUUID(),
+      subject: subjectName,
+      team_mapping_id: club.id,
+      created_at: new Date().toISOString(),
+    };
+    setSubjectLinks((prev) => [...prev, optimisticLink]);
     startTransition(async () => {
-      await linkTeamToApi(subjectName, club.api_team_id!, club.logo_url || "");
+      const result = await linkSubject(subjectName, club.id);
+      if (result && "error" in result) {
+        // Revert
+        setSubjectLinks((prev) => prev.filter((l) => l.id !== optimisticLink.id));
+      }
     });
     setLinkClubId(null);
     setLinkUnlinkedSubject(null);
     setLinkSubjectSearch("");
   }, []);
 
-  // Unlink a subject
-  const handleUnlinkSubject = useCallback((subjectName: string) => {
-    setMappings((prev) =>
-      prev.map((m) =>
-        m.subject === subjectName && !m.is_club
-          ? { ...m, api_team_id: null, logo_url: null }
-          : m
-      )
+  // Unlink a subject from a specific club/national
+  const handleUnlinkSubject = useCallback((subjectName: string, clubId: string) => {
+    setSubjectLinks((prev) =>
+      prev.filter((l) => !(l.subject === subjectName && l.team_mapping_id === clubId))
     );
-    startTransition(async () => { await unlinkTeamFromApi(subjectName); });
+    startTransition(async () => { await unlinkSubject(subjectName, clubId); });
   }, []);
 
   const toggleClubExpand = useCallback((id: string) => {
@@ -197,26 +226,28 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     });
   }, []);
 
-  // Get subjects linked to a club (non-club records with same api_team_id)
-  const getLinkedSubjects = useCallback((clubApiId: number) => {
-    return mappings.filter((m) => !m.is_club && m.api_team_id === clubApiId);
-  }, [mappings]);
-
-  // Filter subjects for link dialog search
-  const filteredSubjects = linkSubjectSearch
-    ? subjects.filter((s) => s.subject.toLowerCase().includes(linkSubjectSearch.toLowerCase()))
-    : subjects;
+  // Get subjects linked to a club via subject_links
+  const getLinkedSubjectsViaLinks = useCallback((clubId: string) => {
+    const linkedNames = subjectLinks
+      .filter((l) => l.team_mapping_id === clubId)
+      .map((l) => l.subject);
+    return mappings.filter((m) => !m.is_club && linkedNames.includes(m.subject));
+  }, [subjectLinks, mappings]);
 
   const favorites = clubs.filter((c) => c.is_followed);
   const others = clubs.filter((c) => !c.is_followed);
 
   const renderClub = (club: TeamMapping) => {
     const isExpanded = expandedClubs.has(club.id);
-    const linked = getLinkedSubjects(club.api_team_id!);
+    const linked = getLinkedSubjectsViaLinks(club.id);
     return (
       <div key={club.id} className="rounded-xl bg-background overflow-hidden">
         <div className="flex items-center gap-3 p-3">
-          <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="md" />
+          {club.kind === "national" ? (
+            <span className="flex h-9 w-9 items-center justify-center text-xl rounded-full bg-card border border-border">🏆</span>
+          ) : (
+            <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="md" />
+          )}
           <button
             onClick={() => toggleClubExpand(club.id)}
             className="flex-1 min-w-0 text-left"
@@ -256,7 +287,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
               >
                 <span className="text-xs text-secondary-foreground">{s.subject}</span>
                 <button
-                  onClick={() => handleUnlinkSubject(s.subject)}
+                  onClick={() => handleUnlinkSubject(s.subject, club.id)}
                   className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -426,7 +457,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
         </DialogContent>
       </Dialog>
 
-      {/* Link subject to club dialog (from club expand) */}
+      {/* Link subject to club/national dialog (from club expand) */}
       <Dialog
         open={linkClubId !== null}
         onOpenChange={(open) => { if (!open) { setLinkClubId(null); setLinkSubjectSearch(""); } }}
@@ -441,7 +472,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
             </DialogDescription>
           </DialogHeader>
 
-          {subjects.length > 5 && (
+          {availableSubjectsForLinkDialog.length > 5 && (
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
@@ -458,7 +489,9 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
           <div className="max-h-72 overflow-y-auto space-y-1">
             {filteredSubjects.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">
-                {subjects.length === 0 ? "Tous les sujets sont deja lies" : "Aucun resultat"}
+                {availableSubjectsForLinkDialog.length === 0
+                  ? "Tous les sujets sont deja lies"
+                  : "Aucun resultat"}
               </p>
             ) : (
               filteredSubjects.map((s) => {
@@ -479,7 +512,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
         </DialogContent>
       </Dialog>
 
-      {/* Link unlinked subject to existing club dialog */}
+      {/* Link unlinked subject to existing club/national dialog */}
       <Dialog
         open={linkUnlinkedSubject !== null}
         onOpenChange={(open) => { if (!open) setLinkUnlinkedSubject(null); }}
@@ -490,7 +523,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
               Lier &laquo; {linkUnlinkedSubject} &raquo;
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Choisissez l&apos;equipe a associer
+              Choisissez l&apos;equipe ou la nationale a associer
             </DialogDescription>
           </DialogHeader>
 
@@ -500,16 +533,40 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                 Ajoutez d&apos;abord une equipe avec le bouton ci-dessus
               </p>
             ) : (
-              clubs.map((club) => (
-                <button
-                  key={club.id}
-                  onClick={() => handleLinkSubject(linkUnlinkedSubject!, club)}
-                  className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-background transition-colors text-left"
-                >
-                  <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="sm" />
-                  <span className="text-sm text-foreground">{club.subject}</span>
-                </button>
-              ))
+              (() => {
+                const alreadyLinkedIds = new Set(
+                  subjectLinks
+                    .filter((l) => l.subject === linkUnlinkedSubject)
+                    .map((l) => l.team_mapping_id)
+                );
+                const availableEntities = clubs.filter((c) => !alreadyLinkedIds.has(c.id));
+                if (availableEntities.length === 0) {
+                  return (
+                    <p className="text-sm text-muted-foreground text-center py-6">
+                      Toutes les equipes sont deja liees
+                    </p>
+                  );
+                }
+                return availableEntities.map((club) => (
+                  <button
+                    key={club.id}
+                    onClick={() => handleLinkSubject(linkUnlinkedSubject!, club)}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-background transition-colors text-left"
+                  >
+                    {club.kind === "national" ? (
+                      <span className="flex h-8 w-8 items-center justify-center text-lg">🏆</span>
+                    ) : (
+                      <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="sm" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm text-foreground">{club.subject}</span>
+                      {club.kind === "national" && (
+                        <span className="ml-2 text-xs text-muted-foreground">Nationale</span>
+                      )}
+                    </div>
+                  </button>
+                ));
+              })()
             )}
           </div>
         </DialogContent>
