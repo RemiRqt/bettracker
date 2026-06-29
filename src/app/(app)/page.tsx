@@ -28,8 +28,8 @@ async function DashboardContent() {
 
       <MoreStats stats={stats} />
 
-      <div className="flex h-[22rem] flex-col rounded-xl bg-[#1e293b] p-3">
-        <h3 className="mb-2 flex-shrink-0 text-[10px] uppercase tracking-wide text-slate-400">
+      <div className="flex h-[22rem] flex-col rounded-xl bg-card p-3">
+        <h3 className="mb-2 flex-shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
           Évolution du capital
         </h3>
         <div className="min-h-0 flex-1">

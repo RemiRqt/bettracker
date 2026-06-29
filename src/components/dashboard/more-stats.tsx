@@ -13,7 +13,7 @@ export function MoreStats({ stats }: { stats: DashboardStats }) {
     <div>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#1e293b] py-2 text-xs font-medium text-slate-400 transition-colors hover:text-slate-200"
+        className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-card py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-secondary-foreground"
       >
         {open ? "Moins de stats" : "Plus de stats"}
         <ChevronDown

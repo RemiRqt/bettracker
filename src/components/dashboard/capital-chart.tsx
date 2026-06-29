@@ -67,19 +67,19 @@ function CustomTooltip({
   const profitPositive = p.profit >= 0;
 
   return (
-    <div className="rounded-lg bg-[#0f172a] border border-slate-700 px-3 py-2 shadow-lg space-y-0.5">
-      <p className="text-xs text-slate-400">{formatDate(p.date)}</p>
-      <p className="text-sm font-bold text-slate-100">
+    <div className="rounded-lg bg-background border border-border px-3 py-2 shadow-lg space-y-0.5">
+      <p className="text-xs text-muted-foreground">{formatDate(p.date)}</p>
+      <p className="text-sm font-bold text-foreground">
         Valeur : {formatEuros(p.valeur)}
       </p>
-      <p className="text-[11px] text-slate-400">
+      <p className="text-[11px] text-muted-foreground">
         Capital : {formatEuros(p.capital)}
         {p.encaisse > 0 && ` · encaissé ${formatEuros(p.encaisse)}`}
       </p>
       <p
         className={cn(
           "text-xs font-semibold",
-          profitPositive ? "text-emerald-400" : "text-red-400"
+          profitPositive ? "text-primary" : "text-destructive"
         )}
       >
         Bénéfice : {profitPositive ? "+" : ""}
@@ -111,7 +111,7 @@ export function CapitalChart({ data }: CapitalChartProps) {
   const last = points[points.length - 1];
   const winning = (last?.profit ?? 0) >= 0;
   const gradId = winning ? "zoneUp" : "zoneDown";
-  const zoneColor = winning ? "#10b981" : "#ef4444";
+  const zoneColor = winning ? "var(--color-primary)" : "var(--color-destructive)";
 
   const markers = useMemo(() => {
     const out: { ts: number; y: number; type: "depot" | "retrait" }[] = [];
@@ -139,14 +139,14 @@ export function CapitalChart({ data }: CapitalChartProps) {
         <span
           className={cn(
             "font-bold",
-            winning ? "text-emerald-400" : "text-red-400"
+            winning ? "text-primary" : "text-destructive"
           )}
         >
           Bénéfice {winning ? "+" : ""}
           {formatEuros(last?.profit ?? 0)}
         </span>
         {(last?.encaisse ?? 0) > 0 && (
-          <span className="text-amber-400 font-medium">
+          <span className="text-warning font-medium">
             Encaissé {formatEuros(last!.encaisse)}
           </span>
         )}
@@ -161,8 +161,8 @@ export function CapitalChart({ data }: CapitalChartProps) {
             className={cn(
               "py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95",
               period === p.key
-                ? "bg-emerald-500/20 text-emerald-400"
-                : "bg-[#0f172a] text-slate-500 hover:text-slate-400"
+                ? "bg-primary/20 text-primary"
+                : "bg-background text-muted-foreground hover:text-secondary-foreground"
             )}
           >
             {p.label}
@@ -172,7 +172,7 @@ export function CapitalChart({ data }: CapitalChartProps) {
 
       {/* Chart */}
       {points.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-slate-500">
+        <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
           Aucune donnée
         </div>
       ) : (
@@ -186,15 +186,15 @@ export function CapitalChart({ data }: CapitalChartProps) {
             >
               <defs>
                 <linearGradient id="zoneUp" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
+                  <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.02} />
                 </linearGradient>
                 <linearGradient id="zoneDown" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#ef4444" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#ef4444" stopOpacity={0.02} />
+                  <stop offset="0%" stopColor="var(--color-destructive)" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="var(--color-destructive)" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-card)" />
               <XAxis dataKey="timestamp" type="number" domain={domain} hide />
               <YAxis hide />
               <Tooltip content={<CustomTooltip />} />
@@ -214,7 +214,7 @@ export function CapitalChart({ data }: CapitalChartProps) {
               <Area
                 type="monotone"
                 dataKey="deposits"
-                stroke="#64748b"
+                stroke="var(--color-muted-foreground)"
                 strokeWidth={1.5}
                 strokeDasharray="4 4"
                 fill="transparent"
@@ -226,8 +226,8 @@ export function CapitalChart({ data }: CapitalChartProps) {
                   x={m.ts}
                   y={m.y}
                   r={3}
-                  fill={m.type === "depot" ? "#3b82f6" : "#f59e0b"}
-                  stroke="#0f172a"
+                  fill={m.type === "depot" ? "var(--color-info)" : "var(--color-warning)"}
+                  stroke="var(--color-background)"
                   strokeWidth={1.5}
                 />
               ))}
@@ -237,7 +237,7 @@ export function CapitalChart({ data }: CapitalChartProps) {
                   y={last.valeur}
                   r={4}
                   fill={zoneColor}
-                  stroke="#0f172a"
+                  stroke="var(--color-background)"
                   strokeWidth={2}
                 />
               )}
