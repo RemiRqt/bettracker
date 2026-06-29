@@ -10,8 +10,8 @@ export default function GlobalError({
     <html lang="fr">
       <body
         style={{
-          backgroundColor: "#0f172a",
-          color: "white",
+          backgroundColor: "var(--color-background)",
+          color: "var(--color-foreground)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -29,8 +29,8 @@ export default function GlobalError({
             style={{
               padding: "0.5rem 1rem",
               borderRadius: "0.75rem",
-              backgroundColor: "#10b981",
-              color: "white",
+              backgroundColor: "var(--color-primary)",
+              color: "var(--color-primary-foreground)",
               border: "none",
               cursor: "pointer",
               fontSize: "0.875rem",

@@ -57,7 +57,7 @@ export function AddBetForm({ seriesId }: AddBetFormProps) {
     <div className="space-y-4">
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-2">
-          <Label htmlFor="odds" className="text-sm text-slate-300">
+          <Label htmlFor="odds" className="text-sm text-secondary-foreground">
             Cote du pari
           </Label>
           <Input
@@ -69,12 +69,12 @@ export function AddBetForm({ seriesId }: AddBetFormProps) {
             placeholder="Ex : 1.50"
             required
             disabled={isPending}
-            className="h-11 md:h-12 text-base bg-slate-800/60 border-slate-700 text-slate-100 placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500/20"
+            className="h-11 md:h-12 text-base bg-card/60 border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/20"
           />
         </div>
 
         {error && (
-          <p className="text-sm text-red-400">{error}</p>
+          <p className="text-sm text-destructive">{error}</p>
         )}
 
         <Button
@@ -97,15 +97,15 @@ export function AddBetForm({ seriesId }: AddBetFormProps) {
       </form>
 
       {result && (
-        <div className="rounded-lg border-l-4 border-l-emerald-500 bg-slate-800/60 p-4 space-y-2">
-          <p className="text-sm font-semibold text-emerald-400">
+        <div className="rounded-lg border-l-4 border-l-primary bg-card/60 p-4 space-y-2">
+          <p className="text-sm font-semibold text-primary">
             Pari n°{result.bet_number} ajouté avec succès
           </p>
           <div className="grid grid-cols-2 gap-1.5 text-sm">
-            <span className="text-slate-400">Mise calculée :</span>
-            <span className="font-medium text-slate-200">{formatEuros(result.stake)}</span>
-            <span className="text-slate-400">Gain potentiel net :</span>
-            <span className="font-medium text-emerald-400">
+            <span className="text-muted-foreground">Mise calculée :</span>
+            <span className="font-medium text-secondary-foreground">{formatEuros(result.stake)}</span>
+            <span className="text-muted-foreground">Gain potentiel net :</span>
+            <span className="font-medium text-primary">
               {formatEuros(result.potential_net)}
             </span>
           </div>

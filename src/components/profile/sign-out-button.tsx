@@ -16,7 +16,7 @@ export function SignOutButton() {
   return (
     <button
       onClick={handleSignOut}
-      className="w-full h-12 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-medium hover:bg-red-500/20 transition-colors"
+      className="w-full h-12 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive font-medium hover:bg-destructive/20 transition-colors"
     >
       Se déconnecter
     </button>

@@ -52,9 +52,9 @@ type FilterKey = FilterValue | null;
 type SortKey = "date" | "gains" | "mise" | "cote";
 
 const FILTERS: { key: FilterValue; label: string; color: string; activeColor: string }[] = [
-  { key: "en_cours", label: "En cours", color: "text-blue-400 border-blue-500/30", activeColor: "bg-blue-500/20" },
-  { key: "gagne", label: "Gagné", color: "text-emerald-400 border-emerald-500/30", activeColor: "bg-emerald-500/20" },
-  { key: "perdu", label: "Perdu", color: "text-red-400 border-red-500/30", activeColor: "bg-red-500/20" },
+  { key: "en_cours", label: "En cours", color: "text-info border-info/30", activeColor: "bg-info/20" },
+  { key: "gagne", label: "Gagné", color: "text-primary border-primary/30", activeColor: "bg-primary/20" },
+  { key: "perdu", label: "Perdu", color: "text-destructive border-destructive/30", activeColor: "bg-destructive/20" },
 ];
 
 const SORTS: { key: SortKey; label: string }[] = [
@@ -197,7 +197,7 @@ export function ParisPage({
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white">Paris</h1>
+        <h1 className="text-xl font-bold text-foreground">Paris</h1>
         <button
           onClick={() => setModalOpen(true)}
           className="h-9 w-9 rounded-lg bg-primary hover:bg-primary/90 flex items-center justify-center transition-colors"
@@ -216,7 +216,7 @@ export function ParisPage({
               "py-2 rounded-xl text-xs font-semibold transition-colors border",
               filter === f.key
                 ? `${f.activeColor} ${f.color}`
-                : "bg-transparent text-slate-500 border-slate-700/50 hover:border-slate-600"
+                : "bg-transparent text-muted-foreground border-border/50 hover:border-border"
             )}
           >
             {f.label}
@@ -236,8 +236,8 @@ export function ParisPage({
               className={cn(
                 "flex items-center justify-center gap-0.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors border",
                 isActive
-                  ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                  : "bg-[#1e293b] text-slate-500 border-slate-700 hover:border-slate-600"
+                  ? "bg-primary/20 text-primary border-primary/30"
+                  : "bg-card text-muted-foreground border-border hover:border-border/80"
               )}
             >
               {s.label}
@@ -253,13 +253,13 @@ export function ParisPage({
 
       {/* Bets list */}
       {sorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-500">
-          <Inbox className="h-10 w-10 mb-3 text-slate-600" />
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <Inbox className="h-10 w-10 mb-3 text-muted-foreground" />
           <p className="text-sm">Aucun pari{filter ? " pour ce filtre" : ""}.</p>
           {!filter && (
             <button
               onClick={() => setModalOpen(true)}
-              className="mt-3 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+              className="mt-3 text-sm text-primary hover:text-primary/80 transition-colors"
             >
               Créer un pari
             </button>
@@ -276,9 +276,9 @@ export function ParisPage({
               <div
                 key={bet.id}
                 className={cn(
-                  "bg-[#1e293b] rounded-xl p-3 border",
+                  "bg-card rounded-xl p-3 border",
                   bet.result === null
-                    ? "border-blue-500/20"
+                    ? "border-info/20"
                     : "border-transparent"
                 )}
               >
@@ -287,18 +287,18 @@ export function ParisPage({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <TeamLogo logoUrl={logoMap[bet.series.subject]} size="sm" className="flex-shrink-0" />
-                      <span className="font-semibold text-white text-sm truncate">
+                      <span className="font-semibold text-foreground text-sm truncate">
                         {bet.series.subject}
                       </span>
-                      <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-700 text-slate-300">
+                      <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-secondary-foreground">
                         {typeLabel}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-muted-foreground">
                         {formatDate(bet.created_at)}
                       </span>
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-muted-foreground">
                         Pari #{bet.bet_number}
                       </span>
                     </div>
@@ -306,12 +306,12 @@ export function ParisPage({
 
                   {/* Right */}
                   <div className="flex-shrink-0 text-right">
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span>
-                        <span className="text-white">{formatEuros(bet.stake)}</span>
+                        <span className="text-foreground">{formatEuros(bet.stake)}</span>
                       </span>
                       <span>
-                        ×<span className="text-white ml-0.5">{bet.odds.toFixed(2)}</span>
+                        ×<span className="text-foreground ml-0.5">{bet.odds.toFixed(2)}</span>
                       </span>
                     </div>
                     <div className="mt-1.5 flex items-center justify-end gap-1.5">
@@ -319,8 +319,8 @@ export function ParisPage({
                         <span className={cn(
                           "px-2 py-0.5 rounded-full text-xs font-medium",
                           bet.result === "gagne"
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : "bg-red-500/20 text-red-400"
+                            ? "bg-primary/20 text-primary"
+                            : "bg-destructive/20 text-destructive"
                         )}>
                           {bet.result === "gagne" ? "Gagne" : "Perdu"}
                         </span>
@@ -328,14 +328,14 @@ export function ParisPage({
                       <button
                         onClick={() => openEdit(bet)}
                         disabled={isPending}
-                        className="text-slate-500 hover:text-slate-400 transition-colors disabled:opacity-50"
+                        className="text-muted-foreground hover:text-muted-foreground/80 transition-colors disabled:opacity-50"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleDelete(bet.id)}
                         disabled={isPending}
-                        className="text-slate-500 hover:text-red-400 transition-colors disabled:opacity-50"
+                        className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -349,14 +349,14 @@ export function ParisPage({
                     <button
                       onClick={() => handleWin(bet)}
                       disabled={isPending}
-                      className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-emerald-500/15 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
+                      className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-primary/15 text-primary text-sm font-semibold hover:bg-primary/25 transition-colors disabled:opacity-50"
                     >
                       <CheckCircle className="h-4 w-4" /> Gagné
                     </button>
                     <button
                       onClick={() => handleValidate(bet.id, "perdu")}
                       disabled={isPending}
-                      className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-red-500/15 text-red-400 text-sm font-semibold hover:bg-red-500/25 transition-colors disabled:opacity-50"
+                      className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-destructive/15 text-destructive text-sm font-semibold hover:bg-destructive/25 transition-colors disabled:opacity-50"
                     >
                       <XCircle className="h-4 w-4" /> Perdu
                     </button>
@@ -370,22 +370,22 @@ export function ParisPage({
 
       {/* Win celebration popup */}
       <Dialog open={winBet !== null} onOpenChange={(open) => { if (!open) setWinBet(null); }}>
-        <DialogContent className="bg-[#1e293b] border border-emerald-500/30 max-w-xs mx-auto rounded-2xl">
+        <DialogContent className="bg-card border border-primary/30 max-w-xs mx-auto rounded-2xl">
           <DialogHeader className="items-center text-center">
             <div className="text-5xl animate-bounce">🎉</div>
-            <DialogTitle className="text-lg text-emerald-400">
+            <DialogTitle className="text-lg text-primary">
               Pari gagné !
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               {winBet?.series.subject} · Pari #{winBet?.bet_number} · cote{" "}
               {winBet?.odds.toFixed(2)}
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-xl bg-emerald-500/10 px-4 py-3 text-center">
-            <p className="text-[10px] uppercase tracking-wide text-slate-400">
+          <div className="rounded-xl bg-primary/10 px-4 py-3 text-center">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
               Bénéfice net
             </p>
-            <p className="text-2xl font-bold text-emerald-400">
+            <p className="text-2xl font-bold text-primary">
               +<RollingNumber value={winBet?.potential_net ?? 0} format="euros" />
             </p>
           </div>
@@ -394,32 +394,32 @@ export function ParisPage({
 
       {/* Edit bet dialog */}
       <Dialog open={editBet !== null} onOpenChange={(open) => { if (!open) setEditBet(null); }}>
-        <DialogContent className="bg-[#1e293b] border border-slate-700 max-w-sm mx-auto rounded-2xl">
+        <DialogContent className="bg-card border border-border max-w-sm mx-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">Modifier le pari</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogTitle className="text-foreground">Modifier le pari</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               {editBet && `${editBet.series.subject} - Pari #${editBet.bet_number}`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Cote</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Cote</label>
               <input
                 type="number"
                 step="0.01"
                 value={editOdds}
                 onChange={(e) => setEditOdds(e.target.value)}
-                className="w-full bg-[#1e293b] border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+                className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">Mise</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Mise</label>
               <input
                 type="number"
                 step="0.01"
                 value={editStake}
                 onChange={(e) => setEditStake(e.target.value)}
-                className="w-full bg-[#1e293b] border border-slate-600 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+                className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             <button
@@ -435,10 +435,10 @@ export function ParisPage({
 
       {/* Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="bg-[#1e293b] border border-slate-700 max-h-[90vh] overflow-y-auto rounded-2xl">
+        <DialogContent className="bg-card border border-border max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">Nouvelle série</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogTitle className="text-foreground">Nouvelle série</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Créez une nouvelle série de paris progressifs
             </DialogDescription>
           </DialogHeader>

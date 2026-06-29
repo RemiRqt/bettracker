@@ -141,22 +141,22 @@ export function NotificationSettings({ initialEnabled }: Props) {
   }
 
   return (
-    <div className="rounded-xl bg-[#1e293b] p-4 space-y-3">
+    <div className="rounded-xl bg-card p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {enabled ? (
-            <Bell className="h-4 w-4 text-emerald-400" />
+            <Bell className="h-4 w-4 text-primary" />
           ) : (
-            <BellOff className="h-4 w-4 text-slate-500" />
+            <BellOff className="h-4 w-4 text-muted-foreground" />
           )}
-          <h2 className="text-sm font-semibold text-white">Notifications matchs</h2>
+          <h2 className="text-sm font-semibold text-foreground">Notifications matchs</h2>
         </div>
         <button
           onClick={enabled ? handleDisable : handleEnable}
           disabled={isPending || !supported}
           className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${
             enabled
-              ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
+              ? "bg-muted text-secondary-foreground hover:bg-muted/80"
               : "bg-primary text-primary-foreground hover:bg-primary/90"
           }`}
         >
@@ -171,24 +171,24 @@ export function NotificationSettings({ initialEnabled }: Props) {
       </div>
 
       {!installed && (
-        <p className="text-xs text-amber-400">
+        <p className="text-xs text-warning">
           Sur iPhone : ajoute l&apos;app a ton ecran d&apos;accueil pour activer les notifications.
         </p>
       )}
 
       {!supported && (
-        <p className="text-xs text-red-400">
+        <p className="text-xs text-destructive">
           Les notifications ne sont pas supportees par ce navigateur.
         </p>
       )}
 
       {permission === "denied" && (
-        <p className="text-xs text-red-400">
+        <p className="text-xs text-destructive">
           Permission refusee. Va dans Reglages iOS &gt; Notifications &gt; BetTracker.
         </p>
       )}
 
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }

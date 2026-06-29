@@ -23,14 +23,14 @@ export function Item({
   return (
     <div
       id={`el-${id}`}
-      className="scroll-mt-32 rounded-lg border border-slate-700/60 bg-slate-900/40 p-4"
+      className="scroll-mt-32 rounded-lg border border-border/60 bg-background/40 p-4"
     >
       <div className="mb-3 flex items-baseline gap-2">
-        <span className="inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-md bg-emerald-500/15 px-1.5 font-mono text-[11px] font-bold text-emerald-400 ring-1 ring-emerald-500/30">
+        <span className="inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-md bg-primary/15 px-1.5 font-mono text-[11px] font-bold text-primary ring-1 ring-primary/30">
           {id}
         </span>
-        <span className="text-sm font-medium text-slate-200">{label}</span>
-        {hint && <span className="text-xs text-slate-500">{hint}</span>}
+        <span className="text-sm font-medium text-secondary-foreground">{label}</span>
+        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
       </div>
       <div className={cn("flex flex-wrap items-center gap-3", className)}>
         {children}
@@ -56,11 +56,11 @@ export function Section({
   return (
     <section id={anchor} className="scroll-mt-28">
       <div className="mb-3">
-        <h2 className="text-lg font-semibold text-white">
-          <span className="text-slate-500">{n}.</span> {title}
+        <h2 className="text-lg font-semibold text-foreground">
+          <span className="text-muted-foreground">{n}.</span> {title}
         </h2>
         {description && (
-          <p className="mt-0.5 text-sm text-slate-400">{description}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
         )}
       </div>
       <div className="grid gap-3">{children}</div>

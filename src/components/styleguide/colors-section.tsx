@@ -30,21 +30,21 @@ const TOKENS: Tok[] = [
 
 function Swatch({ tok }: { tok: Tok }) {
   return (
-    <div className="rounded-lg border border-slate-700/60 bg-slate-900/40 p-2">
+    <div className="rounded-lg border border-border/60 bg-background/40 p-2">
       <div
         className={`mb-2 h-12 w-full rounded-md ${tok.cls} ${
           tok.ring ? "ring-1 ring-inset ring-slate-600" : ""
         }`}
       />
       <div className="flex items-center gap-1.5">
-        <span className="inline-flex h-4 min-w-[1.25rem] items-center justify-center rounded bg-emerald-500/15 px-1 font-mono text-[10px] font-bold text-emerald-400">
+        <span className="inline-flex h-4 min-w-[1.25rem] items-center justify-center rounded bg-primary/15 px-1 font-mono text-[10px] font-bold text-primary">
           {tok.id}
         </span>
-        <span className="truncate text-xs font-medium text-slate-200">
+        <span className="truncate text-xs font-medium text-secondary-foreground">
           {tok.name}
         </span>
       </div>
-      <span className="font-mono text-[10px] text-slate-500">{tok.hex}</span>
+      <span className="font-mono text-[10px] text-muted-foreground">{tok.hex}</span>
     </div>
   );
 }
@@ -64,49 +64,49 @@ export function ColorsSection() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-slate-700/60 bg-slate-900/40 p-3">
+        <div className="rounded-lg border border-border/60 bg-background/40 p-3">
           <div className="mb-2 flex items-center gap-1.5">
-            <span className="inline-flex h-4 min-w-[1.25rem] items-center justify-center rounded bg-emerald-500/15 px-1 font-mono text-[10px] font-bold text-emerald-400">
+            <span className="inline-flex h-4 min-w-[1.25rem] items-center justify-center rounded bg-primary/15 px-1 font-mono text-[10px] font-bold text-primary">
               24
             </span>
-            <span className="text-xs font-medium text-slate-200">radius</span>
+            <span className="text-xs font-medium text-secondary-foreground">radius</span>
           </div>
           <div className="flex items-end gap-2">
-            <div className="h-10 w-10 rounded-sm bg-slate-700" title="sm" />
-            <div className="h-10 w-10 rounded-md bg-slate-700" title="md" />
-            <div className="h-10 w-10 rounded-lg bg-slate-700" title="lg 0.75rem" />
+            <div className="h-10 w-10 rounded-sm bg-muted" title="sm" />
+            <div className="h-10 w-10 rounded-md bg-muted" title="md" />
+            <div className="h-10 w-10 rounded-lg bg-muted" title="lg 0.75rem" />
           </div>
-          <span className="font-mono text-[10px] text-slate-500">sm · md · lg</span>
+          <span className="font-mono text-[10px] text-muted-foreground">sm · md · lg</span>
         </div>
 
-        <div className="rounded-lg border border-slate-700/60 bg-slate-900/40 p-3">
+        <div className="rounded-lg border border-border/60 bg-background/40 p-3">
           <div className="mb-2 flex items-center gap-1.5">
-            <span className="inline-flex h-4 min-w-[1.25rem] items-center justify-center rounded bg-emerald-500/15 px-1 font-mono text-[10px] font-bold text-emerald-400">
+            <span className="inline-flex h-4 min-w-[1.25rem] items-center justify-center rounded bg-primary/15 px-1 font-mono text-[10px] font-bold text-primary">
               25
             </span>
-            <span className="text-xs font-medium text-slate-200">shadow-hard</span>
+            <span className="text-xs font-medium text-secondary-foreground">shadow-hard</span>
           </div>
           <div className="px-1 py-2">
-            <div className="h-10 w-16 rounded-md bg-slate-700 shadow-[var(--shadow-hard)]" />
+            <div className="h-10 w-16 rounded-md bg-muted shadow-[var(--shadow-hard)]" />
           </div>
-          <span className="font-mono text-[10px] text-slate-500">
+          <span className="font-mono text-[10px] text-muted-foreground">
             4px 4px emerald/22
           </span>
         </div>
 
-        <div className="rounded-lg border border-slate-700/60 bg-slate-900/40 p-3">
+        <div className="rounded-lg border border-border/60 bg-background/40 p-3">
           <div className="mb-2 flex items-center gap-1.5">
-            <span className="inline-flex h-4 min-w-[1.25rem] items-center justify-center rounded bg-emerald-500/15 px-1 font-mono text-[10px] font-bold text-emerald-400">
+            <span className="inline-flex h-4 min-w-[1.25rem] items-center justify-center rounded bg-primary/15 px-1 font-mono text-[10px] font-bold text-primary">
               26
             </span>
-            <span className="text-xs font-medium text-slate-200">
+            <span className="text-xs font-medium text-secondary-foreground">
               shadow-hard-sm
             </span>
           </div>
           <div className="px-1 py-2">
-            <div className="h-10 w-16 rounded-md bg-slate-700 shadow-[var(--shadow-hard-sm)]" />
+            <div className="h-10 w-16 rounded-md bg-muted shadow-[var(--shadow-hard-sm)]" />
           </div>
-          <span className="font-mono text-[10px] text-slate-500">
+          <span className="font-mono text-[10px] text-muted-foreground">
             3px 3px emerald/18
           </span>
         </div>

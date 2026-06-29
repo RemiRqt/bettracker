@@ -135,7 +135,7 @@ export function FeedbackSection() {
             <DropdownMenuSeparator />
             <DropdownMenuItem>Modifier</DropdownMenuItem>
             <DropdownMenuItem>Dupliquer</DropdownMenuItem>
-            <DropdownMenuItem className="text-red-400">
+            <DropdownMenuItem className="text-destructive">
               Supprimer
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -52,9 +52,9 @@ export function TransactionForm() {
           Ajouter une transaction
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
+      <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="text-white">Nouvelle transaction</DialogTitle>
+          <DialogTitle className="text-foreground">Nouvelle transaction</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -65,8 +65,8 @@ export function TransactionForm() {
               className={cn(
                 "flex-1 h-10 rounded-xl text-sm font-medium transition-colors",
                 type === "depot"
-                  ? "bg-[#10b981] text-white"
-                  : "bg-[#0f172a] text-slate-400 border border-slate-600"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-background text-muted-foreground border border-border"
               )}
             >
               Dépôt
@@ -77,8 +77,8 @@ export function TransactionForm() {
               className={cn(
                 "flex-1 h-10 rounded-xl text-sm font-medium transition-colors",
                 type === "retrait"
-                  ? "bg-red-500 text-white"
-                  : "bg-[#0f172a] text-slate-400 border border-slate-600"
+                  ? "bg-destructive text-destructive-foreground"
+                  : "bg-background text-muted-foreground border border-border"
               )}
             >
               Retrait
@@ -93,7 +93,7 @@ export function TransactionForm() {
             min="0.01"
             placeholder="Montant (€)"
             required
-            className="h-10 w-full rounded-lg bg-[#0f172a] border border-slate-600 px-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#10b981]"
+            className="h-10 w-full rounded-lg bg-background border border-border px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
           />
 
           <input
@@ -101,10 +101,10 @@ export function TransactionForm() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Note (optionnel)"
-            className="h-10 w-full rounded-lg bg-[#0f172a] border border-slate-600 px-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-[#10b981]"
+            className="h-10 w-full rounded-lg bg-background border border-border px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
           />
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button
             type="submit"

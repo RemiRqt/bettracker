@@ -22,7 +22,7 @@ export function MotionSection() {
       description="Animations fun de l'app. Tout respecte prefers-reduced-motion."
     >
       <Item id={140} label="RollingNumber — €" hint="count-up easeOutCubic 700ms">
-        <span className="text-2xl font-bold text-emerald-400">
+        <span className="text-2xl font-bold text-primary">
           <RollingNumber value={EUROS[step]} format="euros" />
         </span>
         <Button size="sm" variant="outline" onClick={next}>
@@ -58,13 +58,13 @@ export function MotionSection() {
       </Item>
 
       <Item id={145} label="Ombre dure au survol" hint="hover → shadow-hard" className="block">
-        <div className="w-fit rounded-lg border border-emerald-500/30 bg-card px-5 py-4 text-sm transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[var(--shadow-hard)]">
+        <div className="w-fit rounded-lg border border-primary/30 bg-card px-5 py-4 text-sm transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[var(--shadow-hard)]">
           Survole-moi
         </div>
       </Item>
 
       <Item id={146} label="Transition couleur" hint="hover, 150ms ease" className="block">
-        <div className="w-fit cursor-pointer rounded-lg bg-slate-800 px-5 py-4 text-sm transition-colors hover:bg-emerald-500 hover:text-emerald-950">
+        <div className="w-fit cursor-pointer rounded-lg bg-card px-5 py-4 text-sm transition-colors hover:bg-primary hover:text-primary-foreground">
           Survole pour la transition
         </div>
       </Item>

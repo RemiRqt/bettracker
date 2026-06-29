@@ -74,10 +74,10 @@ const FILTER_OPTIONS: {
   color: string;
   activeColor: string;
 }[] = [
-  { key: "en_cours", label: "En cours", color: "text-blue-400 border-blue-500/30", activeColor: "bg-blue-500/20" },
-  { key: "gagne", label: "Gagné", color: "text-emerald-400 border-emerald-500/30", activeColor: "bg-emerald-500/20" },
-  { key: "perdu", label: "Perdu", color: "text-red-400 border-red-500/30", activeColor: "bg-red-500/20" },
-  { key: "pause", label: "En pause", color: "text-amber-400 border-amber-500/30", activeColor: "bg-amber-500/20" },
+  { key: "en_cours", label: "En cours", color: "text-info border-info/30", activeColor: "bg-info/20" },
+  { key: "gagne", label: "Gagné", color: "text-primary border-primary/30", activeColor: "bg-primary/20" },
+  { key: "perdu", label: "Perdu", color: "text-destructive border-destructive/30", activeColor: "bg-destructive/20" },
+  { key: "pause", label: "En pause", color: "text-warning border-warning/30", activeColor: "bg-warning/20" },
 ];
 
 interface EquipesPageProps {
@@ -256,7 +256,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
     <div className="space-y-4 md:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl md:text-2xl font-bold text-slate-100 font-[family-name:var(--font-poppins)]">
+        <h1 className="text-xl md:text-2xl font-bold text-foreground font-[family-name:var(--font-poppins)]">
           Equipes
         </h1>
         <div className="flex items-center gap-2">
@@ -266,8 +266,8 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
             className={cn(
               "flex h-9 w-9 items-center justify-center rounded-lg border transition-colors",
               searchOpen
-                ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
-                : "bg-[#1e293b] border-slate-700 text-slate-300 hover:text-white"
+                ? "bg-primary/10 border-primary/40 text-primary"
+                : "bg-card border-border text-secondary-foreground hover:text-foreground"
             )}
           >
             <Search className="h-5 w-5" />
@@ -285,13 +285,13 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
       {/* Search (toggle) */}
       {searchOpen && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             placeholder="Rechercher..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             autoFocus
-            className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#1e293b] border border-slate-700 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+            className="w-full h-10 pl-10 pr-4 rounded-xl bg-card border border-border text-sm text-secondary-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
           />
         </div>
       )}
@@ -308,7 +308,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                 "flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border",
                 isActive
                   ? `${opt.activeColor} ${opt.color}`
-                  : "bg-transparent text-slate-500 border-slate-700/50 hover:border-slate-600"
+                  : "bg-transparent text-muted-foreground border-border/50 hover:border-border"
               )}
             >
               {opt.label}
@@ -329,8 +329,8 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
               className={cn(
                 "flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-colors border",
                 isActive
-                  ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                  : "bg-[#1e293b] text-slate-400 border-slate-700 hover:border-slate-600"
+                  ? "bg-primary/20 text-primary border-primary/30"
+                  : "bg-card text-muted-foreground border-border hover:border-border/80"
               )}
             >
               {opt.label}
@@ -342,8 +342,8 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
 
       {/* List */}
       {sorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-500">
-          <Inbox className="h-10 w-10 mb-3 text-slate-600" />
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <Inbox className="h-10 w-10 mb-3 text-muted-foreground" />
           <p className="text-sm">Aucune equipe trouvee.</p>
         </div>
       ) : (
@@ -366,14 +366,14 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
               <div
                 key={key}
                 className={cn(
-                  "rounded-xl bg-[#1e293b] overflow-hidden",
-                  eq.activeSeries && "border border-emerald-500/30"
+                  "rounded-xl bg-card overflow-hidden",
+                  eq.activeSeries && "border border-primary/30"
                 )}
               >
                 {/* Next fixture banner (only when there's an active series + upcoming fixture) */}
                 {showFixtureBanner && (
-                  <div className="flex items-center justify-between px-3 py-2 bg-blue-500/10 border-b border-blue-500/20">
-                    <div className="flex items-center gap-1.5 text-xs text-blue-300">
+                  <div className="flex items-center justify-between px-3 py-2 bg-info/10 border-b border-info/20">
+                    <div className="flex items-center gap-1.5 text-xs text-info">
                       <CalendarClock className="h-3.5 w-3.5" />
                       <span className="font-medium">
                         Prochain match : {formatFixtureDateTime(nextFixture.date)}
@@ -407,8 +407,8 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                         onClick={() => toggleExpand(key)}
                         className="flex items-center gap-2 min-w-0 text-left"
                       >
-                        <span className="text-base font-bold text-slate-100 truncate">{eq.name}</span>
-                        <Badge className="shrink-0 bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
+                        <span className="text-base font-bold text-foreground truncate">{eq.name}</span>
+                        <Badge className="shrink-0 bg-primary/20 text-primary border-primary/30 text-[10px] px-1.5 py-0">
                           {betTypeLabel}
                         </Badge>
                       </button>
@@ -417,39 +417,39 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                       onClick={() => toggleExpand(key)}
                       className="flex items-center gap-2 shrink-0"
                     >
-                      <span className={cn("font-bold text-sm", eq.netProfit >= 0 ? "text-emerald-400" : "text-red-400")}>
+                      <span className={cn("font-bold text-sm", eq.netProfit >= 0 ? "text-primary" : "text-destructive")}>
                         {eq.netProfit >= 0 ? "+" : ""}
                         <RollingNumber value={eq.netProfit} format="euros" />
                       </span>
-                      {isExpanded ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronRight className="h-4 w-4 text-slate-500" />}
+                      {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                     </button>
                   </div>
 
                   {/* Row 2: stats + ROI or empty alert */}
                   {eq.seriesCount === 0 ? (
-                    <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                      <span className="text-xs text-amber-400">Pas de série créée</span>
+                    <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-warning/10 border border-warning/20">
+                      <span className="text-xs text-warning">Pas de série créée</span>
                       <button
                         onClick={async () => {
                           await deleteEquipe(eq.equipeId);
                           startTransition(() => { router.refresh(); });
                         }}
-                        className="text-xs text-red-400 hover:text-red-300 cursor-pointer"
+                        className="text-xs text-destructive hover:text-destructive/80 cursor-pointer"
                       >
                         Supprimer
                       </button>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-muted-foreground">
                         {eq.seriesCount} serie{eq.seriesCount > 1 ? "s" : ""} · {eq.betsCount} pari{eq.betsCount > 1 ? "s" : ""}
                         {eq.activeSeries && (
-                          <span className="text-blue-400 ml-2">
+                          <span className="text-info ml-2">
                             <TrendingUp className="h-3 w-3 inline" /> en cours (#{eq.activeSeries.betCount})
                           </span>
                         )}
                       </span>
-                      <span className={cn("text-xs font-medium", eq.roi >= 0 ? "text-emerald-400/70" : "text-red-400/70")}>
+                      <span className={cn("text-xs font-medium", eq.roi >= 0 ? "text-primary/70" : "text-destructive/70")}>
                         ROI {formatPercent(eq.roi)}
                       </span>
                     </div>
@@ -457,21 +457,21 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
 
                   {/* Row 3: progress bar */}
                   {barTotal > 0 && (
-                    <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-slate-700/50">
-                      {wonPct > 0 && <div className="bg-emerald-500" style={{ width: `${wonPct}%` }} />}
-                      {lostPct > 0 && <div className="bg-red-500" style={{ width: `${lostPct}%` }} />}
-                      {pendingPct > 0 && <div className="bg-blue-500" style={{ width: `${pendingPct}%` }} />}
+                    <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-muted/50">
+                      {wonPct > 0 && <div className="bg-primary" style={{ width: `${wonPct}%` }} />}
+                      {lostPct > 0 && <div className="bg-destructive" style={{ width: `${lostPct}%` }} />}
+                      {pendingPct > 0 && <div className="bg-info" style={{ width: `${pendingPct}%` }} />}
                     </div>
                   )}
                 </div>
 
                 {/* Expanded: nouvelle série (top) + séries (récente + voir plus) */}
                 {isExpanded && (
-                  <div className="border-t border-slate-700/50 px-3 pb-3 pt-2 space-y-1.5">
+                  <div className="border-t border-border/50 px-3 pb-3 pt-2 space-y-1.5">
                     {!eq.activeSeries && (
                       <button
                         onClick={() => openBetDialog(eq)}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-slate-600 text-xs text-slate-400 hover:border-[#10b981] hover:text-[#10b981] transition-colors"
+                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         Nouvelle serie
@@ -503,7 +503,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                           {ordered.length > 1 && (
                             <button
                               onClick={() => toggleSeriesShowAll(key)}
-                              className="w-full py-1 text-center text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                              className="w-full py-1 text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
                             >
                               {showAll ? "Voir moins" : `Voir plus (${ordered.length - 1})`}
                             </button>
@@ -521,27 +521,27 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
 
       {/* === Create Equipe Dialog === */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
+        <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">Nouvelle equipe</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogTitle className="text-foreground">Nouvelle equipe</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Creez une equipe avec un type de pari
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-xs text-slate-400 mb-1.5 block">Nom</label>
+              <label className="text-xs text-muted-foreground mb-1.5 block">Nom</label>
               <input
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Ex: PSG, Cherki, France..."
-                className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 autoFocus
               />
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1.5 block">Type de pari</label>
+              <label className="text-xs text-muted-foreground mb-1.5 block">Type de pari</label>
               <div className="grid grid-cols-2 gap-2">
                 {(Object.entries(BET_TYPES) as [string, string][]).map(([key, label]) => (
                   <button
@@ -550,8 +550,8 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                     className={cn(
                       "py-2.5 rounded-xl text-sm font-medium transition-colors border",
                       newBetType === key
-                        ? "bg-[#10b981] border-[#10b981] text-white"
-                        : "bg-[#0f172a] border-slate-600 text-slate-400 hover:border-slate-500"
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "bg-background border-border text-muted-foreground hover:border-border/80"
                     )}
                   >
                     {label}
@@ -564,13 +564,13 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                   value={newBetTypeCustom}
                   onChange={(e) => setNewBetTypeCustom(e.target.value)}
                   placeholder="Type de pari personnalisé"
-                  className="mt-2 w-full bg-[#0f172a] border border-slate-600 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+                  className="mt-2 w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                   autoFocus
                 />
               )}
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1.5 block">Sport</label>
+              <label className="text-xs text-muted-foreground mb-1.5 block">Sport</label>
               <div className="flex gap-2">
                 {(Object.entries(SPORTS) as [string, string][]).map(([key, label]) => (
                   <button
@@ -579,8 +579,8 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                     className={cn(
                       "flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors border flex items-center justify-center gap-1",
                       newSport === key
-                        ? "bg-[#10b981] border-[#10b981] text-white"
-                        : "bg-[#0f172a] border-slate-600 text-slate-400 hover:border-slate-500"
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "bg-background border-border text-muted-foreground hover:border-border/80"
                     )}
                   >
                     <span>{SPORT_EMOJIS[key]}</span>
@@ -589,7 +589,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                 ))}
               </div>
             </div>
-            {createError && <p className="text-xs text-red-400">{createError}</p>}
+            {createError && <p className="text-xs text-destructive">{createError}</p>}
             <button
               onClick={handleCreate}
               disabled={!newName.trim()}
@@ -603,18 +603,18 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
 
       {/* === Edit Equipe Dialog (sport) === */}
       <Dialog open={editEquipe !== null} onOpenChange={(open) => { if (!open) setEditEquipe(null); }}>
-        <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
+        <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">
+            <DialogTitle className="text-foreground">
               Modifier {editEquipe?.name}
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               Sport de l&apos;équipe
             </DialogDescription>
           </DialogHeader>
           {editEquipe && (
             <div>
-              <label className="text-xs text-slate-400 mb-1.5 block">Sport</label>
+              <label className="text-xs text-muted-foreground mb-1.5 block">Sport</label>
               <div className="grid grid-cols-2 gap-2">
                 {(Object.entries(SPORTS) as [string, string][]).map(([sKey, sLabel]) => (
                   <button
@@ -627,8 +627,8 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                     className={cn(
                       "flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium transition-colors border",
                       editEquipe.sport === sKey
-                        ? "bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30"
-                        : "bg-[#0f172a] text-slate-400 border-slate-700 hover:border-slate-500"
+                        ? "bg-primary/20 text-primary border-primary/30"
+                        : "bg-background text-muted-foreground border-border hover:border-border/80"
                     )}
                   >
                     <span>{SPORT_EMOJIS[sKey]}</span>
@@ -643,14 +643,14 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
 
       {/* === Bet Creation Dialog === */}
       <Dialog open={betEquipe !== null} onOpenChange={(open) => { if (!open) setBetEquipe(null); }}>
-        <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
+        <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">
+            <DialogTitle className="text-foreground">
               {betEquipe?.activeSeries
                 ? `Pari #${betEquipe.activeSeries.betCount + 1}`
                 : "Nouvelle serie"}{" — "}{betEquipe?.name}
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               {betEquipe?.activeSeries
                 ? `Serie en cours — Gain cible : ${betEquipe.activeSeries.target_gain}€`
                 : "Definissez le gain souhaite puis saisissez la cote"}
@@ -663,7 +663,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
               {betStep === "target" && (
                 <>
                   <div>
-                    <label className="text-xs text-slate-400 mb-1.5 block">Gain souhaite par pari (€)</label>
+                    <label className="text-xs text-muted-foreground mb-1.5 block">Gain souhaite par pari (€)</label>
                     <input
                       type="number"
                       value={targetGain}
@@ -671,7 +671,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                       placeholder="Ex: 5"
                       step="0.5"
                       min="0.1"
-                      className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                       autoFocus
                     />
                   </div>
@@ -689,27 +689,27 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
               {betStep === "odds" && (
                 <>
                   {/* Series info */}
-                  <div className="bg-[#0f172a] rounded-xl p-3 space-y-1">
+                  <div className="bg-background rounded-xl p-3 space-y-1">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">Gain cible</span>
-                      <span className="text-white">{betEquipe.activeSeries?.target_gain ?? targetGain}€</span>
+                      <span className="text-muted-foreground">Gain cible</span>
+                      <span className="text-foreground">{betEquipe.activeSeries?.target_gain ?? targetGain}€</span>
                     </div>
                     {betEquipe.activeSeries && (
                       <>
                         <div className="flex justify-between text-xs">
-                          <span className="text-slate-400">Mises precedentes</span>
-                          <span className="text-white">{betEquipe.activeSeries.sumStakes.toFixed(2)}€</span>
+                          <span className="text-muted-foreground">Mises precedentes</span>
+                          <span className="text-foreground">{betEquipe.activeSeries.sumStakes.toFixed(2)}€</span>
                         </div>
                         <div className="flex justify-between text-xs">
-                          <span className="text-slate-400">Pari n°</span>
-                          <span className="text-white">{betEquipe.activeSeries.betCount + 1}</span>
+                          <span className="text-muted-foreground">Pari n°</span>
+                          <span className="text-foreground">{betEquipe.activeSeries.betCount + 1}</span>
                         </div>
                       </>
                     )}
                   </div>
 
                   <div>
-                    <label className="text-xs text-slate-400 mb-1.5 block">Cote</label>
+                    <label className="text-xs text-muted-foreground mb-1.5 block">Cote</label>
                     <input
                       type="number"
                       value={odds}
@@ -718,7 +718,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                       placeholder="Ex: 2.10"
                       step="0.01"
                       min="1.01"
-                      className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+                      className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                       autoFocus
                     />
                   </div>
@@ -726,7 +726,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                   {odds && parseFloat(odds) > 1 && calculatedStake === null && (
                     <button
                       onClick={calculateStake}
-                      className="w-full py-2 rounded-xl border border-[#10b981] text-[#10b981] text-sm hover:bg-[#10b981]/10 transition-colors"
+                      className="w-full py-2 rounded-xl border border-primary text-primary text-sm hover:bg-primary/10 transition-colors"
                     >
                       Calculer la mise
                     </button>
@@ -734,12 +734,12 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
 
                   {calculatedStake !== null && (
                     <div className="space-y-3">
-                      <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
-                        <p className="text-xs text-emerald-400 mb-1">Mise calculee</p>
-                        <p className="text-2xl font-bold text-white">{calculatedStake.toFixed(2)}€</p>
+                      <div className="bg-primary/10 border border-primary/30 rounded-xl p-3">
+                        <p className="text-xs text-primary mb-1">Mise calculee</p>
+                        <p className="text-2xl font-bold text-foreground">{calculatedStake.toFixed(2)}€</p>
                       </div>
                       <div>
-                        <label className="text-xs text-slate-400 mb-1.5 block">Mise modifiee (optionnel)</label>
+                        <label className="text-xs text-muted-foreground mb-1.5 block">Mise modifiee (optionnel)</label>
                         <input
                           type="number"
                           value={stakeOverride}
@@ -747,10 +747,10 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                           placeholder={calculatedStake.toFixed(2)}
                           step="0.01"
                           min="0.01"
-                          className="w-full bg-[#0f172a] border border-slate-600 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+                          className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                       </div>
-                      {betError && <p className="text-xs text-red-400">{betError}</p>}
+                      {betError && <p className="text-xs text-destructive">{betError}</p>}
                       <button
                         onClick={handlePlaceBet}
                         disabled={isBetting}
@@ -764,7 +764,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                   {!betEquipe.activeSeries && (
                     <button
                       onClick={() => setBetStep("target")}
-                      className="w-full py-2 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                      className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
                     >
                       Retour
                     </button>

@@ -56,7 +56,7 @@ export function CardsSection() {
         hint="shadow-hard (ombre dure décalée)"
         className="block"
       >
-        <Card className="w-full border-emerald-500/30 shadow-[var(--shadow-hard)]">
+        <Card className="w-full border-primary/30 shadow-[var(--shadow-hard)]">
           <CardHeader>
             <CardTitle className="text-base">Pari gagné 🎉</CardTitle>
             <CardDescription>+24,00 € encaissés</CardDescription>
@@ -70,7 +70,7 @@ export function CardsSection() {
         hint="shadow-hard-sm"
         className="block"
       >
-        <Card className="w-full border-emerald-500/20 shadow-[var(--shadow-hard-sm)]">
+        <Card className="w-full border-primary/20 shadow-[var(--shadow-hard-sm)]">
           <CardContent className="pt-6 text-sm">Ombre dure légère.</CardContent>
         </Card>
       </Item>
@@ -79,10 +79,10 @@ export function CardsSection() {
         <Card className="w-full">
           <CardContent className="pt-6">
             <p className="text-xs text-muted-foreground">Capital total</p>
-            <p className="text-2xl font-bold tracking-tight text-emerald-400">
+            <p className="text-2xl font-bold tracking-tight text-primary">
               <RollingNumber value={1287.5} format="euros" />
             </p>
-            <p className="text-xs text-emerald-400">+12,4 % ce mois</p>
+            <p className="text-xs text-primary">+12,4 % ce mois</p>
           </CardContent>
         </Card>
       </Item>
@@ -93,7 +93,7 @@ export function CardsSection() {
         hint="hover + état série"
         className="block"
       >
-        <Card className="w-full cursor-pointer transition-colors hover:bg-slate-800/60">
+        <Card className="w-full cursor-pointer transition-colors hover:bg-card/60">
           <CardContent className="flex items-center justify-between pt-6">
             <div className="flex items-center gap-3">
               <TeamLogo sport="football" />

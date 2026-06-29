@@ -24,23 +24,23 @@ export function StyleguideClient() {
   return (
     <div className="pb-6">
       <header className="py-4">
-        <h1 className="text-2xl font-bold tracking-tight text-white">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Styleguide
         </h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           Charte graphique vivante de BetTracker. Chaque élément porte un numéro{" "}
-          <span className="font-mono text-emerald-400">#NN</span> — réfère-toi à
+          <span className="font-mono text-primary">#NN</span> — réfère-toi à
           lui pour tes demandes (ex. « modifie 42 »).
         </p>
       </header>
 
-      <nav className="sticky top-14 z-10 -mx-3 mb-6 border-y border-slate-800 bg-[#0f172a]/90 px-3 py-2 backdrop-blur md:-mx-4 md:px-4">
+      <nav className="sticky top-14 z-10 -mx-3 mb-6 border-y border-border bg-background/90 px-3 py-2 backdrop-blur md:-mx-4 md:px-4">
         <div className="flex flex-wrap gap-1.5">
           {NAV.map((n) => (
             <a
               key={n.href}
               href={n.href}
-              className="rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-300 transition-colors hover:border-emerald-500/50 hover:text-emerald-400"
+              className="rounded-full border border-border px-2.5 py-1 text-xs text-secondary-foreground transition-colors hover:border-primary/50 hover:text-primary"
             >
               {n.label}
             </a>

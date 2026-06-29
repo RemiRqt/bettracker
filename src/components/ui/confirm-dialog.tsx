@@ -53,13 +53,13 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
           if (!open) handleResolve(false);
         }}
       >
-        <AlertDialogContent className="bg-[#0f172a] border-slate-700 text-white max-w-sm mx-auto rounded-2xl">
+        <AlertDialogContent className="bg-background border-border text-foreground max-w-sm mx-auto rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white text-base">
+            <AlertDialogTitle className="text-foreground text-base">
               {opts?.title}
             </AlertDialogTitle>
             {opts?.description && (
-              <AlertDialogDescription className="text-slate-400 text-sm">
+              <AlertDialogDescription className="text-muted-foreground text-sm">
                 {opts.description}
               </AlertDialogDescription>
             )}
@@ -67,17 +67,17 @@ export function ConfirmDialogProvider({ children }: { children: React.ReactNode 
           <AlertDialogFooter className="gap-2 flex-row">
             <AlertDialogCancel
               onClick={() => handleResolve(false)}
-              className="flex-1 mt-0 rounded-xl bg-transparent border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+              className="flex-1 mt-0 rounded-xl bg-transparent border-border text-secondary-foreground hover:bg-card hover:text-foreground"
             >
               {opts?.cancelLabel ?? "Annuler"}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => handleResolve(true)}
               className={cn(
-                "flex-1 rounded-xl text-white font-medium",
+                "flex-1 rounded-xl font-medium",
                 isDestructive
-                  ? "bg-red-500 hover:bg-red-600"
-                  : "bg-emerald-500 hover:bg-emerald-600"
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
               )}
             >
               {opts?.confirmLabel ?? "Confirmer"}

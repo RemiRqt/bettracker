@@ -32,15 +32,15 @@ export function ValidateResultForm({
   return (
     <div className="space-y-4">
       {/* Info du pari en attente */}
-      <div className="rounded-lg bg-slate-800/60 p-3 md:p-4">
-        <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">
+      <div className="rounded-lg bg-card/60 p-3 md:p-4">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
           Pari en attente de résultat
         </p>
         <div className="grid grid-cols-2 gap-1.5 text-sm">
-          <span className="text-slate-400">Mise :</span>
-          <span className="font-medium text-slate-200">{formatEuros(stake)}</span>
-          <span className="text-slate-400">Gain potentiel net :</span>
-          <span className="font-medium text-emerald-400">
+          <span className="text-muted-foreground">Mise :</span>
+          <span className="font-medium text-secondary-foreground">{formatEuros(stake)}</span>
+          <span className="text-muted-foreground">Gain potentiel net :</span>
+          <span className="font-medium text-primary">
             {formatEuros(potentialNet)}
           </span>
         </div>
@@ -64,7 +64,7 @@ export function ValidateResultForm({
           variant="outline"
           onClick={() => handleValidate("perdu")}
           disabled={isPending}
-          className="h-12 border-red-500/40 text-red-400 hover:bg-red-500/10 hover:text-red-300 font-medium text-sm md:text-base"
+          className="h-12 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive font-medium text-sm md:text-base"
         >
           {isPending ? (
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />

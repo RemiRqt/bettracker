@@ -97,12 +97,12 @@ export function FormsSection() {
             <TableRow>
               <TableCell>PSG — OM</TableCell>
               <TableCell>1.85</TableCell>
-              <TableCell className="text-right text-emerald-400">+8,50 €</TableCell>
+              <TableCell className="text-right text-primary">+8,50 €</TableCell>
             </TableRow>
             <TableRow>
               <TableCell>OL — RC Lens</TableCell>
               <TableCell>2.10</TableCell>
-              <TableCell className="text-right text-red-400">−10,00 €</TableCell>
+              <TableCell className="text-right text-destructive">−10,00 €</TableCell>
             </TableRow>
           </TableBody>
         </Table>

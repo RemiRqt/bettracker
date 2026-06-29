@@ -39,7 +39,7 @@ export function TeamLogo({
 
   return (
     <div
-      className={`${sizeClasses[size]} rounded-full bg-[#0f172a] border border-slate-600 flex items-center justify-center flex-shrink-0 ${className}`}
+      className={`${sizeClasses[size]} rounded-full bg-background border border-border flex items-center justify-center flex-shrink-0 ${className}`}
     >
       <span className={emojiSizeClasses[size]}>{emoji}</span>
     </div>

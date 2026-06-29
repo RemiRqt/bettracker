@@ -209,15 +209,15 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     const isExpanded = expandedClubs.has(club.id);
     const linked = getLinkedSubjects(club.api_team_id!);
     return (
-      <div key={club.id} className="rounded-xl bg-[#0f172a] overflow-hidden">
+      <div key={club.id} className="rounded-xl bg-background overflow-hidden">
         <div className="flex items-center gap-3 p-3">
           <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="md" />
           <button
             onClick={() => toggleClubExpand(club.id)}
             className="flex-1 min-w-0 text-left"
           >
-            <p className="text-sm font-medium text-white truncate">{club.subject}</p>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm font-medium text-foreground truncate">{club.subject}</p>
+            <p className="text-xs text-muted-foreground">
               {linked.length} lie{linked.length !== 1 ? "s" : ""}
             </p>
           </button>
@@ -226,33 +226,33 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
               className={cn(
                 "h-5 w-5 transition-colors",
                 club.is_followed
-                  ? "text-amber-400 fill-amber-400"
-                  : "text-slate-600 hover:text-amber-400"
+                  ? "text-warning fill-warning"
+                  : "text-muted-foreground hover:text-warning"
               )}
             />
           </button>
           <button onClick={() => toggleClubExpand(club.id)}>
             {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-slate-500" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-slate-500" />
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
             )}
           </button>
           <button onClick={() => handleDeleteClub(club)}>
-            <Trash2 className="h-4 w-4 text-slate-600 hover:text-red-400 transition-colors" />
+            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
           </button>
         </div>
         {isExpanded && (
-          <div className="border-t border-slate-700/50 px-3 pb-3 pt-2 space-y-1.5">
+          <div className="border-t border-border/50 px-3 pb-3 pt-2 space-y-1.5">
             {linked.map((s) => (
               <div
                 key={s.id}
-                className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-[#1e293b]/50"
+                className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-card/50"
               >
-                <span className="text-xs text-slate-300">{s.subject}</span>
+                <span className="text-xs text-secondary-foreground">{s.subject}</span>
                 <button
                   onClick={() => handleUnlinkSubject(s.subject)}
-                  className="text-xs text-slate-500 hover:text-red-400 transition-colors"
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -260,7 +260,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
             ))}
             <button
               onClick={() => { setLinkClubId(club.id); setLinkSubjectSearch(""); }}
-              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-slate-700 text-xs text-slate-500 hover:border-emerald-500 hover:text-emerald-400 transition-colors"
+              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors"
             >
               <Link2 className="h-3 w-3" />
               Lier un joueur/equipe
@@ -275,7 +275,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-sm uppercase tracking-wide text-slate-400">
+        <h2 className="text-sm uppercase tracking-wide text-muted-foreground">
           Mes équipes
         </h2>
         <button
@@ -291,7 +291,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
       {favorites.length > 0 ? (
         <div className="space-y-2">{favorites.map(renderClub)}</div>
       ) : (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted-foreground">
           Aucune équipe en favori. Touche l&apos;étoile d&apos;une équipe pour
           l&apos;épingler ici.
         </p>
@@ -302,7 +302,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
         <div className="space-y-2">
           <button
             onClick={() => setShowMore((s) => !s)}
-            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             {showMore ? (
               <ChevronDown className="h-3.5 w-3.5" />
@@ -318,7 +318,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
               )}
               {subjects.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
                     Non lies ({subjects.length})
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -326,7 +326,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                       <button
                         key={s.id}
                         onClick={() => setLinkUnlinkedSubject(s.subject)}
-                        className="px-2.5 py-1 rounded-full bg-[#0f172a] text-xs text-slate-400 border border-slate-700/50 hover:border-emerald-500 hover:text-emerald-400 transition-colors"
+                        className="px-2.5 py-1 rounded-full bg-background text-xs text-muted-foreground border border-border/50 hover:border-primary hover:text-primary transition-colors"
                       >
                         <Link2 className="h-3 w-3 inline mr-1" />
                         {s.subject}
@@ -344,10 +344,10 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
 
       {/* Add club dialog (API search) */}
       <Dialog open={addClubOpen} onOpenChange={setAddClubOpen}>
-        <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
+        <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">Ajouter une equipe</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogTitle className="text-foreground">Ajouter une equipe</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Recherchez une equipe pour recuperer son logo
             </DialogDescription>
           </DialogHeader>
@@ -361,8 +361,8 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                   selectedCompetition === comp.code
-                    ? "bg-[#10b981] text-white"
-                    : "bg-[#0f172a] text-slate-400 hover:text-white border border-slate-700"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-muted-foreground hover:text-foreground border border-border"
                 )}
               >
                 {comp.flag} {comp.name}
@@ -373,13 +373,13 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
           {/* Filter within loaded teams */}
           {clubResults.length > 0 && (
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 value={clubFilter}
                 onChange={(e) => setClubFilter(e.target.value)}
                 placeholder="Filtrer..."
-                className="w-full bg-[#0f172a] border border-slate-600 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+                className="w-full bg-background border border-border rounded-xl pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           )}
@@ -387,11 +387,11 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
           <div className="max-h-72 overflow-y-auto space-y-1">
             {isSearchingClub && (
               <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             )}
             {!isSearchingClub && selectedCompetition && clubResults.length === 0 && (
-              <p className="text-sm text-slate-500 text-center py-6">Aucune equipe trouvee</p>
+              <p className="text-sm text-muted-foreground text-center py-6">Aucune equipe trouvee</p>
             )}
             {clubResults
               .filter((club) =>
@@ -406,14 +406,14 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                     disabled={alreadyAdded}
                     className={cn(
                       "w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors",
-                      alreadyAdded ? "opacity-50 cursor-not-allowed" : "hover:bg-[#0f172a]"
+                      alreadyAdded ? "opacity-50 cursor-not-allowed" : "hover:bg-background"
                     )}
                   >
                     <img src={club.logo} alt="" className="h-8 w-8 object-contain rounded-full" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white truncate">{club.name}</p>
+                      <p className="text-sm text-foreground truncate">{club.name}</p>
                     </div>
-                    {alreadyAdded && <span className="text-xs text-emerald-400">Ajoutee</span>}
+                    {alreadyAdded && <span className="text-xs text-primary">Ajoutee</span>}
                   </button>
                 );
               })}
@@ -426,25 +426,25 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
         open={linkClubId !== null}
         onOpenChange={(open) => { if (!open) { setLinkClubId(null); setLinkSubjectSearch(""); } }}
       >
-        <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
+        <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">
+            <DialogTitle className="text-foreground">
               Lier a {clubs.find((c) => c.id === linkClubId)?.subject}
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               Choisissez un joueur ou equipe a associer
             </DialogDescription>
           </DialogHeader>
 
           {subjects.length > 5 && (
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 value={linkSubjectSearch}
                 onChange={(e) => setLinkSubjectSearch(e.target.value)}
                 placeholder="Rechercher..."
-                className="w-full bg-[#0f172a] border border-slate-600 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#10b981]"
+                className="w-full bg-background border border-border rounded-xl pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 autoFocus
               />
             </div>
@@ -452,7 +452,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
 
           <div className="max-h-72 overflow-y-auto space-y-1">
             {filteredSubjects.length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-6">
+              <p className="text-sm text-muted-foreground text-center py-6">
                 {subjects.length === 0 ? "Tous les sujets sont deja lies" : "Aucun resultat"}
               </p>
             ) : (
@@ -463,9 +463,9 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                   <button
                     key={s.id}
                     onClick={() => handleLinkSubject(s.subject, targetClub)}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#0f172a] transition-colors text-left"
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-background transition-colors text-left"
                   >
-                    <span className="text-sm text-white">{s.subject}</span>
+                    <span className="text-sm text-foreground">{s.subject}</span>
                   </button>
                 );
               })
@@ -479,19 +479,19 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
         open={linkUnlinkedSubject !== null}
         onOpenChange={(open) => { if (!open) setLinkUnlinkedSubject(null); }}
       >
-        <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
+        <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">
+            <DialogTitle className="text-foreground">
               Lier &laquo; {linkUnlinkedSubject} &raquo;
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-muted-foreground">
               Choisissez l&apos;equipe a associer
             </DialogDescription>
           </DialogHeader>
 
           <div className="max-h-72 overflow-y-auto space-y-1">
             {clubs.length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-6">
+              <p className="text-sm text-muted-foreground text-center py-6">
                 Ajoutez d&apos;abord une equipe avec le bouton ci-dessus
               </p>
             ) : (
@@ -499,10 +499,10 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                 <button
                   key={club.id}
                   onClick={() => handleLinkSubject(linkUnlinkedSubject!, club)}
-                  className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#0f172a] transition-colors text-left"
+                  className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-background transition-colors text-left"
                 >
                   <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="sm" />
-                  <span className="text-sm text-white">{club.subject}</span>
+                  <span className="text-sm text-foreground">{club.subject}</span>
                 </button>
               ))
             )}
