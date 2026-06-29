@@ -22,7 +22,7 @@ export default async function AppLayout({
 
   return (
     <ConfirmDialogProvider>
-      <div className="min-h-screen bg-[#0f172a]">
+      <div className="min-h-screen bg-background">
         <AppHeader email={user.email!} />
         <RouteTransition />
         <main

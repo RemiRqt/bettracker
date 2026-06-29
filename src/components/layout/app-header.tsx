@@ -13,11 +13,11 @@ export function AppHeader({ email }: AppHeaderProps) {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 border-b border-slate-700/50 bg-[#0f172a]/95 backdrop-blur-md"
+      className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur-md"
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       <div className="container mx-auto flex h-12 md:h-14 items-center justify-between px-4">
-        <Link href="/" className="text-lg md:text-xl font-bold text-white">
+        <Link href="/" className="text-lg md:text-xl font-bold text-foreground">
           BetTracker
         </Link>
 
@@ -31,9 +31,9 @@ export function AppHeader({ email }: AppHeaderProps) {
               href="/styleguide"
               title="Styleguide"
               aria-label="Styleguide"
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-600 bg-[#1e293b] transition-colors hover:border-emerald-500/50"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card transition-colors hover:border-primary/50"
             >
-              <Palette className="h-4 w-4 text-slate-400" />
+              <Palette className="h-4 w-4 text-muted-foreground" />
             </Link>
           )}
           <UserMenu email={email} />

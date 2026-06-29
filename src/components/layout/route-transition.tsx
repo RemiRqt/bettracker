@@ -23,7 +23,7 @@ export function RouteTransition() {
       style={{ top: "calc(env(safe-area-inset-top, 0px) + 3rem)" }}
     >
       <div
-        className={`h-full bg-emerald-400 origin-left transition-transform duration-300 ease-out ${
+        className={`h-full bg-primary origin-left transition-transform duration-300 ease-out ${
           active ? "scale-x-100 opacity-100" : "scale-x-0 opacity-0"
         }`}
       />

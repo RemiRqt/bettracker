@@ -57,16 +57,16 @@ export function NavLinks({
                 className={cn(
                   "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
                   isActive
-                    ? "bg-emerald-500/15"
-                    : "bg-transparent group-hover:bg-white/5"
+                    ? "bg-primary/15"
+                    : "bg-transparent group-hover:bg-foreground/5"
                 )}
               >
                 <Icon
                   className={cn(
                     "h-5 w-5 transition-colors",
                     isActive
-                      ? "text-emerald-400"
-                      : "text-slate-500 group-hover:text-slate-300"
+                      ? "text-primary"
+                      : "text-muted-foreground group-hover:text-secondary-foreground"
                   )}
                 />
               </span>
@@ -74,8 +74,8 @@ export function NavLinks({
                 className={cn(
                   "text-[10px] leading-tight transition-colors",
                   isActive
-                    ? "text-emerald-400 font-medium"
-                    : "text-slate-500 group-hover:text-slate-300"
+                    ? "text-primary font-medium"
+                    : "text-muted-foreground group-hover:text-secondary-foreground"
                 )}
               >
                 {label}
@@ -93,8 +93,8 @@ export function NavLinks({
             className={cn(
               "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
               isActive
-                ? "bg-emerald-500/10 text-emerald-400"
-                : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-foreground/5 hover:text-secondary-foreground"
             )}
           >
             <Icon className="h-4 w-4" />
