@@ -4,9 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 const DARK_STATUS_COLORS: Record<SeriesStatus, string> = {
-  en_cours: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  gagnee: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-  abandonnee: "bg-red-500/20 text-red-400 border-red-500/30",
+  en_cours: "bg-info/20 text-info border-info/30",
+  gagnee: "bg-primary/20 text-primary border-primary/30",
+  abandonnee: "bg-destructive/20 text-destructive border-destructive/30",
 };
 
 interface SeriesStatusBadgeProps {

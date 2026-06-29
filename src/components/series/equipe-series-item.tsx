@@ -63,23 +63,23 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
   if (deleted) return null;
 
   return (
-    <div className="rounded-lg bg-[#0f172a]/60 overflow-hidden">
+    <div className="rounded-lg bg-background/60 overflow-hidden">
       {/* Series header - clickable */}
       <button
         onClick={() => setExpanded((prev) => !prev)}
-        className="w-full text-left p-3 space-y-1.5 hover:bg-white/[0.02] transition-colors"
+        className="w-full text-left p-3 space-y-1.5 hover:bg-foreground/[0.02] transition-colors"
       >
         {/* Row 1: Série #N + status badge + gains + chevron */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-slate-200">
+            <span className="text-sm font-semibold text-secondary-foreground">
               Série #{series.seriesNumber}
             </span>
             <SeriesStatusBadge status={series.status as SeriesStatus} />
             <span
               className={cn(
                 "text-sm font-bold",
-                series.netProfit >= 0 ? "text-emerald-400" : "text-red-400"
+                series.netProfit >= 0 ? "text-primary" : "text-destructive"
               )}
             >
               {series.netProfit >= 0 ? "+" : ""}{formatEuros(series.netProfit)}
@@ -89,7 +89,7 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
             {canAbandon && (
               <button
                 onClick={(e) => { e.stopPropagation(); handleAbandon(); }}
-                className="text-slate-600 hover:text-amber-400 transition-colors p-0.5"
+                className="text-muted-foreground hover:text-warning transition-colors p-0.5"
                 title="Abandonner la série"
               >
                 <Ban className="h-3.5 w-3.5" />
@@ -98,22 +98,22 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
             {isDeletable && (
               <button
                 onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-                className="text-slate-600 hover:text-red-400 transition-colors p-0.5"
+                className="text-muted-foreground hover:text-destructive transition-colors p-0.5"
                 title="Supprimer la série"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             )}
             {expanded ? (
-              <ChevronDown className="h-4 w-4 text-slate-500" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-slate-500" />
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
             )}
           </div>
         </div>
 
         {/* Row 2: stats */}
-        <p className="text-xs text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+        <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">
           <span>
             {series.bets.length} pari{series.bets.length > 1 ? "s" : ""}
           </span>
@@ -123,7 +123,7 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
           <span
             className={cn(
               "font-medium",
-              series.roi >= 0 ? "text-emerald-400" : "text-red-400"
+              series.roi >= 0 ? "text-primary" : "text-destructive"
             )}
           >
             ROI : {formatPercent(series.roi)}
@@ -133,7 +133,7 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
 
       {/* Expanded: individual bets */}
       {expanded && (
-        <div className="border-t border-slate-700/30 px-3 pb-3 pt-2 space-y-2">
+        <div className="border-t border-border/30 px-3 pb-3 pt-2 space-y-2">
           {series.bets.map((bet) => {
             const date = new Date(bet.created_at);
             const dateStr = date.toLocaleDateString("fr-FR", {
@@ -146,28 +146,28 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
             let resultClass: string;
             if (bet.result === "gagne") {
               resultLabel = "Gagné";
-              resultClass = "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+              resultClass = "bg-primary/20 text-primary border-primary/30";
             } else if (bet.result === "perdu") {
               resultLabel = "Perdu";
-              resultClass = "bg-red-500/20 text-red-400 border-red-500/30";
+              resultClass = "bg-destructive/20 text-destructive border-destructive/30";
             } else {
               resultLabel = "En attente";
-              resultClass = "bg-slate-500/20 text-slate-400 border-slate-500/30";
+              resultClass = "bg-muted/20 text-muted-foreground border-border/30";
             }
 
             return (
               <div
                 key={bet.id}
-                className="flex items-center gap-3 rounded-lg bg-[#1e293b]/60 p-2.5"
+                className="flex items-center gap-3 rounded-lg bg-card/60 p-2.5"
               >
                 {/* Bet number circle */}
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary text-xs font-bold">
                   {bet.bet_number}
                 </div>
 
                 {/* Bet details */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-300">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-secondary-foreground">
                     <span>{dateStr}</span>
                     <span>
                       Cote : <span className="font-medium">{bet.odds.toFixed(2)}</span>

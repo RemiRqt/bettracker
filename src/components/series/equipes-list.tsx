@@ -58,10 +58,10 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 ];
 
 const FILTER_OPTIONS: { key: "en_cours" | "gagne" | "perdu" | "pause"; label: string; color: string; activeColor: string }[] = [
-  { key: "en_cours", label: "En cours", color: "text-blue-400 border-blue-500/30", activeColor: "bg-blue-500/20" },
-  { key: "gagne", label: "Gagné", color: "text-emerald-400 border-emerald-500/30", activeColor: "bg-emerald-500/20" },
-  { key: "perdu", label: "Perdu", color: "text-red-400 border-red-500/30", activeColor: "bg-red-500/20" },
-  { key: "pause", label: "En pause", color: "text-amber-400 border-amber-500/30", activeColor: "bg-amber-500/20" },
+  { key: "en_cours", label: "En cours", color: "text-info border-info/30", activeColor: "bg-info/20" },
+  { key: "gagne", label: "Gagné", color: "text-primary border-primary/30", activeColor: "bg-primary/20" },
+  { key: "perdu", label: "Perdu", color: "text-destructive border-destructive/30", activeColor: "bg-destructive/20" },
+  { key: "pause", label: "En pause", color: "text-warning border-warning/30", activeColor: "bg-warning/20" },
 ];
 
 interface EquipesListProps {
@@ -143,12 +143,12 @@ export function EquipesList({ equipes, logoMap = {} }: EquipesListProps) {
     <div className="space-y-3">
       {/* Search bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
           placeholder="Rechercher..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#1e293b] border border-slate-700 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+          className="w-full h-10 pl-10 pr-4 rounded-xl bg-card border border-border text-sm text-secondary-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
         />
       </div>
 
@@ -164,7 +164,7 @@ export function EquipesList({ equipes, logoMap = {} }: EquipesListProps) {
                 "flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border",
                 isActive
                   ? `${opt.activeColor} ${opt.color}`
-                  : "bg-transparent text-slate-500 border-slate-700/50 hover:border-slate-600"
+                  : "bg-transparent text-muted-foreground border-border/50 hover:border-border"
               )}
             >
               {opt.label}
@@ -185,8 +185,8 @@ export function EquipesList({ equipes, logoMap = {} }: EquipesListProps) {
               className={cn(
                 "flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-colors border",
                 isActive
-                  ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                  : "bg-[#1e293b] text-slate-400 border-slate-700 hover:border-slate-600"
+                  ? "bg-primary/20 text-primary border-primary/30"
+                  : "bg-card text-muted-foreground border-border hover:border-border"
               )}
             >
               {opt.label}
@@ -202,8 +202,8 @@ export function EquipesList({ equipes, logoMap = {} }: EquipesListProps) {
 
       {/* List */}
       {sorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-500">
-          <Inbox className="h-10 w-10 mb-3 text-slate-600" />
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+          <Inbox className="h-10 w-10 mb-3 text-muted-foreground" />
           <p className="text-sm">Aucune équipe trouvée.</p>
         </div>
       ) : (
@@ -221,19 +221,19 @@ export function EquipesList({ equipes, logoMap = {} }: EquipesListProps) {
             const pendingPct = barTotal > 0 ? (equipe.potentialGains / barTotal) * 100 : 0;
 
             return (
-              <div key={key} className="rounded-xl bg-[#1e293b] overflow-hidden">
+              <div key={key} className="rounded-xl bg-card overflow-hidden">
                 <button
                   onClick={() => toggleExpand(key)}
-                  className="w-full text-left p-3 space-y-2 hover:bg-white/[0.02] transition-colors cursor-pointer"
+                  className="w-full text-left p-3 space-y-2 hover:bg-foreground/[0.02] transition-colors cursor-pointer"
                 >
                   {/* Row 1: logo + name + type + gain + chevron */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <TeamLogo logoUrl={logoMap[equipe.subject]} sport={equipe.sport} size="sm" className="flex-shrink-0" />
-                      <span className="text-base font-bold text-slate-100 truncate">
+                      <span className="text-base font-bold text-foreground truncate">
                         {equipe.subject}
                       </span>
-                      <Badge className="shrink-0 bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px] px-1.5 py-0">
+                      <Badge className="shrink-0 bg-primary/20 text-primary border-primary/30 text-[10px] px-1.5 py-0">
                         {betTypeLabel}
                       </Badge>
                     </div>
@@ -241,29 +241,29 @@ export function EquipesList({ equipes, logoMap = {} }: EquipesListProps) {
                       <span
                         className={cn(
                           "font-bold text-sm",
-                          equipe.netProfit >= 0 ? "text-emerald-400" : "text-red-400"
+                          equipe.netProfit >= 0 ? "text-primary" : "text-destructive"
                         )}
                       >
                         {equipe.netProfit >= 0 ? "+" : ""}
                         {formatEuros(equipe.netProfit)}
                       </span>
                       {isExpanded ? (
-                        <ChevronDown className="h-4 w-4 text-slate-500" />
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 text-slate-500" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       )}
                     </div>
                   </div>
 
                   {/* Row 2: stats + ROI */}
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-muted-foreground">
                       {equipe.seriesCount} série{equipe.seriesCount > 1 ? "s" : ""} · {equipe.betsCount} pari{equipe.betsCount > 1 ? "s" : ""}
                     </span>
                     <span
                       className={cn(
                         "text-xs font-medium",
-                        equipe.roi >= 0 ? "text-emerald-400/70" : "text-red-400/70"
+                        equipe.roi >= 0 ? "text-primary/70" : "text-destructive/70"
                       )}
                     >
                       ROI {formatPercent(equipe.roi)}
@@ -271,22 +271,22 @@ export function EquipesList({ equipes, logoMap = {} }: EquipesListProps) {
                   </div>
 
                   {/* Row 3: progress bar (€ proportions) */}
-                  <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-slate-700/50">
+                  <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-muted/50">
                     {wonPct > 0 && (
-                      <div className="bg-emerald-500" style={{ width: `${wonPct}%` }} />
+                      <div className="bg-primary" style={{ width: `${wonPct}%` }} />
                     )}
                     {lostPct > 0 && (
-                      <div className="bg-red-500" style={{ width: `${lostPct}%` }} />
+                      <div className="bg-destructive" style={{ width: `${lostPct}%` }} />
                     )}
                     {pendingPct > 0 && (
-                      <div className="bg-blue-500" style={{ width: `${pendingPct}%` }} />
+                      <div className="bg-info" style={{ width: `${pendingPct}%` }} />
                     )}
                   </div>
                 </button>
 
                 {/* Expanded series */}
                 {isExpanded && (
-                  <div className="border-t border-slate-700/50 px-3 pb-3 pt-2 space-y-1.5">
+                  <div className="border-t border-border/50 px-3 pb-3 pt-2 space-y-1.5">
                     {equipe.series.map((s) => (
                       <EquipeSeriesItem key={s.id} series={s} />
                     ))}

@@ -14,23 +14,23 @@ interface SeriesDetailProps {
 }
 
 const STATUS_BORDER: Record<SeriesStatus, string> = {
-  en_cours: "border-blue-500/30",
-  gagnee: "border-emerald-500/30",
-  abandonnee: "border-red-500/30",
+  en_cours: "border-info/30",
+  gagnee: "border-primary/30",
+  abandonnee: "border-destructive/30",
 };
 
 function StatTile({
   label,
   value,
-  color = "text-slate-100",
+  color = "text-foreground",
 }: {
   label: string;
   value: React.ReactNode;
   color?: string;
 }) {
   return (
-    <div className="rounded-xl bg-[#0f172a] px-3 py-2">
-      <p className="text-[10px] uppercase tracking-wide text-slate-500">
+    <div className="rounded-xl bg-background px-3 py-2">
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <p className={cn("text-sm md:text-base font-bold", color)}>{value}</p>
@@ -61,17 +61,17 @@ export function SeriesDetail({ series }: SeriesDetailProps) {
       {/* Hero serie */}
       <div
         className={cn(
-          "rounded-2xl bg-[#1e293b] p-4 md:p-5 border",
+          "rounded-2xl bg-card p-4 md:p-5 border",
           STATUS_BORDER[status]
         )}
       >
         <div className="flex items-start justify-between gap-3">
-          <h1 className="min-w-0 text-xl md:text-2xl font-bold text-slate-100 leading-tight">
+          <h1 className="min-w-0 text-xl md:text-2xl font-bold text-foreground leading-tight">
             {series.subject}
           </h1>
           <SeriesStatusBadge status={status} />
         </div>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-muted-foreground">
           {betTypeLabel} · Créée le {createdAt}
         </p>
 
@@ -79,7 +79,7 @@ export function SeriesDetail({ series }: SeriesDetailProps) {
           <StatTile
             label="Objectif/pari"
             value={<RollingNumber value={series.target_gain} format="euros" />}
-            color="text-emerald-400"
+            color="text-primary"
           />
           <StatTile
             label="Mise cumulée"
@@ -92,14 +92,14 @@ export function SeriesDetail({ series }: SeriesDetailProps) {
         </div>
 
         {showValidateForm && lastBet && (
-          <div className="mt-2 flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2">
-            <span className="text-xs text-slate-300">
+          <div className="mt-2 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/10 px-3 py-2">
+            <span className="text-xs text-secondary-foreground">
               Gain potentiel net si gagné
             </span>
             <RollingNumber
               value={lastBet.potential_net}
               format="euros"
-              className="text-base font-bold text-emerald-400"
+              className="text-base font-bold text-primary"
             />
           </div>
         )}
@@ -116,8 +116,8 @@ export function SeriesDetail({ series }: SeriesDetailProps) {
       </div>
 
       {/* Paris */}
-      <div className="rounded-2xl bg-[#1e293b] p-4 md:p-5 border border-slate-700/50">
-        <h2 className="mb-3 text-base md:text-lg font-bold text-slate-100">
+      <div className="rounded-2xl bg-card p-4 md:p-5 border border-border/50">
+        <h2 className="mb-3 text-base md:text-lg font-bold text-foreground">
           Paris
         </h2>
         <div className="space-y-5">

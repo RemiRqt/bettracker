@@ -24,9 +24,9 @@ const BET_TYPE_OPTIONS: {
 ];
 
 const STATUS_DOT_COLORS: Record<string, string> = {
-  en_cours: "bg-blue-500",
-  abandonnee: "bg-red-500",
-  gagnee: "bg-emerald-500",
+  en_cours: "bg-info",
+  abandonnee: "bg-destructive",
+  gagnee: "bg-primary",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -101,8 +101,8 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
   return (
     <form action={formAction} className="space-y-6 pt-4">
       {state?.error && (
-        <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3">
-          <p className="text-sm text-red-400">{state.error}</p>
+        <div className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3">
+          <p className="text-sm text-destructive">{state.error}</p>
         </div>
       )}
 
@@ -112,11 +112,11 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
           <button
             type="button"
             onClick={() => setTeamsOpen(!teamsOpen)}
-            className="flex items-center justify-between w-full text-sm font-medium text-slate-300"
+            className="flex items-center justify-between w-full text-sm font-medium text-secondary-foreground"
           >
             <span>Équipe existante</span>
             <ChevronDown
-              className={`h-4 w-4 text-slate-500 transition-transform ${
+              className={`h-4 w-4 text-muted-foreground transition-transform ${
                 teamsOpen ? "rotate-180" : ""
               }`}
             />
@@ -126,20 +126,20 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
             <div className="space-y-2">
               {/* Search input */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
                   value={teamSearch}
                   onChange={(e) => setTeamSearch(e.target.value)}
                   placeholder="Rechercher..."
-                  className="w-full h-10 rounded-lg bg-[#1e293b] border border-slate-600 pl-9 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-colors"
+                  className="w-full h-10 rounded-lg bg-card border border-border pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
                 />
               </div>
 
               {/* Scrollable list */}
-              <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-700 bg-[#1e293b] divide-y divide-slate-700/50">
+              <div className="max-h-48 overflow-y-auto rounded-lg border border-border bg-card divide-y divide-border/50">
                 {filteredTeams.length === 0 ? (
-                  <div className="px-3 py-4 text-center text-xs text-slate-500">
+                  <div className="px-3 py-4 text-center text-xs text-muted-foreground">
                     Aucun résultat
                   </div>
                 ) : (
@@ -150,7 +150,7 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
                       BET_TYPES[team.bet_type as keyof typeof BET_TYPES] ??
                       team.bet_type;
                     const statusColor =
-                      STATUS_DOT_COLORS[team.lastStatus ?? ""] ?? "bg-slate-500";
+                      STATUS_DOT_COLORS[team.lastStatus ?? ""] ?? "bg-muted";
 
                     return (
                       <button
@@ -159,8 +159,8 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
                         onClick={() => handleTeamSelect(team)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
                           isSelected
-                            ? "bg-[#10b981]/10"
-                            : "hover:bg-slate-700/50"
+                            ? "bg-primary/10"
+                            : "hover:bg-muted/50"
                         }`}
                       >
                         <span
@@ -168,12 +168,12 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
                         />
                         <span
                           className={`text-sm font-medium truncate ${
-                            isSelected ? "text-[#10b981]" : "text-white"
+                            isSelected ? "text-primary" : "text-foreground"
                           }`}
                         >
                           {team.subject}
                         </span>
-                        <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-700 text-slate-400">
+                        <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
                           {typeLabel}
                         </span>
                       </button>
@@ -186,16 +186,16 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
 
           {/* Divider */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-slate-700" />
-            <span className="text-xs text-slate-500">ou créer une nouvelle</span>
-            <div className="flex-1 h-px bg-slate-700" />
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground">ou créer une nouvelle</span>
+            <div className="flex-1 h-px bg-border" />
           </div>
         </div>
       )}
 
       {/* Subject input */}
       <div className="space-y-2">
-        <label htmlFor="subject" className="text-sm font-medium text-slate-300">
+        <label htmlFor="subject" className="text-sm font-medium text-secondary-foreground">
           Sujet
         </label>
         <input
@@ -208,7 +208,7 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
           }}
           placeholder="Ex : PSG, Marseille, Mbappé..."
           required
-          className={`w-full h-12 rounded-xl bg-[#1e293b] border border-slate-600 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-colors ${
+          className={`w-full h-12 rounded-xl bg-card border border-border px-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors ${
             selectedTeamKey ? "opacity-70" : ""
           }`}
         />
@@ -216,7 +216,7 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
 
       {/* Bet type toggles */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-300">
+        <label className="text-sm font-medium text-secondary-foreground">
           Type de pari
         </label>
         <input
@@ -237,8 +237,8 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
                 }}
                 className={`flex flex-col items-center justify-center gap-1.5 h-20 rounded-xl border text-sm font-medium transition-colors ${
                   isSelected
-                    ? "bg-[#10b981] border-[#10b981] text-white"
-                    : "bg-[#1e293b] border-slate-600 text-slate-400 hover:border-slate-500 hover:text-slate-300"
+                    ? "bg-primary border-primary text-primary-foreground"
+                    : "bg-card border-border text-muted-foreground hover:border-border hover:text-secondary-foreground"
                 }`}
               >
                 <Icon className="h-5 w-5" />
@@ -253,7 +253,7 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
             value={betTypeCustom}
             onChange={(e) => setBetTypeCustom(e.target.value)}
             placeholder="Type de pari personnalisé"
-            className="w-full h-12 rounded-xl bg-[#1e293b] border border-slate-600 px-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-colors"
+            className="w-full h-12 rounded-xl bg-card border border-border px-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
             autoFocus
           />
         )}
@@ -261,7 +261,7 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
 
       {/* Target gain slider */}
       <div className="space-y-3">
-        <label className="text-sm font-medium text-slate-300">
+        <label className="text-sm font-medium text-secondary-foreground">
           Objectif de gain
         </label>
         <input type="hidden" name="target_gain" value={targetGain} />
@@ -273,12 +273,12 @@ export function SeriesForm({ existingTeams, onSuccess }: SeriesFormProps) {
             step={0.25}
             value={targetGain}
             onChange={(e) => setTargetGain(parseFloat(e.target.value))}
-            className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-700 accent-[#10b981] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#10b981] [&::-webkit-slider-thumb]:shadow-lg"
+            className="w-full h-2 rounded-full appearance-none cursor-pointer bg-muted accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-lg"
           />
         </div>
-        <div className="flex items-center justify-between text-xs text-slate-500">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>0 €</span>
-          <span className="text-lg font-bold text-emerald-400">{targetGain.toFixed(2)} €</span>
+          <span className="text-lg font-bold text-primary">{targetGain.toFixed(2)} €</span>
           <span>10 €</span>
         </div>
       </div>
