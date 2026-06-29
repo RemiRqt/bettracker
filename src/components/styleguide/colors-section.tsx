@@ -33,7 +33,7 @@ function Swatch({ tok }: { tok: Tok }) {
     <div className="rounded-lg border border-border/60 bg-background/40 p-2">
       <div
         className={`mb-2 h-12 w-full rounded-md ${tok.cls} ${
-          tok.ring ? "ring-1 ring-inset ring-slate-600" : ""
+          tok.ring ? "ring-1 ring-inset ring-border" : ""
         }`}
       />
       <div className="flex items-center gap-1.5">
