@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { EquipesPage } from "@/components/equipes/equipes-page";
 import type { SeriesWithBets } from "@/lib/types";
-import type { CachedFixture } from "@/actions/teams";
+import { getSubjectLinks, getTeamMappings, type CachedFixture, type TeamMapping } from "@/actions/teams";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ export const metadata = { title: "Mes Séries | BetTracker" };
 export default async function EquipesRoute() {
   const supabase = await createClient();
 
-  const [{ data: equipes }, { data: series }, { data: teamMappings }] =
+  const [{ data: equipes }, { data: series }, links, mappings] =
     await Promise.all([
       supabase
         .from("equipes")
@@ -20,51 +20,44 @@ export default async function EquipesRoute() {
         .from("series")
         .select("*, bets(*)")
         .order("created_at", { ascending: false }),
-      supabase
-        .from("team_mappings")
-        .select("subject, logo_url, api_team_id, is_club, cached_fixtures"),
+      getSubjectLinks(),
+      getTeamMappings(),
     ]);
 
   const allSeries = (series ?? []) as SeriesWithBets[];
 
-  // Build logo map: clubs first (they have base64 logos), then non-clubs fill gaps
-  // Also build api_team_id → logo for linking non-club subjects to club logos
+  // Build index: subject → TeamMapping[] via subject_links
+  const byId = new Map(mappings.map((m) => [m.id, m]));
+  const entitiesBySubject = new Map<string, TeamMapping[]>();
+  for (const l of links) {
+    const ent = byId.get(l.team_mapping_id);
+    if (!ent) continue;
+    const arr = entitiesBySubject.get(l.subject) ?? [];
+    arr.push(ent);
+    entitiesBySubject.set(l.subject, arr);
+  }
+
+  // Build logo map: first linked entity's logo_url per subject
   const logoMap: Record<string, string> = {};
-  const apiIdToLogo: Record<number, string> = {};
-
-  // Pass 1: clubs (have base64 logos)
-  for (const m of teamMappings ?? []) {
-    if (m.is_club && m.logo_url) {
-      logoMap[m.subject] = m.logo_url;
-      if (m.api_team_id) apiIdToLogo[m.api_team_id] = m.logo_url;
-    }
-  }
-  // Pass 2: non-clubs inherit logo from linked club via api_team_id
-  for (const m of teamMappings ?? []) {
-    if (!m.is_club && !logoMap[m.subject] && m.api_team_id && apiIdToLogo[m.api_team_id]) {
-      logoMap[m.subject] = apiIdToLogo[m.api_team_id];
-    }
+  for (const [subject, entities] of entitiesBySubject) {
+    const logo = entities[0]?.logo_url;
+    if (logo) logoMap[subject] = logo;
   }
 
-  // Build map: subject → next fixture (earliest scheduled match in the future)
-  // Path: subject → api_team_id → club entry → cached_fixtures → first future fixture
-  const apiIdToNextFixture: Record<number, { date: string }> = {};
+  // Build map: subject → next fixture (earliest future date among all linked entities)
   const nowMs = Date.now();
-  for (const m of teamMappings ?? []) {
-    if (!m.is_club || !m.api_team_id) continue;
-    const fixtures = (m.cached_fixtures as CachedFixture[] | null) ?? [];
-    const future = fixtures
-      .filter((f) => new Date(f.date).getTime() > nowMs)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    if (future.length > 0) {
-      apiIdToNextFixture[m.api_team_id] = { date: future[0].date };
-    }
-  }
   const nextFixtureMap: Record<string, { date: string }> = {};
-  for (const m of teamMappings ?? []) {
-    if (m.api_team_id && apiIdToNextFixture[m.api_team_id]) {
-      nextFixtureMap[m.subject] = apiIdToNextFixture[m.api_team_id];
+  for (const [subject, entities] of entitiesBySubject) {
+    let earliest: string | null = null;
+    for (const ent of entities) {
+      const fixtures = (ent.cached_fixtures ?? []) as CachedFixture[];
+      for (const f of fixtures) {
+        if (new Date(f.date).getTime() > nowMs) {
+          if (!earliest || f.date < earliest) earliest = f.date;
+        }
+      }
     }
+    if (earliest) nextFixtureMap[subject] = { date: earliest };
   }
 
   // Build merged equipe data

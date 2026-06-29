@@ -3,6 +3,7 @@ import {
   ensureTeamMappings,
   getCalendarFixtures,
   getCalendarTeams,
+  getSubjectLinks,
   type CachedFixture,
 } from "@/actions/teams";
 import { CalendarPage } from "@/components/calendar/calendar-page";
@@ -25,26 +26,22 @@ export default async function CalendarRoute() {
   await ensureTeamMappings();
   const calendarTeams = await getCalendarTeams();
 
-  const [teamFixtures, { data: activeSeries }, { data: allMappings }] =
+  const [teamFixtures, { data: activeSeries }, links] =
     await Promise.all([
       getCalendarFixtures(),
       supabase
         .from("series")
         .select("id, subject, bet_type, target_gain, status")
         .eq("status", "en_cours"),
-      supabase
-        .from("team_mappings")
-        .select("subject, api_team_id, is_club"),
+      getSubjectLinks(),
     ]);
 
-  // Build map: api_team_id → linked subject names
-  const apiTeamToSubjects = new Map<number, Set<string>>();
-  for (const m of allMappings ?? []) {
-    if (m.api_team_id) {
-      const subjects = apiTeamToSubjects.get(m.api_team_id) ?? new Set();
-      subjects.add(m.subject);
-      apiTeamToSubjects.set(m.api_team_id, subjects);
-    }
+  // Build map: team_mapping_id → subjects linked to it (via subject_links)
+  const entityToSubjects = new Map<string, Set<string>>();
+  for (const l of links) {
+    const set = entityToSubjects.get(l.team_mapping_id) ?? new Set<string>();
+    set.add(l.subject);
+    entityToSubjects.set(l.team_mapping_id, set);
   }
 
   // Build map: subject → active series list
@@ -77,10 +74,8 @@ export default async function CalendarRoute() {
       lastUpdated = team.fixtures_updated_at;
     }
 
-    // Find all subjects linked to this club's api_team_id
-    const linkedSubjects = team.api_team_id
-      ? apiTeamToSubjects.get(team.api_team_id) ?? new Set<string>()
-      : new Set<string>();
+    // Find all subjects linked to this entity (via subject_links)
+    const linkedSubjects = entityToSubjects.get(team.id) ?? new Set<string>();
 
     // Collect active series for all linked subjects
     const relatedSeries: ActiveSeriesInfo[] = [];
