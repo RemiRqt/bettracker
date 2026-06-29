@@ -43,43 +43,43 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Profile header + compact balance */}
-      <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
+      <div className="rounded-xl bg-card p-4 md:p-6">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center">
-            <User className="h-6 w-6 text-emerald-400/80" />
+          <div className="h-12 w-12 rounded-full bg-primary/10 border border-primary/25 flex items-center justify-center">
+            <User className="h-6 w-6 text-primary/80" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-lg font-semibold text-white font-[family-name:var(--font-poppins)]">
+            <h1 className="text-lg font-semibold text-foreground font-[family-name:var(--font-poppins)]">
               Mon profil
             </h1>
-            <p className="truncate text-sm text-slate-400">{user?.email}</p>
+            <p className="truncate text-sm text-muted-foreground">{user?.email}</p>
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-700/50 pt-3">
+        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border/50 pt-3">
           <div className="text-center">
-            <p className="text-[10px] uppercase tracking-wide text-slate-500">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
               Dépôts
             </p>
-            <p className="text-sm font-bold text-emerald-400">
+            <p className="text-sm font-bold text-primary">
               +<RollingNumber value={totalDeposits} format="euros" />
             </p>
           </div>
           <div className="text-center">
-            <p className="text-[10px] uppercase tracking-wide text-slate-500">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
               Retraits
             </p>
-            <p className="text-sm font-bold text-red-400">
+            <p className="text-sm font-bold text-destructive">
               -<RollingNumber value={totalWithdrawals} format="euros" />
             </p>
           </div>
           <div className="text-center">
-            <p className="text-[10px] uppercase tracking-wide text-slate-500">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
               Solde en cours
             </p>
             <p
               className={`text-sm font-bold ${
-                balance >= 0 ? "text-emerald-400" : "text-red-400"
+                balance >= 0 ? "text-primary" : "text-destructive"
               }`}
             >
               {balance >= 0 ? "+" : ""}
@@ -98,21 +98,21 @@ export default async function ProfilePage() {
       />
 
       {/* Mes équipes */}
-      <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
+      <div className="rounded-xl bg-card p-4 md:p-6">
         <FollowedTeams teamMappings={teamMappings} />
       </div>
 
       {/* Transaction history */}
-      <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
-        <h2 className="text-sm uppercase tracking-wide text-slate-400 mb-4">
+      <div className="rounded-xl bg-card p-4 md:p-6">
+        <h2 className="text-sm uppercase tracking-wide text-muted-foreground mb-4">
           Historique des transactions
         </h2>
         <TransactionList transactions={transactions} />
       </div>
 
       {/* Apparence */}
-      <div className="rounded-xl bg-[#1e293b] p-4 md:p-6">
-        <h2 className="text-sm uppercase tracking-wide text-slate-400 mb-4">
+      <div className="rounded-xl bg-card p-4 md:p-6">
+        <h2 className="text-sm uppercase tracking-wide text-muted-foreground mb-4">
           Apparence
         </h2>
         <ThemeSelector current={theme} />

@@ -9,10 +9,10 @@ export function UserMenu({ email }: UserMenuProps) {
   return (
     <Link
       href="/profile"
-      className="h-8 w-8 rounded-full bg-[#1e293b] border border-slate-600 flex items-center justify-center hover:border-slate-400 transition-colors"
+      className="h-8 w-8 rounded-full bg-card border border-border flex items-center justify-center hover:border-muted-foreground transition-colors"
       title={email}
     >
-      <User className="h-4 w-4 text-slate-400" />
+      <User className="h-4 w-4 text-muted-foreground" />
     </Link>
   );
 }
