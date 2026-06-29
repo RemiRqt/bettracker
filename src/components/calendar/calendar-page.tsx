@@ -80,7 +80,7 @@ export function CalendarPage({
       {/* Header */}
       <div>
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-white font-[family-name:var(--font-poppins)]">
+          <h1 className="text-xl font-bold text-foreground font-[family-name:var(--font-poppins)]">
             Calendrier
           </h1>
           <button
@@ -95,8 +95,8 @@ export function CalendarPage({
 
         {formattedLastUpdated && (
           <div className="mt-1 flex items-center gap-1.5">
-            <Clock className="h-3 w-3 text-slate-500" />
-            <p className="text-xs text-slate-500">
+            <Clock className="h-3 w-3 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">
               Dernière mise à jour : {formattedLastUpdated}
             </p>
           </div>
@@ -105,16 +105,16 @@ export function CalendarPage({
 
       {/* Empty state */}
       {fixtures.length === 0 && (
-        <div className="rounded-xl bg-[#1e293b] p-6 text-center space-y-3">
-          <CalendarDays className="h-10 w-10 text-slate-600 mx-auto" />
-          <p className="text-sm text-slate-400">Aucun match a venir.</p>
+        <div className="rounded-xl bg-card p-6 text-center space-y-3">
+          <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto" />
+          <p className="text-sm text-muted-foreground">Aucun match a venir.</p>
           {teamCount === 0 ? (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               Suivez des equipes depuis votre profil pour voir leurs prochains
               matchs.
             </p>
           ) : (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               {teamCount} equipe{teamCount > 1 ? "s" : ""} eligible
               {teamCount > 1 ? "s" : ""} ({teamNames.join(", ")}), mais aucun
               match retourne par l&apos;API.
@@ -122,7 +122,7 @@ export function CalendarPage({
           )}
           <Link
             href="/profile"
-            className="inline-block mt-2 text-sm text-[#10b981] hover:text-emerald-300 transition-colors"
+            className="inline-block mt-2 text-sm text-primary hover:text-primary transition-colors"
           >
             Gerer mes equipes
           </Link>
@@ -137,7 +137,7 @@ export function CalendarPage({
             <h2
               className={cn(
                 "text-center text-xs uppercase tracking-wide font-[family-name:var(--font-poppins)]",
-                isToday ? "font-semibold text-emerald-400" : "text-slate-400"
+                isToday ? "font-semibold text-primary" : "text-muted-foreground"
               )}
             >
               {isToday ? `Aujourd'hui · ${date}` : date}
@@ -174,15 +174,15 @@ function FixtureCard({
   return (
     <div
       className={cn(
-        "rounded-xl bg-[#1e293b] p-3 space-y-2.5",
-        hasSeries && "border border-emerald-500/30"
+        "rounded-xl bg-card p-3 space-y-2.5",
+        hasSeries && "border border-primary/30"
       )}
     >
       {/* League + Time */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {fixture.leagueLogo && (
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-white/10 p-0.5">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-foreground/10 p-0.5">
               <img
                 src={fixture.leagueLogo}
                 alt=""
@@ -190,11 +190,11 @@ function FixtureCard({
               />
             </div>
           )}
-          <span className="text-xs text-slate-400 truncate max-w-[180px]">
+          <span className="text-xs text-muted-foreground truncate max-w-[180px]">
             {fixture.league}
           </span>
         </div>
-        <span className="text-xs font-medium text-slate-300">{time}</span>
+        <span className="text-xs font-medium text-secondary-foreground">{time}</span>
       </div>
 
       {/* Teams */}
@@ -202,18 +202,18 @@ function FixtureCard({
         {/* Home */}
         <div className="flex flex-1 flex-col items-center gap-1 text-center">
           <TeamLogo logoUrl={fixture.homeLogo} size="lg" />
-          <span className="text-xs text-white line-clamp-2">
+          <span className="text-xs text-foreground line-clamp-2">
             {fixture.homeTeam}
           </span>
         </div>
 
         {/* VS */}
-        <span className="shrink-0 text-xs font-bold text-slate-500">VS</span>
+        <span className="shrink-0 text-xs font-bold text-muted-foreground">VS</span>
 
         {/* Away */}
         <div className="flex flex-1 flex-col items-center gap-1 text-center">
           <TeamLogo logoUrl={fixture.awayLogo} size="lg" />
-          <span className="text-xs text-white line-clamp-2">
+          <span className="text-xs text-foreground line-clamp-2">
             {fixture.awayTeam}
           </span>
         </div>
@@ -221,19 +221,19 @@ function FixtureCard({
 
       {/* Active series linked to this fixture */}
       {activeSeries.length > 0 && (
-        <div className="border-t border-slate-700/50 pt-2 space-y-1.5">
+        <div className="border-t border-border/50 pt-2 space-y-1.5">
           {activeSeries.map((s) => (
             <Link
               key={s.id}
               href={`/series/${s.id}`}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#0f172a] hover:bg-slate-800 transition-colors"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-background hover:bg-card transition-colors"
             >
-              <TrendingUp className="h-3.5 w-3.5 text-[#10b981] flex-shrink-0" />
-              <span className="text-xs text-white truncate">{s.subject}</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300">
+              <TrendingUp className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+              <span className="text-xs text-foreground truncate">{s.subject}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-secondary-foreground">
                 {BET_TYPES[s.bet_type as keyof typeof BET_TYPES] ?? s.bet_type}
               </span>
-              <span className="text-[10px] text-slate-500 ml-auto">
+              <span className="text-[10px] text-muted-foreground ml-auto">
                 {s.target_gain}€/pari
               </span>
             </Link>

@@ -35,13 +35,13 @@ export function FreebetList({ freebets }: FreebetListProps) {
           <button
             onClick={() => handleDelete(id)}
             disabled={deletingId === id}
-            className="text-xs text-red-400 hover:text-red-300 cursor-pointer"
+            className="text-xs text-destructive hover:text-destructive cursor-pointer"
           >
             Oui
           </button>
           <button
             onClick={() => setConfirmId(null)}
-            className="text-xs text-slate-400 hover:text-slate-300 cursor-pointer"
+            className="text-xs text-muted-foreground hover:text-secondary-foreground cursor-pointer"
           >
             Non
           </button>
@@ -51,7 +51,7 @@ export function FreebetList({ freebets }: FreebetListProps) {
     return (
       <button
         onClick={() => setConfirmId(id)}
-        className="text-slate-500 hover:text-red-400 cursor-pointer"
+        className="text-muted-foreground hover:text-destructive cursor-pointer"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
@@ -60,7 +60,7 @@ export function FreebetList({ freebets }: FreebetListProps) {
 
   return (
     <div className="space-y-2">
-      <h2 className="text-sm font-semibold text-slate-200">Mes freebets</h2>
+      <h2 className="text-sm font-semibold text-secondary-foreground">Mes freebets</h2>
 
       {/* Active freebets — full card with progress bar */}
       {active.map((fb) => {
@@ -72,31 +72,31 @@ export function FreebetList({ freebets }: FreebetListProps) {
         return (
           <div
             key={fb.id}
-            className="rounded-xl bg-[#1e293b] p-3 border border-amber-500/20"
+            className="rounded-xl bg-card p-3 border border-warning/20"
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Ticket className="h-4 w-4 text-amber-400" />
-                <span className="text-sm font-bold text-amber-400">
+                <Ticket className="h-4 w-4 text-warning" />
+                <span className="text-sm font-bold text-warning">
                   {formatEuros(fb.remaining_amount)}
                 </span>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-muted-foreground">
                   / {formatEuros(fb.initial_amount)}
                 </span>
               </div>
               <DeleteControl id={fb.id} />
             </div>
-            <div className="h-1.5 rounded-full bg-slate-700 overflow-hidden">
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full rounded-full bg-amber-500 transition-all"
+                className="h-full rounded-full bg-warning transition-all"
                 style={{ width: `${Math.min(usedPercent, 100)}%` }}
               />
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-[10px] text-slate-500">
+              <span className="text-[10px] text-muted-foreground">
                 {new Date(fb.created_at).toLocaleDateString("fr-FR")}
               </span>
-              <span className="text-[10px] text-slate-500">
+              <span className="text-[10px] text-muted-foreground">
                 {Math.round(usedPercent)}% utilisé
               </span>
             </div>
@@ -105,8 +105,8 @@ export function FreebetList({ freebets }: FreebetListProps) {
       })}
 
       {active.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-8 text-slate-500">
-          <Ticket className="h-8 w-8 mb-2 text-slate-600" />
+        <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+          <Ticket className="h-8 w-8 mb-2 text-muted-foreground" />
           <p className="text-xs">Aucun freebet disponible.</p>
         </div>
       )}
@@ -116,7 +116,7 @@ export function FreebetList({ freebets }: FreebetListProps) {
         <div className="pt-1">
           <button
             onClick={() => setShowUsed((prev) => !prev)}
-            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-400 cursor-pointer"
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-muted-foreground cursor-pointer"
           >
             {showUsed ? (
               <ChevronDown className="h-3.5 w-3.5" />
@@ -131,14 +131,14 @@ export function FreebetList({ freebets }: FreebetListProps) {
               {used.map((fb) => (
                 <div
                   key={fb.id}
-                  className="flex items-center justify-between rounded-lg bg-[#1e293b]/60 px-3 py-2"
+                  className="flex items-center justify-between rounded-lg bg-card/60 px-3 py-2"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <Ticket className="h-3.5 w-3.5 text-slate-500 shrink-0" />
-                    <span className="text-xs font-medium text-slate-400">
+                    <Ticket className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-xs font-medium text-muted-foreground">
                       {formatEuros(fb.initial_amount)}
                     </span>
-                    <span className="text-[10px] text-slate-600">
+                    <span className="text-[10px] text-muted-foreground">
                       {new Date(fb.created_at).toLocaleDateString("fr-FR")}
                     </span>
                   </div>

@@ -23,8 +23,8 @@ export default async function FreebetsPage() {
     <div className="space-y-4 pb-24">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-slate-100">Freebets</h1>
-          <p className="text-xs text-slate-400">
+          <h1 className="text-lg font-bold text-foreground">Freebets</h1>
+          <p className="text-xs text-muted-foreground">
             Gérez vos crédits freebet et placez des paris
           </p>
         </div>

@@ -59,15 +59,15 @@ export function FreebetBetForm({ totalBalance }: FreebetBetFormProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="h-11 w-full rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold cursor-pointer">
+        <Button className="h-11 w-full rounded-xl bg-warning hover:bg-warning text-foreground font-semibold cursor-pointer">
           <Plus className="mr-1 h-4 w-4" />
           Placer un pari freebet
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
+      <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="text-white">Placer un pari freebet</DialogTitle>
-          <DialogDescription className="text-amber-400">
+          <DialogTitle className="text-foreground">Placer un pari freebet</DialogTitle>
+          <DialogDescription className="text-warning">
             Solde : {formatEuros(totalBalance)}
           </DialogDescription>
         </DialogHeader>
@@ -78,7 +78,7 @@ export function FreebetBetForm({ totalBalance }: FreebetBetFormProps) {
             onChange={(e) => setSubject(e.target.value)}
             placeholder="Sujet (ex: PSG vs Marseille)"
             required
-            className="h-10 rounded-lg bg-[#0f172a] border-slate-600 text-slate-100 placeholder:text-slate-500"
+            className="h-10 rounded-lg bg-background border-border text-foreground placeholder:text-muted-foreground"
           />
 
           <div className="grid grid-cols-2 gap-2">
@@ -90,7 +90,7 @@ export function FreebetBetForm({ totalBalance }: FreebetBetFormProps) {
               min="1.01"
               placeholder="Cote"
               required
-              className="h-10 rounded-lg bg-[#0f172a] border-slate-600 text-slate-100 placeholder:text-slate-500"
+              className="h-10 rounded-lg bg-background border-border text-foreground placeholder:text-muted-foreground"
             />
             <Input
               value={stake}
@@ -101,25 +101,25 @@ export function FreebetBetForm({ totalBalance }: FreebetBetFormProps) {
               max={totalBalance}
               placeholder={`Mise (max ${formatEuros(totalBalance)})`}
               required
-              className="h-10 rounded-lg bg-[#0f172a] border-slate-600 text-slate-100 placeholder:text-slate-500"
+              className="h-10 rounded-lg bg-background border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>
 
           {potentialProfit > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-              <CircleDollarSign className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm text-emerald-400 font-medium">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
+              <CircleDollarSign className="h-4 w-4 text-primary" />
+              <span className="text-sm text-primary font-medium">
                 Gain potentiel : {formatEuros(potentialProfit)}
               </span>
             </div>
           )}
 
-          {error && <p className="text-xs text-red-400">{error}</p>}
+          {error && <p className="text-xs text-destructive">{error}</p>}
 
           <Button
             type="submit"
             disabled={loading}
-            className="h-10 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold cursor-pointer"
+            className="h-10 rounded-lg bg-warning hover:bg-warning text-foreground font-semibold cursor-pointer"
           >
             Placer le pari
           </Button>

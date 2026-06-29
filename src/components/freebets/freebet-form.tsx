@@ -44,16 +44,16 @@ export function FreebetForm() {
         onClick={() => setOpen(true)}
         size="icon"
         aria-label="Ajouter un freebet"
-        className="h-9 w-9 rounded-lg bg-amber-600 hover:bg-amber-500 text-white cursor-pointer"
+        className="h-9 w-9 rounded-lg bg-warning hover:bg-warning text-foreground cursor-pointer"
       >
         <Plus className="h-5 w-5" />
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="bg-[#1e293b] border border-slate-700 text-white max-w-md mx-auto rounded-2xl">
+        <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">Nouveau freebet</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogTitle className="text-foreground">Nouveau freebet</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Ajoutez un crédit freebet reçu
             </DialogDescription>
           </DialogHeader>
@@ -66,13 +66,13 @@ export function FreebetForm() {
               min="0.01"
               placeholder="Montant (€)"
               required
-              className="h-10 rounded-lg bg-[#0f172a] border-slate-600 text-slate-100 placeholder:text-slate-500"
+              className="h-10 rounded-lg bg-background border-border text-foreground placeholder:text-muted-foreground"
             />
-            {error && <p className="text-xs text-red-400">{error}</p>}
+            {error && <p className="text-xs text-destructive">{error}</p>}
             <Button
               type="submit"
               disabled={loading}
-              className="h-10 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold cursor-pointer"
+              className="h-10 rounded-lg bg-warning hover:bg-warning text-foreground font-semibold cursor-pointer"
             >
               Ajouter
             </Button>

@@ -11,63 +11,63 @@ export function FreebetStatsCard({ balance, used, realGains }: FreebetStatsCardP
   const conversionRate = used > 0 ? (realGains / used) * 100 : 0;
 
   return (
-    <div className="rounded-xl bg-[#1e293b] p-4 space-y-3 border border-amber-500/15">
+    <div className="rounded-xl bg-card p-4 space-y-3 border border-warning/15">
       {/* Main: balance */}
       <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20">
-          <Ticket className="h-4 w-4 text-amber-400" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-warning/20">
+          <Ticket className="h-4 w-4 text-warning" />
         </div>
         <div>
-          <span className="text-[10px] uppercase tracking-wide text-slate-400">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
             Freebets disponibles
           </span>
           <RollingNumber
             value={balance}
             format="euros"
-            className="block text-xl font-bold text-amber-400"
+            className="block text-xl font-bold text-warning"
           />
         </div>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-lg bg-[#0f172a] px-2.5 py-2">
+        <div className="rounded-lg bg-background px-2.5 py-2">
           <div className="flex items-center gap-1 mb-0.5">
-            <CircleDollarSign className="h-3 w-3 text-slate-400" />
-            <span className="text-[10px] uppercase tracking-wide text-slate-400">
+            <CircleDollarSign className="h-3 w-3 text-muted-foreground" />
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
               Utilisé
             </span>
           </div>
           <RollingNumber
             value={used}
             format="euros"
-            className="block text-sm font-bold text-slate-100"
+            className="block text-sm font-bold text-foreground"
           />
         </div>
-        <div className="rounded-lg bg-[#0f172a] px-2.5 py-2">
+        <div className="rounded-lg bg-background px-2.5 py-2">
           <div className="flex items-center gap-1 mb-0.5">
-            <TrendingUp className="h-3 w-3 text-emerald-400" />
-            <span className="text-[10px] uppercase tracking-wide text-slate-400">
+            <TrendingUp className="h-3 w-3 text-primary" />
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
               Gagné
             </span>
           </div>
           <RollingNumber
             value={realGains}
             format="euros"
-            className="block text-sm font-bold text-emerald-400"
+            className="block text-sm font-bold text-primary"
           />
         </div>
-        <div className="rounded-lg bg-[#0f172a] px-2.5 py-2">
+        <div className="rounded-lg bg-background px-2.5 py-2">
           <div className="flex items-center gap-1 mb-0.5">
-            <BarChart3 className="h-3 w-3 text-blue-400" />
-            <span className="text-[10px] uppercase tracking-wide text-slate-400">
+            <BarChart3 className="h-3 w-3 text-info" />
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
               Conversion
             </span>
           </div>
           <RollingNumber
             value={conversionRate}
             format="percent"
-            className="block text-sm font-bold text-blue-400"
+            className="block text-sm font-bold text-info"
           />
         </div>
       </div>
