@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { ParisPage } from "@/components/paris/paris-page";
+import { getSubjectLinks, getTeamMappings } from "@/actions/teams";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +18,8 @@ export default async function NewSeriesPage() {
     return null;
   }
 
-  // Fetch bets and team mappings in parallel
-  const [{ data: bets }, { data: teamMappings }] = await Promise.all([
+  // Fetch bets, subject_links and team_mappings in parallel
+  const [{ data: bets }, links, mappings] = await Promise.all([
     supabase
       .from("bets")
       .select(
@@ -26,9 +27,8 @@ export default async function NewSeriesPage() {
       )
       .eq("series.user_id", user.id)
       .order("created_at", { ascending: false }),
-    supabase
-      .from("team_mappings")
-      .select("subject, logo_url, api_team_id, is_club"),
+    getSubjectLinks(),
+    getTeamMappings(),
   ]);
 
   // Fetch all series to build grouped teams dropdown
@@ -73,19 +73,20 @@ export default async function NewSeriesPage() {
     bet_type: t.bet_type,
   }));
 
-  // Build logo map: clubs first, then non-clubs inherit via api_team_id
-  const logoMap: Record<string, string> = {};
-  const apiIdToLogo: Record<number, string> = {};
-  for (const m of teamMappings ?? []) {
-    if (m.is_club && m.logo_url) {
-      logoMap[m.subject] = m.logo_url;
-      if (m.api_team_id) apiIdToLogo[m.api_team_id] = m.logo_url;
-    }
+  // Build logo map via subject_links resolution (canonical pattern)
+  const byId = new Map(mappings.map((m) => [m.id, m]));
+  const entitiesBySubject = new Map<string, typeof mappings[number][]>();
+  for (const l of links) {
+    const ent = byId.get(l.team_mapping_id);
+    if (!ent) continue;
+    const arr = entitiesBySubject.get(l.subject) ?? [];
+    arr.push(ent);
+    entitiesBySubject.set(l.subject, arr);
   }
-  for (const m of teamMappings ?? []) {
-    if (!m.is_club && !logoMap[m.subject] && m.api_team_id && apiIdToLogo[m.api_team_id]) {
-      logoMap[m.subject] = apiIdToLogo[m.api_team_id];
-    }
+  const logoMap: Record<string, string> = {};
+  for (const [subject, entities] of entitiesBySubject) {
+    const logo = entities[0]?.logo_url;
+    if (logo) logoMap[subject] = logo;
   }
 
   return (

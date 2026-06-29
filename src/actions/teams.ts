@@ -575,7 +575,7 @@ export async function linkSubject(subject: string, teamMappingId: string) {
     .from("subject_links")
     .upsert(
       { user_id: user.id, subject: subject.trim(), team_mapping_id: teamMappingId },
-      { onConflict: "user_id,subject,team_mapping_id" }
+      { onConflict: "user_id,subject,team_mapping_id", ignoreDuplicates: true }
     );
   if (error) return { error: `Erreur lors du lien: ${error.message}` };
 

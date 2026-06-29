@@ -181,16 +181,21 @@ export async function GET(request: NextRequest) {
       .eq("status", "en_cours");
     const activeSubjects = new Set((activeSeries ?? []).map((s) => s.subject));
 
-    const { data: subjMappings } = await supabase
+    const { data: links } = await supabase
+      .from("subject_links")
+      .select("subject, team_mapping_id")
+      .eq("user_id", userId);
+    const { data: entities } = await supabase
       .from("team_mappings")
-      .select("subject, api_team_id")
+      .select("id, api_team_id")
       .eq("user_id", userId)
       .not("api_team_id", "is", null);
-
+    const idToApi = new Map((entities ?? []).map((e) => [e.id as string, e.api_team_id as number]));
     const apiIdsWithActiveSeries = new Set<number>();
-    for (const m of subjMappings ?? []) {
-      if (activeSubjects.has(m.subject) && m.api_team_id) {
-        apiIdsWithActiveSeries.add(m.api_team_id as number);
+    for (const l of links ?? []) {
+      if (activeSubjects.has(l.subject)) {
+        const a = idToApi.get(l.team_mapping_id);
+        if (a) apiIdsWithActiveSeries.add(a);
       }
     }
 
