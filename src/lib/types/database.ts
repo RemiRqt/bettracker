@@ -235,6 +235,9 @@ export interface Database {
           fixtures_updated_at: string | null;
           created_at: string;
           updated_at: string;
+          provider: string;
+          kind: string;
+          country: string | null;
         };
         Insert: {
           id?: string;
@@ -250,6 +253,9 @@ export interface Database {
           fixtures_updated_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          provider?: string;
+          kind?: string;
+          country?: string | null;
         };
         Update: {
           id?: string;
@@ -265,7 +271,16 @@ export interface Database {
           fixtures_updated_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          provider?: string;
+          kind?: string;
+          country?: string | null;
         };
+        Relationships: [];
+      };
+      subject_links: {
+        Row: { id: string; user_id: string; subject: string; team_mapping_id: string; created_at: string };
+        Insert: { id?: string; user_id: string; subject: string; team_mapping_id: string; created_at?: string };
+        Update: { id?: string; user_id?: string; subject?: string; team_mapping_id?: string; created_at?: string };
         Relationships: [];
       };
       user_settings: {
