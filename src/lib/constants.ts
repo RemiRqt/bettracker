@@ -53,4 +53,5 @@ export const FOOTBALL_DATA_COMPETITIONS = [
   { code: "PPL", name: "Primeira Liga", flag: "\uD83C\uDDF5\uD83C\uDDF9" },
   { code: "ELC", name: "Championship", flag: "\uD83C\uDFF4\uDB40\uDC67\uDB40\uDC62\uDB40\uDC65\uDB40\uDC6E\uDB40\uDC67\uDB40\uDC7F" },
   { code: "CL", name: "Champions League", flag: "\uD83C\uDFC6" },
+  { code: "WC", name: "Coupe du Monde", flag: "\uD83C\uDFC6" },
 ] as const;

@@ -92,6 +92,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     }
 
     // Optimistic add
+    const isWC = selectedCompetition === "WC";
     const newMapping: TeamMapping = {
       id: crypto.randomUUID(),
       user_id: "",
@@ -100,6 +101,9 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
       api_team_id: club.id,
       logo_url: club.logo,
       is_club: true,
+      kind: isWC ? "national" : "club",
+      country: isWC ? club.name : null,
+      provider: "football-data",
       is_followed: false,
       next_matches_count: 2,
       cached_fixtures: null,
@@ -110,7 +114,8 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     setMappings((prev) => [newMapping, ...prev]);
 
     startTransition(async () => {
-      await addClub(club.id, club.name, club.logo);
+      await addClub(club.id, club.name, club.logo,
+        isWC ? { kind: "national", country: club.name } : undefined);
     });
 
     setAddClubOpen(false); setSelectedCompetition(""); setClubResults([]); setClubFilter("");

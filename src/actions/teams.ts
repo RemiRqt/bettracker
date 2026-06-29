@@ -22,6 +22,9 @@ export interface TeamMapping {
   api_team_id: number | null;
   logo_url: string | null;
   is_club: boolean;
+  kind: string;
+  country: string | null;
+  provider: string;
   is_followed: boolean;
   next_matches_count: number;
   cached_fixtures: CachedFixture[] | null;
@@ -50,7 +53,7 @@ export async function getTeamMappings(): Promise<TeamMapping[]> {
 
   const { data, error } = await supabase
     .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id)
     .order("subject", { ascending: true });
 
@@ -75,7 +78,7 @@ export async function getFollowedTeams(): Promise<TeamMapping[]> {
 
   const { data, error } = await supabase
     .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id)
     .eq("is_followed", true)
     .order("subject", { ascending: true });
@@ -134,24 +137,19 @@ export async function upsertTeamMapping(
 }
 
 /**
- * Add an API club as a separate record (is_club=true).
+ * Add an API club or national team as a separate record (is_club=true).
  * Stores the direct crest URL from football-data.org.
  */
 export async function addClub(
   apiTeamId: number,
   name: string,
-  crestUrl: string
+  crestUrl: string,
+  options?: { kind?: "club" | "national"; country?: string }
 ) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    throw new Error("Vous devez etre connecte.");
-  }
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) throw new Error("Vous devez etre connecte.");
 
   const { data: existing } = await supabase
     .from("team_mappings")
@@ -160,26 +158,21 @@ export async function addClub(
     .eq("api_team_id", apiTeamId)
     .eq("is_club", true)
     .maybeSingle();
+  if (existing) return { error: "Cette equipe est deja ajoutee." };
 
-  if (existing) {
-    return { error: "Cette equipe est deja ajoutee." };
-  }
-
-  const { error } = await supabase
-    .from("team_mappings")
-    .insert({
-      user_id: user.id,
-      subject: name,
-      api_team_id: apiTeamId,
-      logo_url: crestUrl,
-      sport: "football",
-      is_club: true,
-      is_followed: false,
-    });
-
-  if (error) {
-    return { error: `Erreur: ${error.message}` };
-  }
+  const { error } = await supabase.from("team_mappings").insert({
+    user_id: user.id,
+    subject: name,
+    api_team_id: apiTeamId,
+    logo_url: crestUrl,
+    sport: "football",
+    is_club: true,
+    is_followed: false,
+    kind: options?.kind ?? "club",
+    country: options?.country ?? null,
+    provider: "football-data",
+  });
+  if (error) return { error: `Erreur: ${error.message}` };
 
   revalidateTeamPaths();
   return { success: true };
@@ -389,7 +382,7 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
   // Get existing team mappings
   const { data: existingMappings } = await supabase
     .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id);
 
   const existingSubjects = new Set(
@@ -417,7 +410,7 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
   // Return the full updated list
   const { data: allMappings } = await supabase
     .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id)
     .order("subject", { ascending: true });
 
@@ -443,7 +436,7 @@ export async function getCalendarTeams(): Promise<TeamMapping[]> {
   // Get all team mappings
   const { data: allMappings } = await supabase
     .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
+    .select("id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
     .eq("user_id", user.id);
 
   if (!allMappings) return [];
