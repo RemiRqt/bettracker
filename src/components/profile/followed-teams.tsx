@@ -235,11 +235,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     return (
       <div key={club.id} className="rounded-xl bg-background overflow-hidden">
         <div className="flex items-center gap-3 p-3">
-          {club.kind === "national" ? (
-            <span className="flex h-9 w-9 items-center justify-center text-xl rounded-full bg-card border border-border">🏆</span>
-          ) : (
-            <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="md" />
-          )}
+          <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="md" />
           <button
             onClick={() => toggleClubExpand(club.id)}
             className="flex-1 min-w-0 text-left"
@@ -545,11 +541,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                     onClick={() => handleLinkSubject(linkUnlinkedSubject!, club)}
                     className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-background transition-colors text-left"
                   >
-                    {club.kind === "national" ? (
-                      <span className="flex h-8 w-8 items-center justify-center text-lg">🏆</span>
-                    ) : (
-                      <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="sm" />
-                    )}
+                    <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="sm" />
                     <div className="flex-1 min-w-0">
                       <span className="text-sm text-foreground">{club.subject}</span>
                       {club.kind === "national" && (

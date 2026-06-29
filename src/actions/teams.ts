@@ -160,19 +160,32 @@ export async function addClub(
     .maybeSingle();
   if (existing) return { error: "Cette equipe est deja ajoutee." };
 
-  const { error } = await supabase.from("team_mappings").insert({
-    user_id: user.id,
-    subject: name,
-    api_team_id: apiTeamId,
-    logo_url: crestUrl,
-    sport: "football",
-    is_club: true,
-    is_followed: false,
-    kind: options?.kind ?? "club",
-    country: options?.country ?? null,
-    provider: "football-data",
-  });
+  const { data: inserted, error } = await supabase
+    .from("team_mappings")
+    .insert({
+      user_id: user.id,
+      subject: name,
+      api_team_id: apiTeamId,
+      logo_url: crestUrl,
+      sport: "football",
+      is_club: true,
+      is_followed: false,
+      kind: options?.kind ?? "club",
+      country: options?.country ?? null,
+      provider: "football-data",
+    })
+    .select("id")
+    .single();
   if (error) return { error: `Erreur: ${error.message}` };
+
+  // Auto-lien : une serie portant le meme nom que l'entite herite de son logo/calendrier
+  // (compat avec l'ancien match-par-nom, desormais materialise en subject_links).
+  if (inserted) {
+    await supabase.from("subject_links").upsert(
+      { user_id: user.id, subject: name, team_mapping_id: inserted.id },
+      { onConflict: "user_id,subject,team_mapping_id", ignoreDuplicates: true }
+    );
+  }
 
   revalidateTeamPaths();
   return { success: true };
