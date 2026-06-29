@@ -44,7 +44,7 @@ export function FreebetForm() {
         onClick={() => setOpen(true)}
         size="icon"
         aria-label="Ajouter un freebet"
-        className="h-9 w-9 rounded-lg bg-warning hover:bg-warning text-foreground cursor-pointer"
+        className="h-9 w-9 rounded-lg bg-warning hover:bg-warning/90 text-warning-foreground cursor-pointer"
       >
         <Plus className="h-5 w-5" />
       </Button>
@@ -72,7 +72,7 @@ export function FreebetForm() {
             <Button
               type="submit"
               disabled={loading}
-              className="h-10 rounded-lg bg-warning hover:bg-warning text-foreground font-semibold cursor-pointer"
+              className="h-10 rounded-lg bg-warning hover:bg-warning/90 text-warning-foreground font-semibold cursor-pointer"
             >
               Ajouter
             </Button>

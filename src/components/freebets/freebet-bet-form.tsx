@@ -59,7 +59,7 @@ export function FreebetBetForm({ totalBalance }: FreebetBetFormProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="h-11 w-full rounded-xl bg-warning hover:bg-warning text-foreground font-semibold cursor-pointer">
+        <Button className="h-11 w-full rounded-xl bg-warning hover:bg-warning/90 text-warning-foreground font-semibold cursor-pointer">
           <Plus className="mr-1 h-4 w-4" />
           Placer un pari freebet
         </Button>
@@ -119,7 +119,7 @@ export function FreebetBetForm({ totalBalance }: FreebetBetFormProps) {
           <Button
             type="submit"
             disabled={loading}
-            className="h-10 rounded-lg bg-warning hover:bg-warning text-foreground font-semibold cursor-pointer"
+            className="h-10 rounded-lg bg-warning hover:bg-warning/90 text-warning-foreground font-semibold cursor-pointer"
           >
             Placer le pari
           </Button>

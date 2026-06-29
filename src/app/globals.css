@@ -141,15 +141,13 @@
   button:not(:disabled):not([role="tab"]).bg-destructive:hover {
     box-shadow: var(--shadow-hard);
   }
-  /* Amber action buttons (freebets) get an amber-tinted sticker shadow to
-     match the amber stats card, instead of the emerald one. */
-  button:not(:disabled):not([role="tab"]).bg-amber-600,
-  button:not(:disabled):not([role="tab"]).bg-amber-500 {
-    box-shadow: 3px 3px 0 0 rgb(245 158 11 / 0.18);
+  /* Warning action buttons (freebets) get a warning-tinted sticker shadow to
+     match the warning stats card, instead of the emerald one. */
+  button:not(:disabled):not([role="tab"]).bg-warning {
+    box-shadow: 3px 3px 0 0 color-mix(in srgb, var(--color-warning) 18%, transparent);
   }
-  button:not(:disabled):not([role="tab"]).bg-amber-600:hover,
-  button:not(:disabled):not([role="tab"]).bg-amber-500:hover {
-    box-shadow: 4px 4px 0 0 rgb(245 158 11 / 0.22);
+  button:not(:disabled):not([role="tab"]).bg-warning:hover {
+    box-shadow: 4px 4px 0 0 color-mix(in srgb, var(--color-warning) 22%, transparent);
   }
 }
 
