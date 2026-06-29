@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
+import { getServerTheme } from "@/lib/theme";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -32,13 +33,14 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const theme = await getServerTheme();
   return (
-    <html lang="fr">
+    <html lang="fr" data-theme={theme}>
       <head>
         <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
