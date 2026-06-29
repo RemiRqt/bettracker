@@ -20,6 +20,10 @@
   --color-accent-foreground: #ffffff;
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
+  --color-warning: #f59e0b;
+  --color-warning-foreground: #1c1200;
+  --color-info: #3b82f6;
+  --color-info-foreground: #ffffff;
   --color-border: #475569;
   --color-input: #475569;
   --color-ring: #10b981;
@@ -45,6 +49,60 @@
   --text-base: 1rem;
   --text-sm: 0.9375rem;
   --text-xs: 0.8125rem;
+}
+
+/* ===== Thèmes (accent = --color-primary de chaque thème) ===== */
+/* "actuel" = valeurs par défaut du :root ci-dessus. */
+
+[data-theme="turf"] {
+  --color-background: #0e1f1a;
+  --color-foreground: #e8f5ee;
+  --color-card: #16352b;
+  --color-card-foreground: #e8f5ee;
+  --color-popover: #16352b;
+  --color-popover-foreground: #e8f5ee;
+  --color-primary: #fbbf24;
+  --color-primary-foreground: #2a1c00;
+  --color-secondary: #1d4536;
+  --color-secondary-foreground: #b9d8c8;
+  --color-muted: #1d4536;
+  --color-muted-foreground: #8fb8a4;
+  --color-accent: #1d4536;
+  --color-accent-foreground: #e8f5ee;
+  --color-border: #256048;
+  --color-input: #256048;
+  --color-ring: #fbbf24;
+  --color-warning: #fbbf24;
+  --color-info: #5eead4;
+  --color-sidebar-background: #0e1f1a;
+  --color-sidebar-accent: #16352b;
+  --color-sidebar-border: #256048;
+}
+
+[data-theme="creme"] {
+  --color-background: #f7f4ec;
+  --color-foreground: #1c1917;
+  --color-card: #fffdf8;
+  --color-card-foreground: #1c1917;
+  --color-popover: #fffdf8;
+  --color-popover-foreground: #1c1917;
+  --color-primary: #16a34a;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f3eee2;
+  --color-secondary-foreground: #4a4036;
+  --color-muted: #f3eee2;
+  --color-muted-foreground: #7c7263;
+  --color-accent: #f3eee2;
+  --color-accent-foreground: #1c1917;
+  --color-border: #e7e0d0;
+  --color-input: #e7e0d0;
+  --color-ring: #16a34a;
+  --color-destructive: #dc2626;
+  --color-warning: #d97706;
+  --color-info: #2563eb;
+  --color-sidebar-background: #f7f4ec;
+  --color-sidebar-accent: #fffdf8;
+  --color-sidebar-border: #e7e0d0;
 }
 
 @layer base {
