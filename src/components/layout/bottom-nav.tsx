@@ -28,7 +28,6 @@ export function BottomNav() {
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-50 md:hidden pointer-events-none"
-      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       aria-label="Navigation principale"
     >
       <div className="pointer-events-auto mx-auto max-w-md px-3 pb-3">
