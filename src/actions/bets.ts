@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { SportType } from "@/lib/types";
+import { getSubjectLinks, getTeamMappings } from "@/actions/teams";
 import {
   round2,
   computeStake,
@@ -10,6 +11,114 @@ import {
   objectiveFromStake,
   stakeFromObjective,
 } from "@/lib/bet-calc";
+
+interface BetFormSubject {
+  subject: string;
+  betType: string;
+  sport: string;
+  lastStatus: string;
+  logoUrl?: string;
+  activeSeries?: {
+    id: string;
+    targetGain: number;
+    betCount: number;
+    sumStakes: number;
+  };
+}
+
+/**
+ * Données pour le form de création (modale globale) : subjects existants groupés
+ * par (nom, type) avec la série en cours, + équipes API importées.
+ */
+export async function getBetFormData(): Promise<{
+  existingSubjects: BetFormSubject[];
+  teamMappings: {
+    subject: string;
+    apiTeamId: number | null;
+    logoUrl: string | null;
+    sport: string;
+  }[];
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { existingSubjects: [], teamMappings: [] };
+
+  const [{ data: bets }, { data: allSeries }, links, mappings] =
+    await Promise.all([
+      supabase
+        .from("bets")
+        .select("series_id, stake, series!inner(user_id)")
+        .eq("series.user_id", user.id),
+      supabase
+        .from("series")
+        .select("id, subject, bet_type, status, target_gain, sport, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+      getSubjectLinks(),
+      getTeamMappings(),
+    ]);
+
+  const betAgg = new Map<string, { count: number; sum: number }>();
+  for (const b of bets ?? []) {
+    const a = betAgg.get(b.series_id) ?? { count: 0, sum: 0 };
+    a.count += 1;
+    a.sum += b.stake;
+    betAgg.set(b.series_id, a);
+  }
+
+  const byId = new Map(mappings.map((m) => [m.id, m]));
+  const entitiesBySubject = new Map<string, (typeof mappings)[number][]>();
+  for (const l of links) {
+    const ent = byId.get(l.team_mapping_id);
+    if (!ent) continue;
+    const arr = entitiesBySubject.get(l.subject) ?? [];
+    arr.push(ent);
+    entitiesBySubject.set(l.subject, arr);
+  }
+  const logoMap: Record<string, string> = {};
+  for (const [subject, entities] of entitiesBySubject) {
+    const logo = entities[0]?.logo_url;
+    if (logo) logoMap[subject] = logo;
+  }
+
+  const groups = new Map<string, BetFormSubject>();
+  for (const s of allSeries ?? []) {
+    const key = `${s.subject}::${s.bet_type}`;
+    let g = groups.get(key);
+    if (!g) {
+      g = {
+        subject: s.subject,
+        betType: s.bet_type,
+        sport: s.sport,
+        lastStatus: s.status,
+        logoUrl: logoMap[s.subject],
+      };
+      groups.set(key, g);
+    }
+    if (s.status === "en_cours" && !g.activeSeries) {
+      const agg = betAgg.get(s.id) ?? { count: 0, sum: 0 };
+      g.activeSeries = {
+        id: s.id,
+        targetGain: s.target_gain,
+        betCount: agg.count,
+        sumStakes: agg.sum,
+      };
+    }
+  }
+
+  const teamMappings = mappings
+    .filter((m) => m.is_club)
+    .map((m) => ({
+      subject: m.subject,
+      apiTeamId: m.api_team_id,
+      logoUrl: m.logo_url,
+      sport: m.sport,
+    }));
+
+  return { existingSubjects: Array.from(groups.values()), teamMappings };
+}
 
 type BetMode = "resume" | "serie" | "unique";
 
