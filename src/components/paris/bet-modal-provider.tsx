@@ -21,8 +21,14 @@ import {
   type TeamMappingLite,
 } from "@/components/paris/bet-form";
 
+export interface BetPrefill {
+  subject: string;
+  betType?: string;
+  sport?: string;
+}
+
 interface BetModalContextValue {
-  open: () => void;
+  open: (prefill?: BetPrefill) => void;
 }
 
 const BetModalContext = createContext<BetModalContextValue | null>(null);
@@ -42,8 +48,10 @@ export function BetModalProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<FormData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [prefill, setPrefill] = useState<BetPrefill | null>(null);
 
-  const openModal = useCallback(async () => {
+  const openModal = useCallback(async (p?: BetPrefill) => {
+    setPrefill(p ?? null);
     setOpen(true);
     setLoading(true);
     try {
@@ -71,8 +79,10 @@ export function BetModalProvider({ children }: { children: React.ReactNode }) {
             </div>
           ) : (
             <BetForm
+              key={prefill?.subject ?? "new"}
               existingSubjects={data.existingSubjects}
               teamMappings={data.teamMappings}
+              prefill={prefill ?? undefined}
               onSuccess={() => setOpen(false)}
             />
           )}

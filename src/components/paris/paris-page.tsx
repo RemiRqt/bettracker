@@ -246,7 +246,7 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
           <p className="text-sm">Aucun pari{filter ? " pour ce filtre" : ""}.</p>
           {!filter && (
             <button
-              onClick={openBetModal}
+              onClick={() => openBetModal()}
               className="mt-3 text-sm text-primary hover:text-primary/80 transition-colors"
             >
               Créer un pari

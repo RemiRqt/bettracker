@@ -49,6 +49,7 @@ interface BetFormProps {
   existingSubjects: ExistingSubject[];
   teamMappings: TeamMappingLite[];
   lockedSeries?: LockedSeries;
+  prefill?: { subject: string; betType?: string; sport?: string };
   onSuccess?: () => void;
 }
 
@@ -77,14 +78,34 @@ export function BetForm({
   existingSubjects,
   teamMappings,
   lockedSeries,
+  prefill,
   onSuccess,
 }: BetFormProps) {
-  const [sport, setSport] = useState<string>(lockedSeries?.sport ?? "football");
-  const [name, setName] = useState<string>(lockedSeries?.subject ?? "");
+  const prefillSubject =
+    prefill && !lockedSeries
+      ? existingSubjects.find(
+          (s) =>
+            s.subject === prefill.subject &&
+            (!prefill.betType || s.betType === prefill.betType)
+        ) ??
+        existingSubjects.find((s) => s.subject === prefill.subject) ??
+        null
+      : null;
+
+  const [sport, setSport] = useState<string>(
+    lockedSeries?.sport ?? prefillSubject?.sport ?? prefill?.sport ?? "football"
+  );
+  const [name, setName] = useState<string>(
+    lockedSeries?.subject ?? prefill?.subject ?? ""
+  );
   const [apiTeam, setApiTeam] = useState<ApiTeamAdded | null>(null);
-  const [selectedSubject, setSelectedSubject] = useState<ExistingSubject | null>(null);
-  const [createdNew, setCreatedNew] = useState(false);
-  const [betType, setBetType] = useState<string>(lockedSeries?.betType ?? "");
+  const [selectedSubject, setSelectedSubject] = useState<ExistingSubject | null>(
+    prefillSubject
+  );
+  const [createdNew, setCreatedNew] = useState<boolean>(!!prefill && !prefillSubject);
+  const [betType, setBetType] = useState<string>(
+    lockedSeries?.betType ?? prefillSubject?.betType ?? prefill?.betType ?? ""
+  );
   const [betTypeCustom, setBetTypeCustom] = useState("");
   const [modeChoice, setModeChoice] = useState<"serie" | "unique">("serie");
   const [targetGain, setTargetGain] = useState(1);

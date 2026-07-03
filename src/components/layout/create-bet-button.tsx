@@ -8,7 +8,7 @@ export function CreateBetButton({ className }: { className?: string }) {
   return (
     <button
       type="button"
-      onClick={open}
+      onClick={() => open()}
       aria-label="Nouveau pari"
       className={className}
     >

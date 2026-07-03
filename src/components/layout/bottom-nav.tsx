@@ -74,7 +74,7 @@ export function BottomNav() {
           <div className="relative z-10 flex items-center justify-center px-1">
             <button
               type="button"
-              onClick={open}
+              onClick={() => open()}
               aria-label="Nouveau pari"
               className="flex h-12 w-12 -translate-y-3 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
             >
