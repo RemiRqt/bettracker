@@ -9,7 +9,7 @@ import { useBetModal } from "@/components/paris/bet-modal-provider";
 const LINKS = [
   { href: "/", icon: BarChart3, label: "Dashboard", match: (p: string) => p === "/" },
   {
-    href: "/series/new",
+    href: "/series",
     icon: Ticket,
     label: "Paris",
     match: (p: string) => p.startsWith("/series"),

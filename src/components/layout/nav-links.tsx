@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/", icon: BarChart3, label: "Dashboard", match: (p: string) => p === "/" },
-  { href: "/series/new", icon: Ticket, label: "Paris", match: (p: string) => p.startsWith("/series") },
+  { href: "/series", icon: Ticket, label: "Paris", match: (p: string) => p.startsWith("/series") },
   { href: "/calendar", icon: CalendarDays, label: "Calendrier", match: (p: string) => p === "/calendar" },
   { href: "/profile", icon: User, label: "Profil", match: (p: string) => p === "/profile" },
 ];

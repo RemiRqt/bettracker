@@ -4,8 +4,8 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { key: "paris", label: "Paris", href: "/series/new" },
   { key: "equipes", label: "Équipes", href: "/series" },
+  { key: "paris", label: "Paris", href: "/series/new" },
 ] as const;
 
 export function ParisEquipesSwitch({ active }: { active: "paris" | "equipes" }) {

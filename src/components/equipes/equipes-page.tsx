@@ -308,7 +308,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
                         className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors"
                       >
                         <Plus className="h-3 w-3" />
-                        Ajouter paris
+                        Ajouter pari
                       </button>
                     )}
                   </div>
