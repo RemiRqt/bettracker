@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ChevronDown, ChevronRight, Trash2, Ban, RotateCcw } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, Ban, RotateCcw, CheckCircle, XCircle } from "lucide-react";
 import { SeriesStatusBadge } from "@/components/series/series-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { formatEuros, formatPercent, cn } from "@/lib/utils";
 import { deleteSeries, abandonSeries, reopenSeries } from "@/actions/series";
+import { validateResult } from "@/actions/bets";
+import { fireConfetti } from "@/lib/confetti";
 import { canDeleteSeries } from "@/lib/series-utils";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -19,7 +21,7 @@ interface EquipeSeriesItemProps {
 export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
   const [expanded, setExpanded] = useState(false);
   const [deleted, setDeleted] = useState(false);
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const confirm = useConfirm();
   const { toast } = useToast();
 
@@ -72,6 +74,13 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
       if (result?.error) {
         toast({ title: "Erreur", description: result.error, variant: "destructive" });
       }
+    });
+  }
+
+  function handleValidate(betId: string, result: "gagne" | "perdu") {
+    startTransition(async () => {
+      const res = await validateResult(betId, result);
+      if (result === "gagne" && !res?.error) fireConfetti();
     });
   }
 
@@ -149,7 +158,9 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
       {/* Expanded: individual bets */}
       {expanded && (
         <div className="border-t border-border/30 px-3 pb-3 pt-2 space-y-2">
-          {series.bets.map((bet) => {
+          {[...series.bets]
+            .sort((a, b) => b.bet_number - a.bet_number)
+            .map((bet) => {
             const date = new Date(bet.created_at);
             const dateStr = date.toLocaleDateString("fr-FR", {
               day: "2-digit",
@@ -193,15 +204,36 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
                   </div>
                 </div>
 
-                {/* Result badge */}
-                <Badge
-                  className={cn(
-                    "shrink-0 text-[10px] px-1.5 py-0",
-                    resultClass
-                  )}
-                >
-                  {resultLabel}
-                </Badge>
+                {/* Résultat : badge, ou boutons Gagné/Perdu si en attente */}
+                {bet.result === null ? (
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleValidate(bet.id, "gagne")}
+                      disabled={isPending}
+                      className="flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/25 transition-colors disabled:opacity-50"
+                    >
+                      <CheckCircle className="h-3.5 w-3.5" /> Gagné
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleValidate(bet.id, "perdu")}
+                      disabled={isPending}
+                      className="flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 text-[11px] font-semibold text-destructive hover:bg-destructive/25 transition-colors disabled:opacity-50"
+                    >
+                      <XCircle className="h-3.5 w-3.5" /> Perdu
+                    </button>
+                  </div>
+                ) : (
+                  <Badge
+                    className={cn(
+                      "shrink-0 text-[10px] px-1.5 py-0",
+                      resultClass
+                    )}
+                  >
+                    {resultLabel}
+                  </Badge>
+                )}
               </div>
             );
           })}
