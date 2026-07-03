@@ -8,12 +8,11 @@ import { fireConfetti } from "@/lib/confetti";
 import { useBetModal } from "@/components/paris/bet-modal-provider";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { RollingNumber } from "@/components/ui/rolling-number";
-import { EquipeSeriesItem } from "@/components/series/equipe-series-item";
 import { FollowedTeams } from "@/components/profile/followed-teams";
-import type { EquipeSeries } from "@/components/series/equipes-list";
+import { EquipeCard, type MergedEquipe } from "./equipe-card";
 import type { TeamMapping } from "@/actions/teams";
-import { BET_TYPES, SPORTS, SPORT_EMOJIS } from "@/lib/constants";
-import { formatEuros, formatPercent, cn } from "@/lib/utils";
+import { SPORTS, SPORT_EMOJIS } from "@/lib/constants";
+import { formatPercent, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -23,48 +22,29 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  Plus,
   Search,
   ChevronDown,
   ChevronRight,
   ChevronUp,
   Inbox,
-  TrendingUp,
-  CalendarClock,
-  CheckCircle,
-  XCircle,
   Users,
 } from "lucide-react";
 
-// === Types ===
-
-export interface MergedEquipe {
-  equipeId: string;
+export interface EntityLite {
+  id: string;
   name: string;
-  bet_type: string;
-  sport: string;
-  totalStake: number;
-  netProfit: number;
-  roi: number;
-  seriesCount: number;
-  betsCount: number;
-  wonCount: number;
-  abandonedCount: number;
-  enCoursCount: number;
-  series: EquipeSeries[];
-  lastBetDate: string;
-  lastSeriesStatus: string;
-  totalWonAmount: number;
-  totalLostStake: number;
-  potentialGains: number;
-  activeSeries: {
-    id: string;
-    target_gain: number;
-    betCount: number;
-    sumStakes: number;
-    hasPendingBet: boolean;
-  } | null;
+  logoUrl: string | null;
+  kind: string;
 }
+
+type TypeFilter = "all" | "club" | "national" | "standalone";
+
+const TYPE_FILTERS: { key: TypeFilter; label: string }[] = [
+  { key: "all", label: "Tout" },
+  { key: "club", label: "Clubs" },
+  { key: "national", label: "Nations" },
+  { key: "standalone", label: "Sans lien" },
+];
 
 type SortKey = "date" | "gains" | "paris";
 type FilterKey = "en_cours" | "gagne" | "perdu" | null;
@@ -91,18 +71,10 @@ interface EquipesPageProps {
   logoMap: Record<string, string>;
   nextFixtureMap?: Record<string, { date: string }>;
   teamMappings?: TeamMapping[];
+  subjectEntities?: Record<string, EntityLite[]>;
 }
 
-function formatFixtureDateTime(iso: string): string {
-  const d = new Date(iso);
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${day}/${month} a ${hours}h${minutes}`;
-}
-
-export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMappings = [] }: EquipesPageProps) {
+export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMappings = [], subjectEntities = {} }: EquipesPageProps) {
   const [, startTransition] = useTransition();
   const router = useRouter();
 
@@ -114,6 +86,8 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [searchOpen, setSearchOpen] = useState(false);
   const [myTeamsOpen, setMyTeamsOpen] = useState(false);
+  const [clubExpanded, setClubExpanded] = useState<Set<string>>(new Set());
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [editEquipe, setEditEquipe] = useState<MergedEquipe | null>(null);
   const [seriesShowAll, setSeriesShowAll] = useState<Set<string>>(new Set());
 
@@ -184,6 +158,75 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
       if (result === "gagne" && !res?.error) fireConfetti();
     });
   }
+
+  function toggleClub(id: string) {
+    setClubExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  // Regroupement par club/nation (une équipe liée à club + pays apparaît dans les deux)
+  const groupMap = new Map<
+    string,
+    { entity: EntityLite; equipes: MergedEquipe[]; net: number; stake: number; hasActive: boolean }
+  >();
+  const standalone: MergedEquipe[] = [];
+  for (const eq of sorted) {
+    const ents = subjectEntities[eq.name] ?? [];
+    if (ents.length === 0) {
+      standalone.push(eq);
+      continue;
+    }
+    for (const ent of ents) {
+      const g =
+        groupMap.get(ent.id) ??
+        { entity: ent, equipes: [], net: 0, stake: 0, hasActive: false };
+      g.equipes.push(eq);
+      g.net += eq.netProfit;
+      g.stake += eq.totalStake;
+      if (eq.activeSeries) g.hasActive = true;
+      groupMap.set(ent.id, g);
+    }
+  }
+  const clubGroups = Array.from(groupMap.values())
+    .map((g) => ({
+      ...g,
+      net: Math.round(g.net * 100) / 100,
+      roi: g.stake > 0 ? (g.net / g.stake) * 100 : 0,
+    }))
+    .sort((a, b) => (a.hasActive !== b.hasActive ? (a.hasActive ? -1 : 1) : b.net - a.net));
+
+  const visibleClubGroups =
+    typeFilter === "standalone"
+      ? []
+      : clubGroups.filter((g) => typeFilter === "all" || g.entity.kind === typeFilter);
+  const showStandalone = typeFilter === "all" || typeFilter === "standalone";
+
+  const renderCard = (eq: MergedEquipe, keyPrefix: string) => {
+    const cardKey = `${keyPrefix}${eq.name}:::${eq.bet_type}`;
+    return (
+      <EquipeCard
+        key={cardKey}
+        eq={eq}
+        logoMap={logoMap}
+        nextFixture={nextFixtureMap[eq.name]}
+        isExpanded={expandedIds.has(cardKey)}
+        showAllSeries={seriesShowAll.has(cardKey)}
+        onToggleExpand={() => toggleExpand(cardKey)}
+        onToggleShowAllSeries={() => toggleSeriesShowAll(cardKey)}
+        onEdit={() => setEditEquipe(eq)}
+        onOpenBet={() => openBetModal({ subject: eq.name, betType: eq.bet_type, sport: eq.sport })}
+        onValidate={handleValidate}
+        onDeleteEmpty={async () => {
+          await deleteEquipe(eq.equipeId);
+          startTransition(() => { router.refresh(); });
+        }}
+      />
+    );
+  };
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -265,6 +308,24 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
         </button>
       </div>
 
+      {/* Filtre général : clubs / nations / sans lien */}
+      <div className="flex gap-1.5">
+        {TYPE_FILTERS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTypeFilter(t.key)}
+            className={cn(
+              "flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors border",
+              typeFilter === t.key
+                ? "bg-primary/20 text-primary border-primary/30"
+                : "bg-card text-muted-foreground border-border hover:border-border/80"
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {/* List */}
       {sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -272,211 +333,51 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
           <p className="text-sm">Aucune equipe trouvee.</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {sorted.map((eq) => {
-            const key = `${eq.name}:::${eq.bet_type}`;
-            const isExpanded = expandedIds.has(key);
-            const betTypeLabel = BET_TYPES[eq.bet_type as keyof typeof BET_TYPES] ?? eq.bet_type;
-
-            const barTotal = eq.totalWonAmount + eq.totalLostStake + eq.potentialGains;
-            const wonPct = barTotal > 0 ? (eq.totalWonAmount / barTotal) * 100 : 0;
-            const lostPct = barTotal > 0 ? (eq.totalLostStake / barTotal) * 100 : 0;
-            const pendingPct = barTotal > 0 ? (eq.potentialGains / barTotal) * 100 : 0;
-
-            const nextFixture = nextFixtureMap[eq.name];
-            const showBanner = !!eq.activeSeries;
-            const canBetFromBanner = !!(eq.activeSeries && !eq.activeSeries.hasPendingBet);
-            const activeSeriesFull = eq.activeSeries
-              ? eq.series.find((s) => s.id === eq.activeSeries!.id)
-              : null;
-            const pendingBet =
-              activeSeriesFull?.bets.find((b) => b.result === null) ?? null;
-
+        <div className="space-y-3">
+          {/* Groupes club / nation */}
+          {visibleClubGroups.map((group) => {
+            const gExpanded = clubExpanded.has(group.entity.id);
             return (
-              <div
-                key={key}
-                className={cn(
-                  "rounded-xl bg-card overflow-hidden",
-                  eq.activeSeries && "border border-primary/30"
-                )}
-              >
-                {/* Bandeau série en cours (+ prochain match si dispo) */}
-                {showBanner && (
-                  <div className="flex items-center justify-between px-3 py-2 bg-info/10 border-b border-info/20">
-                    <div className="flex items-center gap-1.5 text-xs text-info">
-                      <CalendarClock className="h-3.5 w-3.5" />
-                      <span className="font-medium">
-                        {nextFixture
-                          ? `Prochain match : ${formatFixtureDateTime(nextFixture.date)}`
-                          : "Série en cours"}
-                      </span>
-                    </div>
-                    {canBetFromBanner && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); openBetModal({ subject: eq.name, betType: eq.bet_type, sport: eq.sport }); }}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors"
-                      >
-                        <Plus className="h-3 w-3" />
-                        Ajouter pari
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {/* Card header */}
-                <div className="p-3 space-y-2">
-                  {/* Row 1: logo (edit) + name+type (expand) + profit (expand) */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <button
-                        onClick={() => setEditEquipe(eq)}
-                        aria-label="Modifier l'équipe"
-                        className="shrink-0 transition-transform active:scale-95"
-                      >
-                        <TeamLogo logoUrl={logoMap[eq.name]} sport={eq.sport} size="sm" />
-                      </button>
-                      <button
-                        onClick={() => toggleExpand(key)}
-                        className="flex items-center gap-2 min-w-0 text-left"
-                      >
-                        <span className="text-base font-bold text-foreground truncate">{eq.name}</span>
-                        <Badge className="shrink-0 bg-primary/20 text-primary border-primary/30 text-[10px] px-1.5 py-0">
-                          {betTypeLabel}
+              <div key={group.entity.id} className="rounded-xl bg-card border border-border overflow-hidden">
+                <button
+                  onClick={() => toggleClub(group.entity.id)}
+                  className="w-full flex items-center gap-3 p-3 text-left hover:bg-foreground/[0.02] transition-colors"
+                >
+                  <TeamLogo logoUrl={group.entity.logoUrl ?? undefined} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-foreground truncate">{group.entity.name}</span>
+                      {group.entity.kind === "national" && (
+                        <Badge className="shrink-0 bg-info/20 text-info border-info/30 text-[10px] px-1.5 py-0">
+                          Nation
                         </Badge>
-                      </button>
+                      )}
                     </div>
-                    <button
-                      onClick={() => toggleExpand(key)}
-                      className="flex items-center gap-2 shrink-0"
-                    >
-                      <span className={cn("font-bold text-sm", eq.netProfit >= 0 ? "text-primary" : "text-destructive")}>
-                        {eq.netProfit >= 0 ? "+" : ""}
-                        <RollingNumber value={eq.netProfit} format="euros" />
-                      </span>
-                      {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-                    </button>
+                    <span className="text-xs text-muted-foreground">
+                      {group.equipes.length} équipe{group.equipes.length > 1 ? "s" : ""} · ROI {formatPercent(group.roi)}
+                    </span>
                   </div>
-
-                  {/* Row 2: stats + ROI or empty alert */}
-                  {eq.seriesCount === 0 ? (
-                    <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-warning/10 border border-warning/20">
-                      <span className="text-xs text-warning">Pas de série créée</span>
-                      <button
-                        onClick={async () => {
-                          await deleteEquipe(eq.equipeId);
-                          startTransition(() => { router.refresh(); });
-                        }}
-                        className="text-xs text-destructive hover:text-destructive/80 cursor-pointer"
-                      >
-                        Supprimer
-                      </button>
-                    </div>
+                  <span className={cn("font-bold text-sm", group.net >= 0 ? "text-primary" : "text-destructive")}>
+                    {group.net >= 0 ? "+" : ""}
+                    <RollingNumber value={group.net} format="euros" />
+                  </span>
+                  {gExpanded ? (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        {eq.seriesCount} serie{eq.seriesCount > 1 ? "s" : ""} · {eq.betsCount} pari{eq.betsCount > 1 ? "s" : ""}
-                        {eq.activeSeries && (
-                          <span className="text-info ml-2">
-                            <TrendingUp className="h-3 w-3 inline" /> en cours (#{eq.activeSeries.betCount})
-                          </span>
-                        )}
-                      </span>
-                      <span className={cn("text-xs font-medium", eq.roi >= 0 ? "text-primary/70" : "text-destructive/70")}>
-                        ROI {formatPercent(eq.roi)}
-                      </span>
-                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   )}
-
-                  {/* Row 3: progress bar */}
-                  {barTotal > 0 && (
-                    <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-muted/50">
-                      {wonPct > 0 && <div className="bg-primary" style={{ width: `${wonPct}%` }} />}
-                      {lostPct > 0 && <div className="bg-destructive" style={{ width: `${lostPct}%` }} />}
-                      {pendingPct > 0 && <div className="bg-info" style={{ width: `${pendingPct}%` }} />}
-                    </div>
-                  )}
-
-                  {/* Pari en cours (sous la barre de progression) */}
-                  {pendingBet && (
-                    <div className="flex items-center justify-between gap-2 rounded-lg bg-info/10 border border-info/20 p-2">
-                      <div className="flex items-center gap-2 min-w-0 text-xs text-secondary-foreground">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-info/20 text-info text-[11px] font-bold">
-                          {pendingBet.bet_number}
-                        </span>
-                        <span>Cote {pendingBet.odds.toFixed(2)}</span>
-                        <span className="text-muted-foreground">· {formatEuros(pendingBet.stake)}</span>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); handleValidate(pendingBet.id, "gagne"); }}
-                          className="flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/25 transition-colors"
-                        >
-                          <CheckCircle className="h-3.5 w-3.5" /> Gagné
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); handleValidate(pendingBet.id, "perdu"); }}
-                          className="flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 text-[11px] font-semibold text-destructive hover:bg-destructive/25 transition-colors"
-                        >
-                          <XCircle className="h-3.5 w-3.5" /> Perdu
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Expanded: nouvelle série (top) + séries (récente + voir plus) */}
-                {isExpanded && (
-                  <div className="border-t border-border/50 px-3 pb-3 pt-2 space-y-1.5">
-                    {!eq.activeSeries && (
-                      <button
-                        onClick={() => openBetModal({ subject: eq.name, betType: eq.bet_type, sport: eq.sport })}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        Nouvelle serie
-                      </button>
-                    )}
-
-                    {(() => {
-                      const ordered = [...eq.series].sort((a, b) =>
-                        b.created_at.localeCompare(a.created_at)
-                      );
-                      const showAll = seriesShowAll.has(key);
-                      const visible = showAll ? ordered : ordered.slice(0, 1);
-                      return (
-                        <>
-                          {visible.map((s) => (
-                            <div key={s.id}>
-                              <EquipeSeriesItem series={s} />
-                              {s.status === "en_cours" && !eq.activeSeries?.hasPendingBet && (
-                                <button
-                                  onClick={() => openBetModal({ subject: eq.name, betType: eq.bet_type, sport: eq.sport })}
-                                  className="w-full mt-1.5 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
-                                >
-                                  <Plus className="h-3.5 w-3.5" />
-                                  Parier
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                          {ordered.length > 1 && (
-                            <button
-                              onClick={() => toggleSeriesShowAll(key)}
-                              className="w-full py-1 text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              {showAll ? "Voir moins" : `Voir plus (${ordered.length - 1})`}
-                            </button>
-                          )}
-                        </>
-                      );
-                    })()}
+                </button>
+                {gExpanded && (
+                  <div className="border-t border-border/50 p-2 space-y-2">
+                    {group.equipes.map((eq) => renderCard(eq, `${group.entity.id}:`))}
                   </div>
                 )}
               </div>
             );
           })}
+
+          {/* Sans lien club */}
+          {showStandalone && standalone.map((eq) => renderCard(eq, "solo:"))}
         </div>
       )}
 

@@ -45,6 +45,18 @@ export default async function EquipesRoute() {
     if (logo) logoMap[subject] = logo;
   }
 
+  // subject → entités API liées (clubs / nations) pour le regroupement par club
+  const subjectEntities: Record<
+    string,
+    { id: string; name: string; logoUrl: string | null; kind: string }[]
+  > = {};
+  for (const [subject, entities] of entitiesBySubject) {
+    const ents = entities
+      .filter((m) => m.is_club)
+      .map((m) => ({ id: m.id, name: m.subject, logoUrl: m.logo_url, kind: m.kind }));
+    if (ents.length) subjectEntities[subject] = ents;
+  }
+
   // Build map: subject → next fixture (earliest future date among all linked entities)
   const nowMs = Date.now();
   const nextFixtureMap: Record<string, { date: string }> = {};
@@ -193,7 +205,7 @@ export default async function EquipesRoute() {
   return (
     <div className="space-y-3">
       <ParisEquipesSwitch active="equipes" />
-      <EquipesPage equipes={mergedEquipes} logoMap={logoMap} nextFixtureMap={nextFixtureMap} teamMappings={mappings} />
+      <EquipesPage equipes={mergedEquipes} logoMap={logoMap} nextFixtureMap={nextFixtureMap} teamMappings={mappings} subjectEntities={subjectEntities} />
     </div>
   );
 }
