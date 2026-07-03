@@ -2,18 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Users, CircleDollarSign, CalendarDays, Ticket } from "lucide-react";
+import { BarChart3, Ticket, CalendarDays, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/", icon: BarChart3, label: "Dashboard" },
-  { href: "/series", icon: Users, label: "Équipes" },
-  { href: "/series/new", icon: CircleDollarSign, label: "Paris" },
-  { href: "/freebets", icon: Ticket, label: "Freebets" },
-  { href: "/calendar", icon: CalendarDays, label: "Calendrier" },
+  { href: "/", icon: BarChart3, label: "Dashboard", match: (p: string) => p === "/" },
+  { href: "/series/new", icon: Ticket, label: "Paris", match: (p: string) => p.startsWith("/series") },
+  { href: "/calendar", icon: CalendarDays, label: "Calendrier", match: (p: string) => p === "/calendar" },
+  { href: "/profile", icon: User, label: "Profil", match: (p: string) => p === "/profile" },
 ];
-
-const EXACT_MATCHES = new Set(["/", "/series", "/calendar", "/freebets"]);
 
 interface NavLinksProps {
   variant?: "horizontal" | "vertical";
@@ -39,10 +36,8 @@ export function NavLinks({
         className
       )}
     >
-      {links.map(({ href, icon: Icon, label }) => {
-        const isActive = EXACT_MATCHES.has(href)
-          ? pathname === href
-          : pathname.startsWith(href);
+      {links.map(({ href, icon: Icon, label, match }) => {
+        const isActive = match(pathname);
 
         if (isVertical) {
           return (
