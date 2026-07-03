@@ -10,7 +10,8 @@ import { SignOutButton } from "@/components/profile/sign-out-button";
 import { ThemeSelector } from "@/components/profile/theme-selector";
 import { RollingNumber } from "@/components/ui/rolling-number";
 import { getServerTheme } from "@/lib/theme.server";
-import { User } from "lucide-react";
+import Link from "next/link";
+import { User, Ticket, ChevronRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,21 @@ export default async function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Freebets */}
+      <Link
+        href="/freebets"
+        className="flex items-center gap-3 rounded-xl bg-card p-4 md:p-6 transition-colors hover:bg-card/80"
+      >
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/15 text-warning">
+          <Ticket className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-foreground">Freebets</p>
+          <p className="text-xs text-muted-foreground">Gérer tes paris gratuits</p>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </Link>
 
       {/* Add transaction (popup) */}
       <TransactionForm />

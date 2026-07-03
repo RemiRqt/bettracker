@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { EquipesPage } from "@/components/equipes/equipes-page";
+import { ParisEquipesSwitch } from "@/components/paris/paris-equipes-switch";
 import type { SeriesWithBets } from "@/lib/types";
 import { getSubjectLinks, getTeamMappings, type CachedFixture, type TeamMapping } from "@/actions/teams";
 
@@ -189,5 +190,10 @@ export default async function EquipesRoute() {
     return b.lastBetDate.localeCompare(a.lastBetDate);
   });
 
-  return <EquipesPage equipes={mergedEquipes} logoMap={logoMap} nextFixtureMap={nextFixtureMap} />;
+  return (
+    <div className="space-y-3">
+      <ParisEquipesSwitch active="equipes" />
+      <EquipesPage equipes={mergedEquipes} logoMap={logoMap} nextFixtureMap={nextFixtureMap} />
+    </div>
+  );
 }

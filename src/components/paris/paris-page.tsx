@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, CheckCircle, XCircle, Trash2, ChevronUp, ChevronDown, Pencil, Inbox } from "lucide-react";
+import { CheckCircle, XCircle, Trash2, ChevronUp, ChevronDown, Pencil, Inbox } from "lucide-react";
 import { validateResult, deleteBet, updateBet } from "@/actions/bets";
 import { BET_TYPES, SPORT_EMOJIS } from "@/lib/constants";
 import { formatEuros, cn } from "@/lib/utils";
@@ -17,11 +17,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  BetForm,
-  type ExistingSubject,
-  type TeamMappingLite,
-} from "@/components/paris/bet-form";
+import { useBetModal } from "@/components/paris/bet-modal-provider";
+import { ParisEquipesSwitch } from "@/components/paris/paris-equipes-switch";
 
 interface Series {
   id: string;
@@ -48,8 +45,6 @@ interface Bet {
 
 interface ParisPageProps {
   bets: Bet[];
-  existingSubjects: ExistingSubject[];
-  teamMappings: TeamMappingLite[];
   logoMap?: Record<string, string>;
 }
 
@@ -70,17 +65,12 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: "cote", label: "Cote" },
 ];
 
-export function ParisPage({
-  bets,
-  existingSubjects,
-  teamMappings,
-  logoMap = {},
-}: ParisPageProps) {
+export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
   const searchParams = useSearchParams();
   const initialFilter = (searchParams.get("filter") as FilterKey) || null;
   const confirm = useConfirm();
+  const { open: openBetModal } = useBetModal();
 
-  const [modalOpen, setModalOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [filter, setFilter] = useState<FilterKey>(initialFilter);
   const [sortBy, setSortBy] = useState<SortKey>("date");
@@ -202,15 +192,7 @@ export function ParisPage({
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">Paris</h1>
-        <button
-          onClick={() => setModalOpen(true)}
-          className="h-9 w-9 rounded-lg bg-primary hover:bg-primary/90 flex items-center justify-center transition-colors"
-        >
-          <Plus className="h-5 w-5 text-primary-foreground" />
-        </button>
-      </div>
+      <ParisEquipesSwitch active="paris" />
 
       {/* Filters 1/3 */}
       <div className="grid grid-cols-3 gap-1.5">
@@ -264,7 +246,7 @@ export function ParisPage({
           <p className="text-sm">Aucun pari{filter ? " pour ce filtre" : ""}.</p>
           {!filter && (
             <button
-              onClick={() => setModalOpen(true)}
+              onClick={openBetModal}
               className="mt-3 text-sm text-primary hover:text-primary/80 transition-colors"
             >
               Créer un pari
@@ -446,23 +428,6 @@ export function ParisPage({
               Enregistrer
             </button>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="bg-card border border-border max-h-[90vh] overflow-y-auto rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Nouveau pari</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Reprise de série, nouvelle série ou pari unique
-            </DialogDescription>
-          </DialogHeader>
-          <BetForm
-            existingSubjects={existingSubjects}
-            teamMappings={teamMappings}
-            onSuccess={() => setModalOpen(false)}
-          />
         </DialogContent>
       </Dialog>
     </div>
