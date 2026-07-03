@@ -4,12 +4,7 @@ import { useState, useTransition } from "react";
 import { createBetEntry } from "@/actions/bets";
 import { BET_TYPES, SPORTS } from "@/lib/constants";
 import type { SportType } from "@/lib/types";
-import {
-  computeStake,
-  computePotentialNet,
-  stakeFromObjective,
-  objectiveFromStake,
-} from "@/lib/bet-calc";
+import { computeStake, computePotentialNet, round2 } from "@/lib/bet-calc";
 import { cn, formatEuros } from "@/lib/utils";
 import { TeamLogo } from "@/components/ui/team-logo";
 import {
@@ -57,7 +52,26 @@ interface BetFormProps {
   onSuccess?: () => void;
 }
 
+// Paliers de l'objectif de gain : 0–2 pas 0,05 · 2–5 pas 0,1 · 5–10 pas 0,25.
+const OBJECTIVE_STOPS: number[] = [];
+for (let i = 0; i <= 40; i++) OBJECTIVE_STOPS.push(round2(i * 0.05)); // 0 → 2
+for (let i = 21; i <= 50; i++) OBJECTIVE_STOPS.push(round2(i * 0.1)); // 2,1 → 5
+for (let i = 21; i <= 40; i++) OBJECTIVE_STOPS.push(round2(i * 0.25)); // 5,25 → 10
+
+function nearestStopIndex(v: number): number {
+  let best = 0;
+  for (let i = 1; i < OBJECTIVE_STOPS.length; i++) {
+    if (Math.abs(OBJECTIVE_STOPS[i] - v) < Math.abs(OBJECTIVE_STOPS[best] - v)) {
+      best = i;
+    }
+  }
+  return best;
+}
+
 const BET_TYPE_KEYS = Object.keys(BET_TYPES) as (keyof typeof BET_TYPES)[];
+
+const INPUT =
+  "w-full h-12 rounded-xl bg-card border border-border px-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors";
 
 export function BetForm({
   existingSubjects,
@@ -68,63 +82,59 @@ export function BetForm({
   const [sport, setSport] = useState<string>(lockedSeries?.sport ?? "football");
   const [name, setName] = useState<string>(lockedSeries?.subject ?? "");
   const [apiTeam, setApiTeam] = useState<ApiTeamAdded | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState<ExistingSubject | null>(null);
   const [betType, setBetType] = useState<string>(lockedSeries?.betType ?? "");
   const [betTypeCustom, setBetTypeCustom] = useState("");
   const [modeChoice, setModeChoice] = useState<"serie" | "unique">("serie");
-  const [uniqueDriver, setUniqueDriver] = useState<"objective" | "stake">("objective");
   const [targetGain, setTargetGain] = useState(1);
   const [odds, setOdds] = useState("");
   const [stake, setStake] = useState("");
-  const [objective, setObjective] = useState("");
+  const [gain, setGain] = useState("");
+  const [stakeEdited, setStakeEdited] = useState(false);
   const [showList, setShowList] = useState(false);
   const [addTeamOpen, setAddTeamOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const effectiveBetType = betType === "autre" ? betTypeCustom.trim() : betType;
+  const o = parseFloat(odds) || 0;
+  const validOdds = o > 1;
 
-  // Contexte série active pour (subject, betType) -> détermine le mode "resume"
   const activeCtx = lockedSeries
     ? {
         targetGain: lockedSeries.targetGain,
         betCount: lockedSeries.betCount,
         sumStakes: lockedSeries.sumStakes,
       }
-    : existingSubjects.find(
-        (s) =>
-          s.subject === name.trim() &&
-          s.betType === betType &&
-          s.activeSeries
-      )?.activeSeries ?? null;
+    : selectedSubject?.activeSeries ?? null;
 
-  const mode: "resume" | "serie" | "unique" = activeCtx ? "resume" : modeChoice;
+  const mode: "resume" | "serie" | "unique" = lockedSeries
+    ? "resume"
+    : modeChoice === "unique"
+    ? "unique"
+    : activeCtx
+    ? "resume"
+    : "serie";
 
-  // === Calculs live ===
-  const o = parseFloat(odds) || 0;
-  const validOdds = o > 1;
+  const effectiveBetType =
+    lockedSeries?.betType ??
+    selectedSubject?.betType ??
+    (betType === "autre" ? betTypeCustom.trim() : betType);
 
+  // Contexte martingale (resume : pari #n, somme S, cible T ; serie : n=1, S=0, T=slider)
   const n = mode === "resume" ? activeCtx!.betCount + 1 : 1;
   const S = mode === "resume" ? activeCtx!.sumStakes : 0;
   const T = mode === "resume" ? activeCtx!.targetGain : targetGain;
-  const suggestedStake = validOdds ? computeStake(n, T, S, o) : 0;
-  const effectiveStake = stake !== "" ? parseFloat(stake) || 0 : suggestedStake;
-  const serieGain = validOdds ? computePotentialNet(effectiveStake, o, S) : 0;
+  const serieGain =
+    validOdds && stake !== ""
+      ? computePotentialNet(parseFloat(stake) || 0, o, S)
+      : 0;
 
-  // Pari unique
-  const uObjInput = objective !== "" ? parseFloat(objective) || 0 : 0;
-  const uStakeInput = stake !== "" ? parseFloat(stake) || 0 : 0;
-  const uStake =
-    uniqueDriver === "objective"
-      ? validOdds
-        ? stakeFromObjective(uObjInput, o)
-        : 0
-      : uStakeInput;
-  const uObjective =
-    uniqueDriver === "stake"
-      ? validOdds
-        ? objectiveFromStake(uStakeInput, o)
-        : 0
-      : uObjInput;
+  function resetAmounts() {
+    setOdds("");
+    setStake("");
+    setGain("");
+    setStakeEdited(false);
+  }
 
   // === Recherche locale ===
   const q = name.trim().toLowerCase();
@@ -146,14 +156,17 @@ export function BetForm({
 
   function pickSubject(s: ExistingSubject) {
     setName(s.subject);
+    setSelectedSubject(s);
     setBetType(s.betType);
     setSport(s.sport);
     setApiTeam(null);
     setShowList(false);
+    resetAmounts();
   }
 
   function pickMapping(m: TeamMappingLite) {
     setName(m.subject);
+    setSelectedSubject(null);
     setSport(m.sport);
     setApiTeam(
       m.apiTeamId != null
@@ -167,6 +180,40 @@ export function BetForm({
         : null
     );
     setShowList(false);
+    resetAmounts();
+  }
+
+  // La section type/sport apparaît pour une équipe "nouvelle" (nom libre ou mapping sans série).
+  const needTeamParams = !lockedSeries && !selectedSubject;
+
+  // === Handlers de calcul (rendu direct, pas de useEffect) ===
+  function onOddsChange(v: string) {
+    setOdds(v);
+    const c = parseFloat(v) || 0;
+    if (mode === "unique") {
+      if (c > 1 && stake !== "")
+        setGain(String(round2((parseFloat(stake) || 0) * (c - 1))));
+    } else if (!stakeEdited && c > 1) {
+      setStake(String(computeStake(n, T, S, c)));
+    }
+  }
+
+  function onStakeChange(v: string) {
+    setStake(v);
+    setStakeEdited(true);
+    if (mode === "unique" && validOdds)
+      setGain(String(round2((parseFloat(v) || 0) * (o - 1))));
+  }
+
+  function onGainChange(v: string) {
+    setGain(v);
+    if (validOdds) setStake(String(round2((parseFloat(v) || 0) / (o - 1))));
+  }
+
+  function onObjectiveChange(num: number) {
+    setTargetGain(num);
+    if (!stakeEdited && validOdds)
+      setStake(String(computeStake(1, num, 0, o)));
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -179,12 +226,8 @@ export function BetForm({
     if (!validOdds) return setError("La cote doit être supérieure à 1.");
     if (mode === "serie" && targetGain <= 0)
       return setError("Définis un objectif de gain.");
-    if (mode === "unique") {
-      if (uniqueDriver === "objective" && uObjInput <= 0)
-        return setError("Renseigne un objectif de gain.");
-      if (uniqueDriver === "stake" && uStakeInput <= 0)
-        return setError("Renseigne une mise.");
-    }
+    if ((mode === "unique" || mode === "resume") && stake === "")
+      return setError("Renseigne une mise.");
 
     const payload = {
       subject,
@@ -192,20 +235,8 @@ export function BetForm({
       sport: sport as SportType,
       mode,
       odds: o,
-      targetGain:
-        mode === "serie"
-          ? targetGain
-          : mode === "unique" && uniqueDriver === "objective"
-          ? uObjInput
-          : undefined,
-      stake:
-        mode === "unique"
-          ? uniqueDriver === "stake"
-            ? uStakeInput
-            : undefined
-          : stake !== ""
-          ? parseFloat(stake) || undefined
-          : undefined,
+      targetGain: mode === "serie" ? targetGain : undefined,
+      stake: stake !== "" ? parseFloat(stake) || undefined : undefined,
       apiTeam: apiTeam
         ? {
             apiTeamId: apiTeam.apiTeamId,
@@ -226,8 +257,7 @@ export function BetForm({
     });
   }
 
-  const inputCls =
-    "w-full h-12 rounded-xl bg-card border border-border px-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors";
+  const sliderIndex = nearestStopIndex(targetGain);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 pt-2">
@@ -237,28 +267,7 @@ export function BetForm({
         </div>
       )}
 
-      {/* Sport */}
-      {!lockedSeries && (
-        <div className="grid grid-cols-4 gap-2">
-          {(Object.entries(SPORTS) as [string, string][]).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setSport(key)}
-              className={cn(
-                "h-10 rounded-lg text-xs font-medium border transition-colors",
-                sport === key
-                  ? "bg-primary border-primary text-primary-foreground"
-                  : "bg-card border-border text-muted-foreground hover:text-secondary-foreground"
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Nom */}
+      {/* 1. Nom */}
       {lockedSeries ? (
         <div className="flex items-center gap-2 rounded-xl bg-card/60 border border-border px-4 h-12">
           <TeamLogo logoUrl={undefined} size="sm" />
@@ -272,6 +281,7 @@ export function BetForm({
           name={name}
           onNameChange={(v) => {
             setName(v);
+            setSelectedSubject(null);
             setApiTeam(null);
             setShowList(true);
           }}
@@ -287,71 +297,127 @@ export function BetForm({
         />
       )}
 
-      {/* Type de pari (masqué en reprise verrouillée) */}
+      {/* 2. Mode : Série (continuer / nouvelle) ou Pari unique */}
       {!lockedSeries && (
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-secondary-foreground">Type de pari</label>
-          <div className="grid grid-cols-4 gap-2">
-            {BET_TYPE_KEYS.map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setBetType(key)}
-                className={cn(
-                  "h-11 rounded-xl border text-sm font-medium transition-colors",
-                  betType === key
-                    ? "bg-primary border-primary text-primary-foreground"
-                    : "bg-card border-border text-muted-foreground hover:text-secondary-foreground"
-                )}
-              >
-                {BET_TYPES[key]}
-              </button>
-            ))}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setModeChoice("serie");
+              resetAmounts();
+            }}
+            className={cn(
+              "h-11 rounded-xl border text-sm font-medium transition-colors",
+              modeChoice === "serie"
+                ? "bg-primary/15 border-primary/40 text-primary"
+                : "bg-card border-border text-muted-foreground"
+            )}
+          >
+            {activeCtx ? "Continuer la série" : "Nouvelle série"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setModeChoice("unique");
+              resetAmounts();
+            }}
+            className={cn(
+              "h-11 rounded-xl border text-sm font-medium transition-colors",
+              modeChoice === "unique"
+                ? "bg-primary/15 border-primary/40 text-primary"
+                : "bg-card border-border text-muted-foreground"
+            )}
+          >
+            Pari unique
+          </button>
+        </div>
+      )}
+
+      {/* 2 bis. Nouvelle équipe : type + sport */}
+      {needTeamParams && (
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-secondary-foreground">
+              Type de pari
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              {BET_TYPE_KEYS.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setBetType(key)}
+                  className={cn(
+                    "h-11 rounded-xl border text-sm font-medium transition-colors",
+                    betType === key
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "bg-card border-border text-muted-foreground hover:text-secondary-foreground"
+                  )}
+                >
+                  {BET_TYPES[key]}
+                </button>
+              ))}
+            </div>
+            {betType === "autre" && (
+              <input
+                value={betTypeCustom}
+                onChange={(e) => setBetTypeCustom(e.target.value)}
+                placeholder="Type personnalisé"
+                className={INPUT}
+                autoFocus
+              />
+            )}
           </div>
-          {betType === "autre" && (
-            <input
-              value={betTypeCustom}
-              onChange={(e) => setBetTypeCustom(e.target.value)}
-              placeholder="Type personnalisé"
-              className={inputCls}
-              autoFocus
-            />
+
+          {!apiTeam && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-secondary-foreground">
+                Sport
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {(Object.entries(SPORTS) as [string, string][]).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSport(key)}
+                    className={cn(
+                      "h-10 rounded-lg text-xs font-medium border transition-colors",
+                      sport === key
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "bg-card border-border text-muted-foreground hover:text-secondary-foreground"
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}
 
-      {/* Sélecteur Nouvelle série / Pari unique (si pas de série en cours) */}
-      {!activeCtx && (
-        <div className="grid grid-cols-2 gap-2">
-          {(["serie", "unique"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setModeChoice(m)}
-              className={cn(
-                "h-11 rounded-xl border text-sm font-medium transition-colors",
-                modeChoice === m
-                  ? "bg-primary/15 border-primary/40 text-primary"
-                  : "bg-card border-border text-muted-foreground"
-              )}
-            >
-              {m === "serie" ? "Nouvelle série" : "Pari unique"}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Objectif (nouvelle série) */}
+      {/* 3. Nouvelle série : objectif (slider à pas variables + saisie libre) */}
       {mode === "serie" && (
         <div className="space-y-3">
-          <label className="text-sm font-medium text-secondary-foreground">Objectif de gain</label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-secondary-foreground">
+              Objectif de gain
+            </label>
+            <input
+              type="number"
+              step="any"
+              min="0"
+              value={targetGain}
+              onChange={(e) => onObjectiveChange(parseFloat(e.target.value) || 0)}
+              className="w-24 h-9 rounded-lg bg-card border border-border px-3 text-right text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
           <input
             type="range"
             min={0}
-            max={10}
-            step={0.25}
-            value={targetGain}
-            onChange={(e) => setTargetGain(parseFloat(e.target.value))}
+            max={OBJECTIVE_STOPS.length - 1}
+            step={1}
+            value={sliderIndex}
+            onChange={(e) => onObjectiveChange(OBJECTIVE_STOPS[parseInt(e.target.value, 10)])}
             className="w-full h-2 rounded-full appearance-none cursor-pointer bg-muted accent-primary"
           />
           <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -362,86 +428,75 @@ export function BetForm({
         </div>
       )}
 
-      {/* Cote */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-secondary-foreground">Cote</label>
-        <input
-          type="number"
-          step="0.01"
-          min="1.01"
-          value={odds}
-          onChange={(e) => setOdds(e.target.value)}
-          placeholder="Ex : 1.50"
-          className={inputCls}
-          required
-        />
-      </div>
-
-      {/* Champs selon le mode */}
+      {/* 3. Cote + mise (série / reprise) ou cote puis mise+gain (unique) */}
       {mode === "unique" ? (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            {(["objective", "stake"] as const).map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setUniqueDriver(d)}
-                className={cn(
-                  "h-10 rounded-lg border text-xs font-medium transition-colors",
-                  uniqueDriver === d
-                    ? "bg-primary/15 border-primary/40 text-primary"
-                    : "bg-card border-border text-muted-foreground"
-                )}
-              >
-                {d === "objective" ? "Saisir l'objectif" : "Saisir la mise"}
-              </button>
-            ))}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-secondary-foreground">Cote</label>
+            <input
+              type="number"
+              step="0.01"
+              min="1.01"
+              value={odds}
+              onChange={(e) => onOddsChange(e.target.value)}
+              placeholder="Ex : 1.50"
+              className={INPUT}
+            />
           </div>
-          {uniqueDriver === "objective" ? (
-            <>
-              <input
-                type="number"
-                step="0.01"
-                value={objective}
-                onChange={(e) => setObjective(e.target.value)}
-                placeholder="Objectif de gain (€)"
-                className={inputCls}
-              />
-              <p className="text-sm text-muted-foreground">
-                Mise calculée : <span className="text-foreground font-medium">{formatEuros(uStake)}</span>
-              </p>
-            </>
-          ) : (
-            <>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Mise</label>
               <input
                 type="number"
                 step="0.01"
                 value={stake}
-                onChange={(e) => setStake(e.target.value)}
-                placeholder="Mise (€)"
-                className={inputCls}
+                onChange={(e) => onStakeChange(e.target.value)}
+                placeholder="€"
+                className={INPUT}
               />
-              <p className="text-sm text-muted-foreground">
-                Gain net : <span className="text-primary font-medium">{formatEuros(uObjective)}</span>
-              </p>
-            </>
-          )}
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Gain net</label>
+              <input
+                type="number"
+                step="0.01"
+                value={gain}
+                onChange={(e) => onGainChange(e.target.value)}
+                placeholder="€"
+                className={INPUT}
+              />
+            </div>
+          </div>
         </div>
       ) : (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-secondary-foreground">Mise</label>
-          <input
-            type="number"
-            step="0.01"
-            value={stake}
-            onChange={(e) => setStake(e.target.value)}
-            placeholder={validOdds ? formatEuros(suggestedStake) : "Mise (€)"}
-            className={inputCls}
-          />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Cote</label>
+              <input
+                type="number"
+                step="0.01"
+                min="1.01"
+                value={odds}
+                onChange={(e) => onOddsChange(e.target.value)}
+                placeholder="Ex : 1.50"
+                className={INPUT}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Mise</label>
+              <input
+                type="number"
+                step="0.01"
+                value={stake}
+                onChange={(e) => onStakeChange(e.target.value)}
+                placeholder={validOdds ? formatEuros(computeStake(n, T, S, o)) : "€"}
+                className={INPUT}
+              />
+            </div>
+          </div>
           <p className="text-sm text-muted-foreground">
-            Mise {stake === "" ? "auto" : ""} :{" "}
-            <span className="text-foreground font-medium">{formatEuros(effectiveStake)}</span>
-            {"  ·  "}Gain net : <span className="text-primary font-medium">{formatEuros(serieGain)}</span>
+            Gain net : <span className="text-primary font-medium">{formatEuros(serieGain)}</span>
           </p>
         </div>
       )}
@@ -470,6 +525,7 @@ export function BetForm({
         onTeamAdded={(t) => {
           setApiTeam(t);
           setName(t.subject);
+          setSelectedSubject(null);
           setSport("football");
           setShowList(false);
           setAddTeamOpen(false);
