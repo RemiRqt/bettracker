@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { ParisPage } from "@/components/paris/paris-page";
+import type { ExistingSubject } from "@/components/paris/bet-form";
 import { getSubjectLinks, getTeamMappings } from "@/actions/teams";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +24,7 @@ export default async function NewSeriesPage() {
     supabase
       .from("bets")
       .select(
-        "*, series!inner(id, subject, bet_type, status, target_gain, user_id)"
+        "*, series!inner(id, subject, bet_type, status, target_gain, user_id, kind, sport)"
       )
       .eq("series.user_id", user.id)
       .order("created_at", { ascending: false }),
@@ -31,51 +32,25 @@ export default async function NewSeriesPage() {
     getTeamMappings(),
   ]);
 
-  // Fetch all series to build grouped teams dropdown
+  // Fetch all series (subject+bet_type grouping + active-series context)
   const { data: allSeries } = await supabase
     .from("series")
-    .select("subject, bet_type, status, created_at")
+    .select("id, subject, bet_type, status, target_gain, sport, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  // Group series by subject+bet_type, determine lastStatus from most recent
-  const groupMap = new Map<
-    string,
-    { subject: string; bet_type: string; lastStatus: string }
-  >();
-
-  if (allSeries) {
-    for (const s of allSeries) {
-      const key = `${s.subject}::${s.bet_type}`;
-      if (!groupMap.has(key)) {
-        groupMap.set(key, {
-          subject: s.subject,
-          bet_type: s.bet_type,
-          lastStatus: s.status,
-        });
-      }
-    }
+  // Aggregate bets per series (count + sum of stakes) for the active-series context
+  const betAgg = new Map<string, { count: number; sum: number }>();
+  for (const b of bets ?? []) {
+    const a = betAgg.get(b.series_id) ?? { count: 0, sum: 0 };
+    a.count += 1;
+    a.sum += b.stake;
+    betAgg.set(b.series_id, a);
   }
-
-  const statusOrder: Record<string, number> = {
-    en_cours: 0,
-    abandonnee: 1,
-    gagnee: 2,
-  };
-
-  const existingTeams = Array.from(groupMap.values()).sort(
-    (a, b) =>
-      (statusOrder[a.lastStatus] ?? 99) - (statusOrder[b.lastStatus] ?? 99)
-  );
-
-  const existingTeamsRaw = existingTeams.map((t) => ({
-    subject: t.subject,
-    bet_type: t.bet_type,
-  }));
 
   // Build logo map via subject_links resolution (canonical pattern)
   const byId = new Map(mappings.map((m) => [m.id, m]));
-  const entitiesBySubject = new Map<string, typeof mappings[number][]>();
+  const entitiesBySubject = new Map<string, (typeof mappings)[number][]>();
   for (const l of links) {
     const ent = byId.get(l.team_mapping_id);
     if (!ent) continue;
@@ -89,12 +64,48 @@ export default async function NewSeriesPage() {
     if (logo) logoMap[subject] = logo;
   }
 
+  // Group series by subject+bet_type: lastStatus (most recent) + active series
+  const groups = new Map<string, ExistingSubject>();
+  for (const s of allSeries ?? []) {
+    const key = `${s.subject}::${s.bet_type}`;
+    let g = groups.get(key);
+    if (!g) {
+      g = {
+        subject: s.subject,
+        betType: s.bet_type,
+        sport: s.sport,
+        lastStatus: s.status,
+        logoUrl: logoMap[s.subject],
+      };
+      groups.set(key, g);
+    }
+    if (s.status === "en_cours" && !g.activeSeries) {
+      const agg = betAgg.get(s.id) ?? { count: 0, sum: 0 };
+      g.activeSeries = {
+        id: s.id,
+        targetGain: s.target_gain,
+        betCount: agg.count,
+        sumStakes: agg.sum,
+      };
+    }
+  }
+  const existingSubjects = Array.from(groups.values());
+
+  const teamMappings = mappings
+    .filter((m) => m.is_club)
+    .map((m) => ({
+      subject: m.subject,
+      apiTeamId: m.api_team_id,
+      logoUrl: m.logo_url,
+      sport: m.sport,
+    }));
+
   return (
     <Suspense>
       <ParisPage
         bets={bets ?? []}
-        existingTeams={existingTeams}
-        existingTeamsRaw={existingTeamsRaw}
+        existingSubjects={existingSubjects}
+        teamMappings={teamMappings}
         logoMap={logoMap}
       />
     </Suspense>

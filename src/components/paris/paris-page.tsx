@@ -4,7 +4,7 @@ import { useState, useTransition, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plus, CheckCircle, XCircle, Trash2, ChevronUp, ChevronDown, Pencil, Inbox } from "lucide-react";
 import { validateResult, deleteBet, updateBet } from "@/actions/bets";
-import { BET_TYPES } from "@/lib/constants";
+import { BET_TYPES, SPORT_EMOJIS } from "@/lib/constants";
 import { formatEuros, cn } from "@/lib/utils";
 import { fireConfetti } from "@/lib/confetti";
 import { RollingNumber } from "@/components/ui/rolling-number";
@@ -17,7 +17,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { SeriesForm } from "@/components/series/series-form";
+import {
+  BetForm,
+  type ExistingSubject,
+  type TeamMappingLite,
+} from "@/components/paris/bet-form";
 
 interface Series {
   id: string;
@@ -26,6 +30,8 @@ interface Series {
   status: string;
   target_gain: number;
   user_id: string;
+  kind: string;
+  sport: string;
 }
 
 interface Bet {
@@ -42,8 +48,8 @@ interface Bet {
 
 interface ParisPageProps {
   bets: Bet[];
-  existingTeams: { subject: string; bet_type: string; lastStatus: string }[];
-  existingTeamsRaw: { subject: string; bet_type: string }[];
+  existingSubjects: ExistingSubject[];
+  teamMappings: TeamMappingLite[];
   logoMap?: Record<string, string>;
 }
 
@@ -66,8 +72,8 @@ const SORTS: { key: SortKey; label: string }[] = [
 
 export function ParisPage({
   bets,
-  existingTeams,
-  existingTeamsRaw,
+  existingSubjects,
+  teamMappings,
   logoMap = {},
 }: ParisPageProps) {
   const searchParams = useSearchParams();
@@ -293,6 +299,16 @@ export function ParisPage({
                       <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-secondary-foreground">
                         {typeLabel}
                       </span>
+                      {bet.series.kind === "unique" && (
+                        <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/15 text-primary">
+                          Unique
+                        </span>
+                      )}
+                      {bet.series.sport && bet.series.sport !== "football" && (
+                        <span className="flex-shrink-0 text-xs" title={bet.series.sport}>
+                          {SPORT_EMOJIS[bet.series.sport] ?? SPORT_EMOJIS.default}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs text-muted-foreground">
@@ -437,13 +453,14 @@ export function ParisPage({
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="bg-card border border-border max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Nouvelle série</DialogTitle>
+            <DialogTitle className="text-foreground">Nouveau pari</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Créez une nouvelle série de paris progressifs
+              Reprise de série, nouvelle série ou pari unique
             </DialogDescription>
           </DialogHeader>
-          <SeriesForm
-            existingTeams={existingTeams}
+          <BetForm
+            existingSubjects={existingSubjects}
+            teamMappings={teamMappings}
             onSuccess={() => setModalOpen(false)}
           />
         </DialogContent>

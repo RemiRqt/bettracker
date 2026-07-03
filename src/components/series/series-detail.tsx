@@ -6,7 +6,7 @@ import { SeriesStatusBadge } from "@/components/series/series-status-badge";
 import { AbandonDialog } from "@/components/series/abandon-dialog";
 import { DeleteSeriesButton } from "@/components/series/delete-series-button";
 import { BetsTable } from "@/components/bets/bets-table";
-import { AddBetForm } from "@/components/bets/add-bet-form";
+import { BetForm } from "@/components/paris/bet-form";
 import { ValidateResultForm } from "@/components/bets/validate-result-form";
 
 interface SeriesDetailProps {
@@ -123,7 +123,21 @@ export function SeriesDetail({ series }: SeriesDetailProps) {
         <div className="space-y-5">
           <BetsTable bets={bets} />
 
-          {showAddBetForm && <AddBetForm seriesId={series.id} />}
+          {showAddBetForm && (
+            <BetForm
+              lockedSeries={{
+                seriesId: series.id,
+                subject: series.subject,
+                betType: series.bet_type,
+                sport: series.sport,
+                targetGain: series.target_gain,
+                betCount: bets.length,
+                sumStakes: miseCumulee,
+              }}
+              existingSubjects={[]}
+              teamMappings={[]}
+            />
+          )}
 
           {showValidateForm && lastBet && (
             <ValidateResultForm
