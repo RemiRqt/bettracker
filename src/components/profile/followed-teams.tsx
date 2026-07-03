@@ -6,7 +6,6 @@ import {
   linkSubject,
   unlinkSubject,
   getSubjectLinks,
-  addClub,
   deleteTeamMapping,
 } from "@/actions/teams";
 import type { TeamMapping, SubjectLink } from "@/actions/teams";
@@ -20,18 +19,11 @@ import {
 } from "@/components/ui/dialog";
 import { Star, Link2, Search, Loader2, Plus, X, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FOOTBALL_DATA_COMPETITIONS } from "@/lib/constants";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { AddApiTeamDialog } from "@/components/teams/add-api-team-dialog";
 
 interface FollowedTeamsProps {
   teamMappings: TeamMapping[];
-}
-
-interface ApiTeamResult {
-  id: number;
-  name: string;
-  country: string | null;
-  logo: string;
 }
 
 export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsProps) {
@@ -47,10 +39,6 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
 
   // Add club dialog
   const [addClubOpen, setAddClubOpen] = useState(false);
-  const [selectedCompetition, setSelectedCompetition] = useState("");
-  const [clubFilter, setClubFilter] = useState("");
-  const [clubResults, setClubResults] = useState<ApiTeamResult[]>([]);
-  const [isSearchingClub, setIsSearchingClub] = useState(false);
   // Link subject to club dialog (from club expand)
   const [linkClubId, setLinkClubId] = useState<string | null>(null);
   const [linkSubjectSearch, setLinkSubjectSearch] = useState("");
@@ -93,59 +81,6 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
     : availableSubjectsForLinkDialog;
 
   // === Handlers ===
-
-  const loadCompetitionTeams = useCallback(async (code: string) => {
-    if (!code) return;
-    setSelectedCompetition(code);
-    setIsSearchingClub(true);
-    setClubResults([]);
-    setClubFilter("");
-    try {
-      const res = await fetch(`/api/football/search?competition=${encodeURIComponent(code)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setClubResults(Array.isArray(data) ? data : []);
-      }
-    } catch { setClubResults([]); }
-    finally { setIsSearchingClub(false); }
-  }, []);
-
-  const handleAddClub = useCallback((club: ApiTeamResult) => {
-    // Check if already exists
-    if (clubs.some((m) => m.api_team_id === club.id)) {
-      setAddClubOpen(false); setSelectedCompetition(""); setClubResults([]); setClubFilter("");
-      return;
-    }
-
-    // Optimistic add
-    const isWC = selectedCompetition === "WC";
-    const newMapping: TeamMapping = {
-      id: crypto.randomUUID(),
-      user_id: "",
-      subject: club.name,
-      sport: "football",
-      api_team_id: club.id,
-      logo_url: club.logo,
-      is_club: true,
-      kind: isWC ? "national" : "club",
-      country: isWC ? club.name : null,
-      provider: "football-data",
-      is_followed: false,
-      next_matches_count: 2,
-      cached_fixtures: null,
-      fixtures_updated_at: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    setMappings((prev) => [newMapping, ...prev]);
-
-    startTransition(async () => {
-      await addClub(club.id, club.name, club.logo,
-        isWC ? { kind: "national", country: club.name } : undefined);
-    });
-
-    setAddClubOpen(false); setSelectedCompetition(""); setClubResults([]); setClubFilter("");
-  }, [clubs, selectedCompetition]);
 
   const handleDeleteClub = useCallback(async (club: TeamMapping) => {
     const ok = await confirm({
@@ -366,84 +301,41 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
 
       {/* === DIALOGS === */}
 
-      {/* Add club dialog (API search) */}
-      <Dialog open={addClubOpen} onOpenChange={setAddClubOpen}>
-        <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Ajouter une equipe</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Recherchez une equipe pour recuperer son logo
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Competition picker */}
-          <div className="flex flex-wrap gap-1.5">
-            {FOOTBALL_DATA_COMPETITIONS.map((comp) => (
-              <button
-                key={comp.code}
-                onClick={() => loadCompetitionTeams(comp.code)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                  selectedCompetition === comp.code
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background text-muted-foreground hover:text-foreground border border-border"
-                )}
-              >
-                {comp.flag} {comp.name}
-              </button>
-            ))}
-          </div>
-
-          {/* Filter within loaded teams */}
-          {clubResults.length > 0 && (
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={clubFilter}
-                onChange={(e) => setClubFilter(e.target.value)}
-                placeholder="Filtrer..."
-                className="w-full bg-background border border-border rounded-xl pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-          )}
-
-          <div className="max-h-72 overflow-y-auto space-y-1">
-            {isSearchingClub && (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              </div>
-            )}
-            {!isSearchingClub && selectedCompetition && clubResults.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">Aucune equipe trouvee</p>
-            )}
-            {clubResults
-              .filter((club) =>
-                !clubFilter || club.name.toLowerCase().includes(clubFilter.toLowerCase())
-              )
-              .map((club) => {
-                const alreadyAdded = clubs.some((m) => m.api_team_id === club.id);
-                return (
-                  <button
-                    key={club.id}
-                    onClick={() => handleAddClub(club)}
-                    disabled={alreadyAdded}
-                    className={cn(
-                      "w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors",
-                      alreadyAdded ? "opacity-50 cursor-not-allowed" : "hover:bg-background"
-                    )}
-                  >
-                    <img src={club.logo} alt="" className="h-8 w-8 object-contain rounded-full" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground truncate">{club.name}</p>
-                    </div>
-                    {alreadyAdded && <span className="text-xs text-primary">Ajoutee</span>}
-                  </button>
-                );
-              })}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Add club dialog (API search) — composant extrait */}
+      <AddApiTeamDialog
+        open={addClubOpen}
+        onOpenChange={setAddClubOpen}
+        existingApiTeamIds={clubs
+          .map((c) => c.api_team_id)
+          .filter((id): id is number => id != null)}
+        onTeamAdded={(t) => {
+          setMappings((prev) =>
+            prev.some((m) => m.is_club && m.api_team_id === t.apiTeamId)
+              ? prev
+              : [
+                  {
+                    id: crypto.randomUUID(),
+                    user_id: "",
+                    subject: t.subject,
+                    sport: "football",
+                    api_team_id: t.apiTeamId,
+                    logo_url: t.logoUrl,
+                    is_club: true,
+                    kind: t.kind,
+                    country: t.country,
+                    provider: "football-data",
+                    is_followed: false,
+                    next_matches_count: 2,
+                    cached_fixtures: null,
+                    fixtures_updated_at: null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                  },
+                  ...prev,
+                ]
+          );
+        }}
+      />
 
       {/* Link subject to club/national dialog (from club expand) */}
       <Dialog
