@@ -2,6 +2,176 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import type { SportType } from "@/lib/types";
+import {
+  round2,
+  computeStake,
+  computePotentialNet,
+  objectiveFromStake,
+  stakeFromObjective,
+} from "@/lib/bet-calc";
+
+type BetMode = "resume" | "serie" | "unique";
+
+interface CreateBetInput {
+  subject: string;
+  betType: string;
+  sport: SportType;
+  mode: BetMode;
+  odds: number;
+  targetGain?: number;
+  stake?: number;
+  apiTeam?: {
+    apiTeamId: number;
+    crestUrl: string;
+    kind?: "club" | "national";
+    country?: string;
+  };
+}
+
+export async function createBetEntry(input: CreateBetInput) {
+  const { subject, betType, sport, mode, odds, apiTeam } = input;
+
+  if (!subject?.trim()) return { error: "Le nom est requis." };
+  if (!betType?.trim()) return { error: "Le type de pari est requis." };
+  if (!odds || odds <= 1) return { error: "La cote doit etre superieure a 1." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) throw new Error("Vous devez etre connecte.");
+
+  const name = subject.trim();
+  let seriesId: string;
+  let n: number;
+  let sumPrev: number;
+  let T: number;
+
+  if (mode === "resume") {
+    const { data: active, error: findErr } = await supabase
+      .from("series")
+      .select("id, target_gain")
+      .eq("user_id", user.id)
+      .eq("subject", name)
+      .eq("bet_type", betType)
+      .eq("status", "en_cours")
+      .single();
+    if (findErr || !active)
+      return { error: "Aucune serie en cours pour cette equipe." };
+
+    seriesId = active.id;
+    T = active.target_gain;
+    const { data: prev } = await supabase
+      .from("bets")
+      .select("stake")
+      .eq("series_id", seriesId)
+      .order("bet_number", { ascending: true });
+    n = (prev?.length ?? 0) + 1;
+    sumPrev = (prev ?? []).reduce((s, b) => s + b.stake, 0);
+  } else {
+    let target: number;
+    if (mode === "serie") {
+      if (!input.targetGain || input.targetGain <= 0)
+        return { error: "L'objectif de gain est requis." };
+      target = input.targetGain;
+    } else {
+      // unique : exactement un de { targetGain, stake }
+      if (input.targetGain && input.targetGain > 0) target = input.targetGain;
+      else if (input.stake && input.stake > 0)
+        target = objectiveFromStake(input.stake, odds);
+      else return { error: "Renseigne un objectif ou une mise." };
+    }
+
+    const { data: newSeries, error: seriesErr } = await supabase
+      .from("series")
+      .insert({
+        user_id: user.id,
+        subject: name,
+        bet_type: betType,
+        target_gain: target,
+        status: "en_cours",
+        kind: mode === "unique" ? "unique" : "serie",
+        sport,
+      })
+      .select("id")
+      .single();
+    if (seriesErr)
+      return { error: `Erreur creation serie: ${seriesErr.message}` };
+
+    await supabase.from("equipes").upsert(
+      { user_id: user.id, name, bet_type: betType, sport },
+      { onConflict: "user_id,name,bet_type", ignoreDuplicates: true }
+    );
+
+    seriesId = newSeries.id;
+    T = target;
+    n = 1;
+    sumPrev = 0;
+  }
+
+  const override =
+    input.stake && input.stake > 0 ? round2(input.stake) : null;
+  const stake =
+    mode === "unique"
+      ? override ?? stakeFromObjective(T, odds)
+      : override ?? computeStake(n, T, sumPrev, odds);
+  const potential_net = computePotentialNet(stake, odds, sumPrev);
+
+  const { error: insertErr } = await supabase.from("bets").insert({
+    series_id: seriesId,
+    bet_number: n,
+    odds,
+    stake,
+    potential_net,
+    result: null,
+  });
+  if (insertErr)
+    return { error: `Erreur ajout pari: ${insertErr.message}` };
+
+  // Foot : garantir le lien API si une equipe a ete choisie (idempotent, cf. addClub)
+  if (sport === "football" && apiTeam) {
+    const { data: existing } = await supabase
+      .from("team_mappings")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("api_team_id", apiTeam.apiTeamId)
+      .eq("is_club", true)
+      .maybeSingle();
+    let mappingId = existing?.id as string | undefined;
+    if (!mappingId) {
+      const { data: inserted } = await supabase
+        .from("team_mappings")
+        .insert({
+          user_id: user.id,
+          subject: name,
+          api_team_id: apiTeam.apiTeamId,
+          logo_url: apiTeam.crestUrl,
+          sport: "football",
+          is_club: true,
+          is_followed: false,
+          kind: apiTeam.kind ?? "club",
+          country: apiTeam.country ?? null,
+          provider: "football-data",
+        })
+        .select("id")
+        .single();
+      mappingId = inserted?.id;
+    }
+    if (mappingId) {
+      await supabase.from("subject_links").upsert(
+        { user_id: user.id, subject: name, team_mapping_id: mappingId },
+        { onConflict: "user_id,subject,team_mapping_id", ignoreDuplicates: true }
+      );
+    }
+  }
+
+  revalidatePath("/series");
+  revalidatePath(`/series/${seriesId}`);
+  revalidatePath("/");
+  return { success: true, seriesId, stake, potential_net, bet_number: n };
+}
 
 export async function addBet(seriesId: string, odds: number) {
   if (!odds || odds <= 1) {
