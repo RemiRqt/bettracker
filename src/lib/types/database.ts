@@ -17,6 +17,8 @@ export interface Database {
           bet_type: string;
           target_gain: number;
           status: string;
+          kind: string;
+          sport: string;
           created_at: string;
         };
         Insert: {
@@ -26,6 +28,8 @@ export interface Database {
           bet_type: string;
           target_gain: number;
           status?: string;
+          kind?: string;
+          sport?: string;
           created_at?: string;
         };
         Update: {
@@ -35,6 +39,8 @@ export interface Database {
           bet_type?: string;
           target_gain?: number;
           status?: string;
+          kind?: string;
+          sport?: string;
           created_at?: string;
         };
         Relationships: [];
