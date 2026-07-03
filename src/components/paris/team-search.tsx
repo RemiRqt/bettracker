@@ -102,7 +102,7 @@ export function TeamSearch({
               >
                 <Plus className="h-4 w-4" />
                 <span className="text-sm">
-                  Ajouter l&apos;équipe «&nbsp;{name.trim()}&nbsp;» (API)
+                  Créer l&apos;équipe «&nbsp;{name.trim()}&nbsp;»
                 </span>
               </button>
             )}

@@ -62,7 +62,7 @@ export function BetModalProvider({ children }: { children: React.ReactNode }) {
           <DialogHeader>
             <DialogTitle className="text-foreground">Nouveau pari</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Reprise de série, nouvelle série ou pari unique
+              Recherche une équipe ou un joueur
             </DialogDescription>
           </DialogHeader>
           {loading || !data ? (

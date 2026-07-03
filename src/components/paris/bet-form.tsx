@@ -12,7 +12,7 @@ import {
   type ApiTeamAdded,
 } from "@/components/teams/add-api-team-dialog";
 import { TeamSearch } from "./team-search";
-import { Loader2 } from "lucide-react";
+import { Loader2, Link2, Check } from "lucide-react";
 
 export interface ExistingSubject {
   subject: string;
@@ -83,6 +83,7 @@ export function BetForm({
   const [name, setName] = useState<string>(lockedSeries?.subject ?? "");
   const [apiTeam, setApiTeam] = useState<ApiTeamAdded | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<ExistingSubject | null>(null);
+  const [createdNew, setCreatedNew] = useState(false);
   const [betType, setBetType] = useState<string>(lockedSeries?.betType ?? "");
   const [betTypeCustom, setBetTypeCustom] = useState("");
   const [modeChoice, setModeChoice] = useState<"serie" | "unique">("serie");
@@ -98,6 +99,10 @@ export function BetForm({
 
   const o = parseFloat(odds) || 0;
   const validOdds = o > 1;
+
+  // Un sujet est résolu (sélection existante, création, ou équipe API) → on déroule le form.
+  const resolved =
+    !!lockedSeries || !!selectedSubject || !!apiTeam || createdNew;
 
   const activeCtx = lockedSeries
     ? {
@@ -152,11 +157,12 @@ export function BetForm({
   const exactLocal =
     existingSubjects.some((s) => s.subject.toLowerCase() === q) ||
     teamMappings.some((m) => m.subject.toLowerCase() === q);
-  const showAddTeam = sport === "football" && q.length > 0 && !exactLocal;
+  const showAddTeam = q.length > 0 && !exactLocal;
 
   function pickSubject(s: ExistingSubject) {
     setName(s.subject);
     setSelectedSubject(s);
+    setCreatedNew(false);
     setBetType(s.betType);
     setSport(s.sport);
     setApiTeam(null);
@@ -167,6 +173,7 @@ export function BetForm({
   function pickMapping(m: TeamMappingLite) {
     setName(m.subject);
     setSelectedSubject(null);
+    setCreatedNew(true);
     setSport(m.sport);
     setApiTeam(
       m.apiTeamId != null
@@ -183,7 +190,7 @@ export function BetForm({
     resetAmounts();
   }
 
-  // La section type/sport apparaît pour une équipe "nouvelle" (nom libre ou mapping sans série).
+  // La section type/sport apparaît pour une équipe "nouvelle" (nom libre ou mapping).
   const needTeamParams = !lockedSeries && !selectedSubject;
 
   // === Handlers de calcul (rendu direct, pas de useEffect) ===
@@ -267,7 +274,7 @@ export function BetForm({
         </div>
       )}
 
-      {/* 1. Nom */}
+      {/* 1. Nom (recherche) — seul élément visible tant que rien n'est résolu */}
       {lockedSeries ? (
         <div className="flex items-center gap-2 rounded-xl bg-card/60 border border-border px-4 h-12">
           <TeamLogo logoUrl={undefined} size="sm" />
@@ -283,6 +290,7 @@ export function BetForm({
             setName(v);
             setSelectedSubject(null);
             setApiTeam(null);
+            setCreatedNew(false);
             setShowList(true);
           }}
           apiSelected={!!apiTeam}
@@ -293,231 +301,262 @@ export function BetForm({
           showAddTeam={showAddTeam}
           onPickSubject={pickSubject}
           onPickMapping={pickMapping}
-          onAddTeam={() => setAddTeamOpen(true)}
+          onAddTeam={() => {
+            setSelectedSubject(null);
+            setApiTeam(null);
+            setCreatedNew(true);
+            setShowList(false);
+          }}
         />
       )}
 
-      {/* 2. Mode : Série (continuer / nouvelle) ou Pari unique */}
-      {!lockedSeries && (
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setModeChoice("serie");
-              resetAmounts();
-            }}
-            className={cn(
-              "h-11 rounded-xl border text-sm font-medium transition-colors",
-              modeChoice === "serie"
-                ? "bg-primary/15 border-primary/40 text-primary"
-                : "bg-card border-border text-muted-foreground"
-            )}
-          >
-            {activeCtx ? "Continuer la série" : "Nouvelle série"}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setModeChoice("unique");
-              resetAmounts();
-            }}
-            className={cn(
-              "h-11 rounded-xl border text-sm font-medium transition-colors",
-              modeChoice === "unique"
-                ? "bg-primary/15 border-primary/40 text-primary"
-                : "bg-card border-border text-muted-foreground"
-            )}
-          >
-            Pari unique
-          </button>
-        </div>
-      )}
-
-      {/* 2 bis. Nouvelle équipe : type + sport */}
-      {needTeamParams && (
-        <div className="space-y-3">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-secondary-foreground">
-              Type de pari
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {BET_TYPE_KEYS.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setBetType(key)}
-                  className={cn(
-                    "h-11 rounded-xl border text-sm font-medium transition-colors",
-                    betType === key
-                      ? "bg-primary border-primary text-primary-foreground"
-                      : "bg-card border-border text-muted-foreground hover:text-secondary-foreground"
-                  )}
-                >
-                  {BET_TYPES[key]}
-                </button>
-              ))}
+      {resolved && (
+        <>
+          {/* 2. Mode : Série (continuer / nouvelle) ou Pari unique */}
+          {!lockedSeries && (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setModeChoice("serie");
+                  resetAmounts();
+                }}
+                className={cn(
+                  "h-11 rounded-xl border text-sm font-medium transition-colors",
+                  modeChoice === "serie"
+                    ? "bg-primary/15 border-primary/40 text-primary"
+                    : "bg-card border-border text-muted-foreground"
+                )}
+              >
+                {activeCtx ? "Continuer la série" : "Nouvelle série"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setModeChoice("unique");
+                  resetAmounts();
+                }}
+                className={cn(
+                  "h-11 rounded-xl border text-sm font-medium transition-colors",
+                  modeChoice === "unique"
+                    ? "bg-primary/15 border-primary/40 text-primary"
+                    : "bg-card border-border text-muted-foreground"
+                )}
+              >
+                Pari unique
+              </button>
             </div>
-            {betType === "autre" && (
-              <input
-                value={betTypeCustom}
-                onChange={(e) => setBetTypeCustom(e.target.value)}
-                placeholder="Type personnalisé"
-                className={INPUT}
-                autoFocus
-              />
-            )}
-          </div>
+          )}
 
-          {!apiTeam && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-secondary-foreground">
-                Sport
-              </label>
-              <div className="grid grid-cols-4 gap-2">
-                {(Object.entries(SPORTS) as [string, string][]).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setSport(key)}
-                    className={cn(
-                      "h-10 rounded-lg text-xs font-medium border transition-colors",
-                      sport === key
-                        ? "bg-primary border-primary text-primary-foreground"
-                        : "bg-card border-border text-muted-foreground hover:text-secondary-foreground"
+          {/* 2 bis. Nouvelle équipe : type + sport (+ lien API si foot) */}
+          {needTeamParams && (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-secondary-foreground">
+                  Type de pari
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {BET_TYPE_KEYS.map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setBetType(key)}
+                      className={cn(
+                        "h-11 rounded-xl border text-sm font-medium transition-colors",
+                        betType === key
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "bg-card border-border text-muted-foreground hover:text-secondary-foreground"
+                      )}
+                    >
+                      {BET_TYPES[key]}
+                    </button>
+                  ))}
+                </div>
+                {betType === "autre" && (
+                  <input
+                    value={betTypeCustom}
+                    onChange={(e) => setBetTypeCustom(e.target.value)}
+                    placeholder="Type personnalisé"
+                    className={INPUT}
+                    autoFocus
+                  />
+                )}
+              </div>
+
+              {apiTeam ? (
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <Check className="h-4 w-4" /> Lié à {apiTeam.subject}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-secondary-foreground">
+                    Sport
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {(Object.entries(SPORTS) as [string, string][]).map(
+                      ([key, label]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setSport(key)}
+                          className={cn(
+                            "h-10 rounded-lg text-xs font-medium border transition-colors",
+                            sport === key
+                              ? "bg-primary border-primary text-primary-foreground"
+                              : "bg-card border-border text-muted-foreground hover:text-secondary-foreground"
+                          )}
+                        >
+                          {label}
+                        </button>
+                      )
                     )}
-                  >
-                    {label}
-                  </button>
-                ))}
+                  </div>
+                  {sport === "football" && (
+                    <button
+                      type="button"
+                      onClick={() => setAddTeamOpen(true)}
+                      className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80"
+                    >
+                      <Link2 className="h-4 w-4" /> Lier à une équipe API (logo & calendrier)
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 3. Nouvelle série : objectif (slider à pas variables + saisie libre) */}
+          {mode === "serie" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-secondary-foreground">
+                  Objectif de gain
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  value={targetGain}
+                  onChange={(e) => onObjectiveChange(parseFloat(e.target.value) || 0)}
+                  className="w-24 h-9 rounded-lg bg-card border border-border px-3 text-right text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={OBJECTIVE_STOPS.length - 1}
+                step={1}
+                value={sliderIndex}
+                onChange={(e) =>
+                  onObjectiveChange(OBJECTIVE_STOPS[parseInt(e.target.value, 10)])
+                }
+                className="w-full h-2 rounded-full appearance-none cursor-pointer bg-muted accent-primary"
+              />
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>0 €</span>
+                <span className="text-lg font-bold text-primary">
+                  {formatEuros(targetGain)}
+                </span>
+                <span>10 €</span>
               </div>
             </div>
           )}
-        </div>
-      )}
 
-      {/* 3. Nouvelle série : objectif (slider à pas variables + saisie libre) */}
-      {mode === "serie" && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-secondary-foreground">
-              Objectif de gain
-            </label>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              value={targetGain}
-              onChange={(e) => onObjectiveChange(parseFloat(e.target.value) || 0)}
-              className="w-24 h-9 rounded-lg bg-card border border-border px-3 text-right text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={OBJECTIVE_STOPS.length - 1}
-            step={1}
-            value={sliderIndex}
-            onChange={(e) => onObjectiveChange(OBJECTIVE_STOPS[parseInt(e.target.value, 10)])}
-            className="w-full h-2 rounded-full appearance-none cursor-pointer bg-muted accent-primary"
-          />
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>0 €</span>
-            <span className="text-lg font-bold text-primary">{formatEuros(targetGain)}</span>
-            <span>10 €</span>
-          </div>
-        </div>
-      )}
+          {/* 3. Cote + mise (série / reprise) ou cote puis mise+gain (unique) */}
+          {mode === "unique" ? (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-secondary-foreground">
+                  Cote
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="1.01"
+                  value={odds}
+                  onChange={(e) => onOddsChange(e.target.value)}
+                  placeholder="Ex : 1.50"
+                  className={INPUT}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Mise</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={stake}
+                    onChange={(e) => onStakeChange(e.target.value)}
+                    placeholder="€"
+                    className={INPUT}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Gain net</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={gain}
+                    onChange={(e) => onGainChange(e.target.value)}
+                    placeholder="€"
+                    className={INPUT}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Cote</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="1.01"
+                    value={odds}
+                    onChange={(e) => onOddsChange(e.target.value)}
+                    placeholder="Ex : 1.50"
+                    className={INPUT}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Mise</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={stake}
+                    onChange={(e) => onStakeChange(e.target.value)}
+                    placeholder={validOdds ? formatEuros(computeStake(n, T, S, o)) : "€"}
+                    className={INPUT}
+                  />
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Gain net :{" "}
+                <span className="text-primary font-medium">{formatEuros(serieGain)}</span>
+              </p>
+            </div>
+          )}
 
-      {/* 3. Cote + mise (série / reprise) ou cote puis mise+gain (unique) */}
-      {mode === "unique" ? (
-        <div className="space-y-3">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-secondary-foreground">Cote</label>
-            <input
-              type="number"
-              step="0.01"
-              min="1.01"
-              value={odds}
-              onChange={(e) => onOddsChange(e.target.value)}
-              placeholder="Ex : 1.50"
-              className={INPUT}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Mise</label>
-              <input
-                type="number"
-                step="0.01"
-                value={stake}
-                onChange={(e) => onStakeChange(e.target.value)}
-                placeholder="€"
-                className={INPUT}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Gain net</label>
-              <input
-                type="number"
-                step="0.01"
-                value={gain}
-                onChange={(e) => onGainChange(e.target.value)}
-                placeholder="€"
-                className={INPUT}
-              />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Cote</label>
-              <input
-                type="number"
-                step="0.01"
-                min="1.01"
-                value={odds}
-                onChange={(e) => onOddsChange(e.target.value)}
-                placeholder="Ex : 1.50"
-                className={INPUT}
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Mise</label>
-              <input
-                type="number"
-                step="0.01"
-                value={stake}
-                onChange={(e) => onStakeChange(e.target.value)}
-                placeholder={validOdds ? formatEuros(computeStake(n, T, S, o)) : "€"}
-                className={INPUT}
-              />
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Gain net : <span className="text-primary font-medium">{formatEuros(serieGain)}</span>
-          </p>
-        </div>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold transition-colors disabled:opacity-50"
+          >
+            {isPending ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Enregistrement...
+              </span>
+            ) : mode === "resume" ? (
+              "Ajouter le pari"
+            ) : mode === "unique" ? (
+              "Créer le pari unique"
+            ) : (
+              "Lancer la série"
+            )}
+          </button>
+        </>
       )}
-
-      <button
-        type="submit"
-        disabled={isPending}
-        className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold transition-colors disabled:opacity-50"
-      >
-        {isPending ? (
-          <span className="flex items-center justify-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" /> Enregistrement...
-          </span>
-        ) : mode === "resume" ? (
-          "Ajouter le pari"
-        ) : mode === "unique" ? (
-          "Créer le pari unique"
-        ) : (
-          "Lancer la série"
-        )}
-      </button>
 
       <AddApiTeamDialog
         open={addTeamOpen}
@@ -526,6 +565,7 @@ export function BetForm({
           setApiTeam(t);
           setName(t.subject);
           setSelectedSubject(null);
+          setCreatedNew(true);
           setSport("football");
           setShowList(false);
           setAddTeamOpen(false);
