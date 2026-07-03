@@ -41,6 +41,49 @@ export async function abandonSeries(seriesId: string) {
   return { success: true };
 }
 
+export async function reopenSeries(seriesId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Vous devez etre connecte.");
+  }
+
+  const { data: series, error: seriesError } = await supabase
+    .from("series")
+    .select("id, status")
+    .eq("id", seriesId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (seriesError || !series) {
+    return { error: "Serie introuvable." };
+  }
+
+  if (series.status !== "abandonnee") {
+    return { error: "Seule une serie abandonnee peut etre rouverte." };
+  }
+
+  const { error } = await supabase
+    .from("series")
+    .update({ status: "en_cours" })
+    .eq("id", seriesId);
+
+  if (error) {
+    return { error: `Erreur lors de la reouverture de la serie: ${error.message}` };
+  }
+
+  revalidatePath(`/series/${seriesId}`);
+  revalidatePath("/series");
+  revalidatePath("/");
+
+  return { success: true };
+}
+
 export async function deleteSeries(seriesId: string) {
   const supabase = await createClient();
 

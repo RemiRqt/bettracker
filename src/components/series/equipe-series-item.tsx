@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ChevronDown, ChevronRight, Trash2, Ban } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, Ban, RotateCcw } from "lucide-react";
 import { SeriesStatusBadge } from "@/components/series/series-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { formatEuros, formatPercent, cn } from "@/lib/utils";
-import { deleteSeries, abandonSeries } from "@/actions/series";
+import { deleteSeries, abandonSeries, reopenSeries } from "@/actions/series";
 import { canDeleteSeries } from "@/lib/series-utils";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -54,6 +54,21 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
     if (!ok) return;
     startTransition(async () => {
       const result = await abandonSeries(series.id);
+      if (result?.error) {
+        toast({ title: "Erreur", description: result.error, variant: "destructive" });
+      }
+    });
+  }
+
+  async function handleReopen() {
+    const ok = await confirm({
+      title: `Rouvrir la série #${series.seriesNumber} ?`,
+      description: "La série repasse en cours ; tu pourras ajouter le pari suivant.",
+      confirmLabel: "Rouvrir",
+    });
+    if (!ok) return;
+    startTransition(async () => {
+      const result = await reopenSeries(series.id);
       if (result?.error) {
         toast({ title: "Erreur", description: result.error, variant: "destructive" });
       }
@@ -190,6 +205,16 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
               </div>
             );
           })}
+
+          {series.status === "abandonnee" && (
+            <button
+              type="button"
+              onClick={handleReopen}
+              className="w-full flex items-center justify-center gap-2 h-9 rounded-lg bg-info/15 text-info text-sm font-medium hover:bg-info/25 transition-colors"
+            >
+              <RotateCcw className="h-4 w-4" /> Rouvrir la série
+            </button>
+          )}
         </div>
       )}
     </div>
