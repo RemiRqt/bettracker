@@ -48,12 +48,32 @@ export default async function EquipesRoute() {
   // subject → entités API liées (clubs / nations) pour le regroupement par club
   const subjectEntities: Record<
     string,
-    { id: string; name: string; logoUrl: string | null; kind: string }[]
+    {
+      id: string;
+      name: string;
+      logoUrl: string | null;
+      kind: string;
+      isFollowed: boolean;
+      nextFixtureDate: string | null;
+    }[]
   > = {};
   for (const [subject, entities] of entitiesBySubject) {
     const ents = entities
       .filter((m) => m.is_club)
-      .map((m) => ({ id: m.id, name: m.subject, logoUrl: m.logo_url, kind: m.kind }));
+      .map((m) => {
+        let next: string | null = null;
+        for (const f of (m.cached_fixtures ?? []) as CachedFixture[]) {
+          if (new Date(f.date).getTime() > nowMs && (!next || f.date < next)) next = f.date;
+        }
+        return {
+          id: m.id,
+          name: m.subject,
+          logoUrl: m.logo_url,
+          kind: m.kind,
+          isFollowed: m.is_followed,
+          nextFixtureDate: next,
+        };
+      });
     if (ents.length) subjectEntities[subject] = ents;
   }
 

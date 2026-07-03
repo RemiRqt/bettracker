@@ -9,7 +9,7 @@ import { useBetModal } from "@/components/paris/bet-modal-provider";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { RollingNumber } from "@/components/ui/rolling-number";
 import { FollowedTeams } from "@/components/profile/followed-teams";
-import { EquipeCard, type MergedEquipe } from "./equipe-card";
+import { EquipeCard, formatFixtureDateTime, type MergedEquipe } from "./equipe-card";
 import type { TeamMapping } from "@/actions/teams";
 import { SPORTS, SPORT_EMOJIS } from "@/lib/constants";
 import { formatPercent, cn } from "@/lib/utils";
@@ -28,6 +28,7 @@ import {
   ChevronUp,
   Inbox,
   Users,
+  CalendarClock,
 } from "lucide-react";
 
 export interface EntityLite {
@@ -35,16 +36,9 @@ export interface EntityLite {
   name: string;
   logoUrl: string | null;
   kind: string;
+  isFollowed: boolean;
+  nextFixtureDate: string | null;
 }
-
-type TypeFilter = "all" | "club" | "national" | "standalone";
-
-const TYPE_FILTERS: { key: TypeFilter; label: string }[] = [
-  { key: "all", label: "Tout" },
-  { key: "club", label: "Clubs" },
-  { key: "national", label: "Nations" },
-  { key: "standalone", label: "Sans lien" },
-];
 
 type SortKey = "date" | "gains" | "paris";
 type FilterKey = "en_cours" | "gagne" | "perdu" | null;
@@ -87,7 +81,6 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
   const [searchOpen, setSearchOpen] = useState(false);
   const [myTeamsOpen, setMyTeamsOpen] = useState(false);
   const [clubExpanded, setClubExpanded] = useState<Set<string>>(new Set());
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [editEquipe, setEditEquipe] = useState<MergedEquipe | null>(null);
   const [seriesShowAll, setSeriesShowAll] = useState<Set<string>>(new Set());
 
@@ -171,7 +164,15 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
   // Regroupement par club/nation (une équipe liée à club + pays apparaît dans les deux)
   const groupMap = new Map<
     string,
-    { entity: EntityLite; equipes: MergedEquipe[]; net: number; stake: number; hasActive: boolean }
+    {
+      entity: EntityLite;
+      equipes: MergedEquipe[];
+      net: number;
+      stake: number;
+      betsCount: number;
+      lastBetDate: string;
+      hasActive: boolean;
+    }
   >();
   const standalone: MergedEquipe[] = [];
   for (const eq of sorted) {
@@ -183,10 +184,12 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
     for (const ent of ents) {
       const g =
         groupMap.get(ent.id) ??
-        { entity: ent, equipes: [], net: 0, stake: 0, hasActive: false };
+        { entity: ent, equipes: [], net: 0, stake: 0, betsCount: 0, lastBetDate: "", hasActive: false };
       g.equipes.push(eq);
       g.net += eq.netProfit;
       g.stake += eq.totalStake;
+      g.betsCount += eq.betsCount;
+      if (eq.lastBetDate > g.lastBetDate) g.lastBetDate = eq.lastBetDate;
       if (eq.activeSeries) g.hasActive = true;
       groupMap.set(ent.id, g);
     }
@@ -197,13 +200,17 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
       net: Math.round(g.net * 100) / 100,
       roi: g.stake > 0 ? (g.net / g.stake) * 100 : 0,
     }))
-    .sort((a, b) => (a.hasActive !== b.hasActive ? (a.hasActive ? -1 : 1) : b.net - a.net));
-
-  const visibleClubGroups =
-    typeFilter === "standalone"
-      ? []
-      : clubGroups.filter((g) => typeFilter === "all" || g.entity.kind === typeFilter);
-  const showStandalone = typeFilter === "all" || typeFilter === "standalone";
+    .sort((a, b) => {
+      // "en cours" toujours en haut, puis le tri choisi
+      if (a.hasActive !== b.hasActive) return a.hasActive ? -1 : 1;
+      let cmp = 0;
+      switch (sortBy) {
+        case "date": cmp = b.lastBetDate.localeCompare(a.lastBetDate); break;
+        case "gains": cmp = b.net - a.net; break;
+        case "paris": cmp = b.betsCount - a.betsCount; break;
+      }
+      return sortAsc ? -cmp : cmp;
+    });
 
   const renderCard = (eq: MergedEquipe, keyPrefix: string) => {
     const cardKey = `${keyPrefix}${eq.name}:::${eq.bet_type}`;
@@ -230,14 +237,6 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Mes équipes */}
-      <button
-        onClick={() => setMyTeamsOpen(true)}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card py-2.5 text-sm font-medium text-secondary-foreground hover:border-primary/50 transition-colors"
-      >
-        <Users className="h-4 w-4" /> Mes équipes
-      </button>
-
       {/* Search (toggle) */}
       {searchOpen && (
         <div className="relative">
@@ -252,26 +251,34 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
         </div>
       )}
 
-      {/* Filter tabs */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        {FILTER_OPTIONS.map((opt) => {
-          const isActive = filterBy === opt.key;
-          return (
-            <button
-              key={opt.key}
-              onClick={() => setFilterBy(isActive ? null : opt.key)}
-              className={cn(
-                "flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border",
-                isActive
-                  ? `${opt.activeColor} ${opt.color}`
-                  : "bg-transparent text-muted-foreground border-border/50 hover:border-border"
-              )}
-            >
-              {opt.label}
-              <span className="ml-1 opacity-60">{counts[opt.key]}</span>
-            </button>
-          );
-        })}
+      {/* Filter tabs + Mes équipes (droite) */}
+      <div className="flex items-center gap-1.5">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none flex-1">
+          {FILTER_OPTIONS.map((opt) => {
+            const isActive = filterBy === opt.key;
+            return (
+              <button
+                key={opt.key}
+                onClick={() => setFilterBy(isActive ? null : opt.key)}
+                className={cn(
+                  "flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border",
+                  isActive
+                    ? `${opt.activeColor} ${opt.color}`
+                    : "bg-transparent text-muted-foreground border-border/50 hover:border-border"
+                )}
+              >
+                {opt.label}
+                <span className="ml-1 opacity-60">{counts[opt.key]}</span>
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={() => setMyTeamsOpen(true)}
+          className="flex-shrink-0 flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:border-primary/50 transition-colors"
+        >
+          <Users className="h-3.5 w-3.5" /> Mes équipes
+        </button>
       </div>
 
       {/* Sort + search (loupe à droite) */}
@@ -308,24 +315,6 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
         </button>
       </div>
 
-      {/* Filtre général : clubs / nations / sans lien */}
-      <div className="flex gap-1.5">
-        {TYPE_FILTERS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTypeFilter(t.key)}
-            className={cn(
-              "flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors border",
-              typeFilter === t.key
-                ? "bg-primary/20 text-primary border-primary/30"
-                : "bg-card text-muted-foreground border-border hover:border-border/80"
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
       {/* List */}
       {sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -335,10 +324,18 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
       ) : (
         <div className="space-y-3">
           {/* Groupes club / nation */}
-          {visibleClubGroups.map((group) => {
+          {clubGroups.map((group) => {
             const gExpanded = clubExpanded.has(group.entity.id);
             return (
               <div key={group.entity.id} className="rounded-xl bg-card border border-border overflow-hidden">
+                {group.entity.isFollowed && group.entity.nextFixtureDate && (
+                  <div className="flex items-center gap-1.5 px-3 py-2 bg-info/10 border-b border-info/20 text-xs text-info">
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    <span className="font-medium">
+                      Prochain match : {formatFixtureDateTime(group.entity.nextFixtureDate)}
+                    </span>
+                  </div>
+                )}
                 <button
                   onClick={() => toggleClub(group.entity.id)}
                   className="w-full flex items-center gap-3 p-3 text-left hover:bg-foreground/[0.02] transition-colors"
@@ -377,7 +374,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
           })}
 
           {/* Sans lien club */}
-          {showStandalone && standalone.map((eq) => renderCard(eq, "solo:"))}
+          {standalone.map((eq) => renderCard(eq, "solo:"))}
         </div>
       )}
 
