@@ -111,6 +111,10 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
   const sorted = useMemo(() => {
     const arr = [...filtered];
     arr.sort((a, b) => {
+      // "en cours" (résultat null) toujours en haut
+      const aPending = a.result === null ? 0 : 1;
+      const bPending = b.result === null ? 0 : 1;
+      if (aPending !== bPending) return aPending - bPending;
       let cmp = 0;
       switch (sortBy) {
         case "date":

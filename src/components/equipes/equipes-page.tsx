@@ -145,11 +145,10 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
   });
 
   const sorted = [...filtered].sort((a, b) => {
-    // Equipes without series always first
-    const aEmpty = a.seriesCount === 0;
-    const bEmpty = b.seriesCount === 0;
-    if (aEmpty && !bEmpty) return -1;
-    if (!aEmpty && bEmpty) return 1;
+    // séries en cours toujours en haut
+    const aActive = a.activeSeries ? 0 : 1;
+    const bActive = b.activeSeries ? 0 : 1;
+    if (aActive !== bActive) return aActive - bActive;
 
     let cmp = 0;
     switch (sortBy) {
