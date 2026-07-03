@@ -193,7 +193,7 @@ export default async function EquipesRoute() {
   return (
     <div className="space-y-3">
       <ParisEquipesSwitch active="equipes" />
-      <EquipesPage equipes={mergedEquipes} logoMap={logoMap} nextFixtureMap={nextFixtureMap} />
+      <EquipesPage equipes={mergedEquipes} logoMap={logoMap} nextFixtureMap={nextFixtureMap} teamMappings={mappings} />
     </div>
   );
 }

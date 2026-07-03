@@ -9,7 +9,9 @@ import { useBetModal } from "@/components/paris/bet-modal-provider";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { RollingNumber } from "@/components/ui/rolling-number";
 import { EquipeSeriesItem } from "@/components/series/equipe-series-item";
+import { FollowedTeams } from "@/components/profile/followed-teams";
 import type { EquipeSeries } from "@/components/series/equipes-list";
+import type { TeamMapping } from "@/actions/teams";
 import { BET_TYPES, SPORTS, SPORT_EMOJIS } from "@/lib/constants";
 import { formatEuros, formatPercent, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +33,7 @@ import {
   CalendarClock,
   CheckCircle,
   XCircle,
+  Users,
 } from "lucide-react";
 
 // === Types ===
@@ -64,7 +67,7 @@ export interface MergedEquipe {
 }
 
 type SortKey = "date" | "gains" | "paris";
-type FilterKey = "en_cours" | "gagne" | "perdu" | "pause" | null;
+type FilterKey = "en_cours" | "gagne" | "perdu" | null;
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "date", label: "Récent" },
@@ -73,7 +76,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 ];
 
 const FILTER_OPTIONS: {
-  key: "en_cours" | "gagne" | "perdu" | "pause";
+  key: "en_cours" | "gagne" | "perdu";
   label: string;
   color: string;
   activeColor: string;
@@ -81,13 +84,13 @@ const FILTER_OPTIONS: {
   { key: "en_cours", label: "En cours", color: "text-info border-info/30", activeColor: "bg-info/20" },
   { key: "gagne", label: "Gagné", color: "text-primary border-primary/30", activeColor: "bg-primary/20" },
   { key: "perdu", label: "Perdu", color: "text-destructive border-destructive/30", activeColor: "bg-destructive/20" },
-  { key: "pause", label: "En pause", color: "text-warning border-warning/30", activeColor: "bg-warning/20" },
 ];
 
 interface EquipesPageProps {
   equipes: MergedEquipe[];
   logoMap: Record<string, string>;
   nextFixtureMap?: Record<string, { date: string }>;
+  teamMappings?: TeamMapping[];
 }
 
 function formatFixtureDateTime(iso: string): string {
@@ -99,7 +102,7 @@ function formatFixtureDateTime(iso: string): string {
   return `${day}/${month} a ${hours}h${minutes}`;
 }
 
-export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPageProps) {
+export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMappings = [] }: EquipesPageProps) {
   const [, startTransition] = useTransition();
   const router = useRouter();
 
@@ -110,6 +113,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
   const [filterBy, setFilterBy] = useState<FilterKey>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [searchOpen, setSearchOpen] = useState(false);
+  const [myTeamsOpen, setMyTeamsOpen] = useState(false);
   const [editEquipe, setEditEquipe] = useState<MergedEquipe | null>(null);
   const [seriesShowAll, setSeriesShowAll] = useState<Set<string>>(new Set());
 
@@ -123,12 +127,11 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
   }
 
   const counts = useMemo(() => {
-    const c = { en_cours: 0, gagne: 0, perdu: 0, pause: 0 };
+    const c = { en_cours: 0, gagne: 0, perdu: 0 };
     for (const eq of equipes) {
       if (eq.enCoursCount > 0) c.en_cours++;
       if (eq.netProfit > 0) c.gagne++;
       if (eq.netProfit < 0) c.perdu++;
-      if (eq.lastSeriesStatus === "abandonnee" && eq.enCoursCount === 0) c.pause++;
     }
     return c;
   }, [equipes]);
@@ -140,7 +143,6 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
       case "en_cours": return eq.enCoursCount > 0;
       case "gagne": return eq.netProfit > 0;
       case "perdu": return eq.netProfit < 0;
-      case "pause": return eq.lastSeriesStatus === "abandonnee" && eq.enCoursCount === 0;
     }
   });
 
@@ -185,6 +187,14 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {/* Mes équipes */}
+      <button
+        onClick={() => setMyTeamsOpen(true)}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card py-2.5 text-sm font-medium text-secondary-foreground hover:border-primary/50 transition-colors"
+      >
+        <Users className="h-4 w-4" /> Mes équipes
+      </button>
+
       {/* Search (toggle) */}
       {searchOpen && (
         <div className="relative">
@@ -469,6 +479,19 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {} }: EquipesPa
           })}
         </div>
       )}
+
+      {/* === Mes équipes Dialog === */}
+      <Dialog open={myTeamsOpen} onOpenChange={setMyTeamsOpen}>
+        <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto max-h-[90vh] overflow-y-auto rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Mes équipes</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Ajoute des équipes API et gère tes favoris
+            </DialogDescription>
+          </DialogHeader>
+          <FollowedTeams teamMappings={teamMappings} />
+        </DialogContent>
+      </Dialog>
 
       {/* === Edit Equipe Dialog (sport) === */}
       <Dialog open={editEquipe !== null} onOpenChange={(open) => { if (!open) setEditEquipe(null); }}>
