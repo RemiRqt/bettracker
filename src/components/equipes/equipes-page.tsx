@@ -6,14 +6,11 @@ import { deleteEquipe, updateEquipeSport } from "@/actions/equipes";
 import { validateResult } from "@/actions/bets";
 import { fireConfetti } from "@/lib/confetti";
 import { useBetModal } from "@/components/paris/bet-modal-provider";
-import { TeamLogo } from "@/components/ui/team-logo";
-import { RollingNumber } from "@/components/ui/rolling-number";
 import { FollowedTeams } from "@/components/profile/followed-teams";
-import { EquipeCard, formatFixtureDateTime, type MergedEquipe } from "./equipe-card";
+import { EquipeCard, type MergedEquipe } from "./equipe-card";
 import type { TeamMapping } from "@/actions/teams";
 import { SPORTS, SPORT_EMOJIS } from "@/lib/constants";
-import { formatPercent, cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -24,21 +21,10 @@ import {
 import {
   Search,
   ChevronDown,
-  ChevronRight,
   ChevronUp,
   Inbox,
   Users,
-  CalendarClock,
 } from "lucide-react";
-
-export interface EntityLite {
-  id: string;
-  name: string;
-  logoUrl: string | null;
-  kind: string;
-  isFollowed: boolean;
-  nextFixtureDate: string | null;
-}
 
 type SortKey = "date" | "gains" | "paris";
 type FilterKey = "en_cours" | "gagne" | "perdu" | null;
@@ -65,10 +51,9 @@ interface EquipesPageProps {
   logoMap: Record<string, string>;
   nextFixtureMap?: Record<string, { date: string }>;
   teamMappings?: TeamMapping[];
-  subjectEntities?: Record<string, EntityLite[]>;
 }
 
-export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMappings = [], subjectEntities = {} }: EquipesPageProps) {
+export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMappings = [] }: EquipesPageProps) {
   const [, startTransition] = useTransition();
   const router = useRouter();
 
@@ -80,8 +65,6 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [searchOpen, setSearchOpen] = useState(false);
   const [myTeamsOpen, setMyTeamsOpen] = useState(false);
-  // Groupes club DÉPLIÉS par défaut : on stocke les groupes repliés (vide = tout ouvert).
-  const [clubCollapsed, setClubCollapsed] = useState<Set<string>>(new Set());
   const [editEquipe, setEditEquipe] = useState<MergedEquipe | null>(null);
   const [seriesShowAll, setSeriesShowAll] = useState<Set<string>>(new Set());
 
@@ -153,88 +136,6 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
     });
   }
 
-  function toggleClub(id: string) {
-    setClubCollapsed((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  // Regroupement par club/nation (une équipe liée à club + pays apparaît dans les deux)
-  const groupMap = new Map<
-    string,
-    {
-      entity: EntityLite;
-      equipes: MergedEquipe[];
-      net: number;
-      stake: number;
-      betsCount: number;
-      lastBetDate: string;
-      hasActive: boolean;
-    }
-  >();
-  const standalone: MergedEquipe[] = [];
-  for (const eq of sorted) {
-    const ents = subjectEntities[eq.name] ?? [];
-    if (ents.length === 0) {
-      standalone.push(eq);
-      continue;
-    }
-    for (const ent of ents) {
-      const g =
-        groupMap.get(ent.id) ??
-        { entity: ent, equipes: [], net: 0, stake: 0, betsCount: 0, lastBetDate: "", hasActive: false };
-      g.equipes.push(eq);
-      g.net += eq.netProfit;
-      g.stake += eq.totalStake;
-      g.betsCount += eq.betsCount;
-      if (eq.lastBetDate > g.lastBetDate) g.lastBetDate = eq.lastBetDate;
-      if (eq.activeSeries) g.hasActive = true;
-      groupMap.set(ent.id, g);
-    }
-  }
-  const clubGroups = Array.from(groupMap.values()).map((g) => ({
-    ...g,
-    net: Math.round(g.net * 100) / 100,
-    roi: g.stake > 0 ? (g.net / g.stake) * 100 : 0,
-  }));
-
-  // Tri GLOBAL : groupes club + équipes sans lien mélangés dans un seul ordre
-  // (en cours toujours en haut, puis le tri choisi Récent/Gains/Paris).
-  type Row =
-    | { kind: "group"; hasActive: boolean; d: string; n: number; b: number; group: (typeof clubGroups)[number] }
-    | { kind: "equipe"; hasActive: boolean; d: string; n: number; b: number; eq: MergedEquipe };
-  const rows: Row[] = [
-    ...clubGroups.map((g) => ({
-      kind: "group" as const,
-      hasActive: g.hasActive,
-      d: g.lastBetDate,
-      n: g.net,
-      b: g.betsCount,
-      group: g,
-    })),
-    ...standalone.map((eq) => ({
-      kind: "equipe" as const,
-      hasActive: !!eq.activeSeries,
-      d: eq.lastBetDate,
-      n: eq.netProfit,
-      b: eq.betsCount,
-      eq,
-    })),
-  ];
-  rows.sort((a, b) => {
-    if (a.hasActive !== b.hasActive) return a.hasActive ? -1 : 1;
-    let cmp = 0;
-    switch (sortBy) {
-      case "date": cmp = b.d.localeCompare(a.d); break;
-      case "gains": cmp = b.n - a.n; break;
-      case "paris": cmp = b.b - a.b; break;
-    }
-    return sortAsc ? -cmp : cmp;
-  });
-
   const renderCard = (eq: MergedEquipe, keyPrefix: string) => {
     const cardKey = `${keyPrefix}${eq.name}:::${eq.bet_type}`;
     return (
@@ -255,55 +156,6 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
           startTransition(() => { router.refresh(); });
         }}
       />
-    );
-  };
-
-  const renderGroup = (group: (typeof clubGroups)[number]) => {
-    const gExpanded = !clubCollapsed.has(group.entity.id);
-    return (
-      <div key={group.entity.id} className="rounded-xl bg-card border border-border overflow-hidden">
-        {group.entity.isFollowed && group.entity.nextFixtureDate && (
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-info/10 border-b border-info/20 text-xs text-info">
-            <CalendarClock className="h-3.5 w-3.5" />
-            <span className="font-medium">
-              Prochain match : {formatFixtureDateTime(group.entity.nextFixtureDate)}
-            </span>
-          </div>
-        )}
-        <button
-          onClick={() => toggleClub(group.entity.id)}
-          className="w-full flex items-center gap-3 p-3 text-left hover:bg-foreground/[0.02] transition-colors"
-        >
-          <TeamLogo logoUrl={group.entity.logoUrl ?? undefined} size="sm" />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-foreground truncate">{group.entity.name}</span>
-              {group.entity.kind === "national" && (
-                <Badge className="shrink-0 bg-info/20 text-info border-info/30 text-[10px] px-1.5 py-0">
-                  Nation
-                </Badge>
-              )}
-            </div>
-            <span className="text-xs text-muted-foreground">
-              {group.equipes.length} équipe{group.equipes.length > 1 ? "s" : ""} · ROI {formatPercent(group.roi)}
-            </span>
-          </div>
-          <span className={cn("font-bold text-sm", group.net >= 0 ? "text-primary" : "text-destructive")}>
-            {group.net >= 0 ? "+" : ""}
-            <RollingNumber value={group.net} format="euros" />
-          </span>
-          {gExpanded ? (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          )}
-        </button>
-        {gExpanded && (
-          <div className="border-t border-border/50 p-2 space-y-2">
-            {group.equipes.map((eq) => renderCard(eq, `${group.entity.id}:`))}
-          </div>
-        )}
-      </div>
     );
   };
 
@@ -394,12 +246,8 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
           <p className="text-sm">Aucune equipe trouvee.</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {rows.map((row) =>
-            row.kind === "group"
-              ? renderGroup(row.group)
-              : renderCard(row.eq, "solo:")
-          )}
+        <div className="space-y-2">
+          {sorted.map((eq) => renderCard(eq, ""))}
         </div>
       )}
 
