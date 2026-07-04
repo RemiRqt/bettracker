@@ -80,7 +80,8 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [searchOpen, setSearchOpen] = useState(false);
   const [myTeamsOpen, setMyTeamsOpen] = useState(false);
-  const [clubExpanded, setClubExpanded] = useState<Set<string>>(new Set());
+  // Groupes club DÉPLIÉS par défaut : on stocke les groupes repliés (vide = tout ouvert).
+  const [clubCollapsed, setClubCollapsed] = useState<Set<string>>(new Set());
   const [editEquipe, setEditEquipe] = useState<MergedEquipe | null>(null);
   const [seriesShowAll, setSeriesShowAll] = useState<Set<string>>(new Set());
 
@@ -153,7 +154,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
   }
 
   function toggleClub(id: string) {
-    setClubExpanded((prev) => {
+    setClubCollapsed((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -325,7 +326,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
         <div className="space-y-3">
           {/* Groupes club / nation */}
           {clubGroups.map((group) => {
-            const gExpanded = clubExpanded.has(group.entity.id);
+            const gExpanded = !clubCollapsed.has(group.entity.id);
             return (
               <div key={group.entity.id} className="rounded-xl bg-card border border-border overflow-hidden">
                 {group.entity.isFollowed && group.entity.nextFixtureDate && (
