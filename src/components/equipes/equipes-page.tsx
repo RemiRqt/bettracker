@@ -195,23 +195,45 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
       groupMap.set(ent.id, g);
     }
   }
-  const clubGroups = Array.from(groupMap.values())
-    .map((g) => ({
-      ...g,
-      net: Math.round(g.net * 100) / 100,
-      roi: g.stake > 0 ? (g.net / g.stake) * 100 : 0,
-    }))
-    .sort((a, b) => {
-      // "en cours" toujours en haut, puis le tri choisi
-      if (a.hasActive !== b.hasActive) return a.hasActive ? -1 : 1;
-      let cmp = 0;
-      switch (sortBy) {
-        case "date": cmp = b.lastBetDate.localeCompare(a.lastBetDate); break;
-        case "gains": cmp = b.net - a.net; break;
-        case "paris": cmp = b.betsCount - a.betsCount; break;
-      }
-      return sortAsc ? -cmp : cmp;
-    });
+  const clubGroups = Array.from(groupMap.values()).map((g) => ({
+    ...g,
+    net: Math.round(g.net * 100) / 100,
+    roi: g.stake > 0 ? (g.net / g.stake) * 100 : 0,
+  }));
+
+  // Tri GLOBAL : groupes club + équipes sans lien mélangés dans un seul ordre
+  // (en cours toujours en haut, puis le tri choisi Récent/Gains/Paris).
+  type Row =
+    | { kind: "group"; hasActive: boolean; d: string; n: number; b: number; group: (typeof clubGroups)[number] }
+    | { kind: "equipe"; hasActive: boolean; d: string; n: number; b: number; eq: MergedEquipe };
+  const rows: Row[] = [
+    ...clubGroups.map((g) => ({
+      kind: "group" as const,
+      hasActive: g.hasActive,
+      d: g.lastBetDate,
+      n: g.net,
+      b: g.betsCount,
+      group: g,
+    })),
+    ...standalone.map((eq) => ({
+      kind: "equipe" as const,
+      hasActive: !!eq.activeSeries,
+      d: eq.lastBetDate,
+      n: eq.netProfit,
+      b: eq.betsCount,
+      eq,
+    })),
+  ];
+  rows.sort((a, b) => {
+    if (a.hasActive !== b.hasActive) return a.hasActive ? -1 : 1;
+    let cmp = 0;
+    switch (sortBy) {
+      case "date": cmp = b.d.localeCompare(a.d); break;
+      case "gains": cmp = b.n - a.n; break;
+      case "paris": cmp = b.b - a.b; break;
+    }
+    return sortAsc ? -cmp : cmp;
+  });
 
   const renderCard = (eq: MergedEquipe, keyPrefix: string) => {
     const cardKey = `${keyPrefix}${eq.name}:::${eq.bet_type}`;
@@ -233,6 +255,55 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
           startTransition(() => { router.refresh(); });
         }}
       />
+    );
+  };
+
+  const renderGroup = (group: (typeof clubGroups)[number]) => {
+    const gExpanded = !clubCollapsed.has(group.entity.id);
+    return (
+      <div key={group.entity.id} className="rounded-xl bg-card border border-border overflow-hidden">
+        {group.entity.isFollowed && group.entity.nextFixtureDate && (
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-info/10 border-b border-info/20 text-xs text-info">
+            <CalendarClock className="h-3.5 w-3.5" />
+            <span className="font-medium">
+              Prochain match : {formatFixtureDateTime(group.entity.nextFixtureDate)}
+            </span>
+          </div>
+        )}
+        <button
+          onClick={() => toggleClub(group.entity.id)}
+          className="w-full flex items-center gap-3 p-3 text-left hover:bg-foreground/[0.02] transition-colors"
+        >
+          <TeamLogo logoUrl={group.entity.logoUrl ?? undefined} size="sm" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-foreground truncate">{group.entity.name}</span>
+              {group.entity.kind === "national" && (
+                <Badge className="shrink-0 bg-info/20 text-info border-info/30 text-[10px] px-1.5 py-0">
+                  Nation
+                </Badge>
+              )}
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {group.equipes.length} équipe{group.equipes.length > 1 ? "s" : ""} · ROI {formatPercent(group.roi)}
+            </span>
+          </div>
+          <span className={cn("font-bold text-sm", group.net >= 0 ? "text-primary" : "text-destructive")}>
+            {group.net >= 0 ? "+" : ""}
+            <RollingNumber value={group.net} format="euros" />
+          </span>
+          {gExpanded ? (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          )}
+        </button>
+        {gExpanded && (
+          <div className="border-t border-border/50 p-2 space-y-2">
+            {group.equipes.map((eq) => renderCard(eq, `${group.entity.id}:`))}
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -324,58 +395,11 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Groupes club / nation */}
-          {clubGroups.map((group) => {
-            const gExpanded = !clubCollapsed.has(group.entity.id);
-            return (
-              <div key={group.entity.id} className="rounded-xl bg-card border border-border overflow-hidden">
-                {group.entity.isFollowed && group.entity.nextFixtureDate && (
-                  <div className="flex items-center gap-1.5 px-3 py-2 bg-info/10 border-b border-info/20 text-xs text-info">
-                    <CalendarClock className="h-3.5 w-3.5" />
-                    <span className="font-medium">
-                      Prochain match : {formatFixtureDateTime(group.entity.nextFixtureDate)}
-                    </span>
-                  </div>
-                )}
-                <button
-                  onClick={() => toggleClub(group.entity.id)}
-                  className="w-full flex items-center gap-3 p-3 text-left hover:bg-foreground/[0.02] transition-colors"
-                >
-                  <TeamLogo logoUrl={group.entity.logoUrl ?? undefined} size="sm" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-foreground truncate">{group.entity.name}</span>
-                      {group.entity.kind === "national" && (
-                        <Badge className="shrink-0 bg-info/20 text-info border-info/30 text-[10px] px-1.5 py-0">
-                          Nation
-                        </Badge>
-                      )}
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {group.equipes.length} équipe{group.equipes.length > 1 ? "s" : ""} · ROI {formatPercent(group.roi)}
-                    </span>
-                  </div>
-                  <span className={cn("font-bold text-sm", group.net >= 0 ? "text-primary" : "text-destructive")}>
-                    {group.net >= 0 ? "+" : ""}
-                    <RollingNumber value={group.net} format="euros" />
-                  </span>
-                  {gExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </button>
-                {gExpanded && (
-                  <div className="border-t border-border/50 p-2 space-y-2">
-                    {group.equipes.map((eq) => renderCard(eq, `${group.entity.id}:`))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Sans lien club */}
-          {standalone.map((eq) => renderCard(eq, "solo:"))}
+          {rows.map((row) =>
+            row.kind === "group"
+              ? renderGroup(row.group)
+              : renderCard(row.eq, "solo:")
+          )}
         </div>
       )}
 
