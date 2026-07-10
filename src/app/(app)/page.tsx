@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDashboardStats } from "@/actions/stats";
+import { getActionItems } from "@/actions/series";
 import { StatsHero } from "@/components/dashboard/stats-cards";
+import { ActionItems } from "@/components/dashboard/action-items";
 import { MoreStats } from "@/components/dashboard/more-stats";
 
 export const dynamic = "force-dynamic";
@@ -19,11 +21,16 @@ export default function DashboardPage() {
 }
 
 async function DashboardContent() {
-  const stats = await getDashboardStats();
+  const [stats, actionItems] = await Promise.all([
+    getDashboardStats(),
+    getActionItems(),
+  ]);
 
   return (
     <>
       <StatsHero stats={stats} />
+
+      <ActionItems items={actionItems} />
 
       <MoreStats stats={stats} />
     </>

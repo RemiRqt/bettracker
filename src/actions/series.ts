@@ -2,6 +2,113 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import {
+  getSubjectLinks,
+  getTeamMappings,
+  type CachedFixture,
+  type TeamMapping,
+} from "@/actions/teams";
+import type { ActionItem, BetType, SportType } from "@/lib/types";
+
+/**
+ * Active series that need attention on the dashboard.
+ * Each item carries its logo + next match date, and its pending bet (if any).
+ * The UI shows the pending bet directly, else the série + "Parier" button.
+ */
+export async function getActionItems(): Promise<ActionItem[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error("Vous devez etre connecte.");
+  }
+
+  const [{ data: series, error: seriesError }, links, mappings] =
+    await Promise.all([
+      supabase
+        .from("series")
+        .select(
+          "id, subject, bet_type, sport, target_gain, created_at, bets(id, bet_number, odds, stake, result)"
+        )
+        .eq("user_id", user.id)
+        .eq("status", "en_cours")
+        .order("created_at", { ascending: false })
+        .limit(50),
+      getSubjectLinks(),
+      getTeamMappings(),
+    ]);
+
+  if (seriesError) {
+    throw new Error(
+      `Erreur lors de la recuperation des series: ${seriesError.message}`
+    );
+  }
+
+  // subject → TeamMapping[] via subject_links
+  const byId = new Map(mappings.map((m) => [m.id, m]));
+  const entitiesBySubject = new Map<string, TeamMapping[]>();
+  for (const l of links) {
+    const ent = byId.get(l.team_mapping_id);
+    if (!ent) continue;
+    const arr = entitiesBySubject.get(l.subject) ?? [];
+    arr.push(ent);
+    entitiesBySubject.set(l.subject, arr);
+  }
+
+  const nowMs = Date.now();
+
+  const items: ActionItem[] = (series ?? []).map((s) => {
+    const entities = entitiesBySubject.get(s.subject) ?? [];
+    const logoUrl = entities[0]?.logo_url ?? null;
+
+    let nextMatchDate: string | null = null;
+    for (const ent of entities) {
+      const fixtures = (ent.cached_fixtures ?? []) as CachedFixture[];
+      for (const f of fixtures) {
+        if (
+          new Date(f.date).getTime() > nowMs &&
+          (!nextMatchDate || f.date < nextMatchDate)
+        ) {
+          nextMatchDate = f.date;
+        }
+      }
+    }
+
+    const pending = (s.bets ?? []).find((b) => b.result === null) ?? null;
+
+    return {
+      seriesId: s.id,
+      subject: s.subject,
+      betType: s.bet_type as BetType,
+      sport: s.sport as SportType,
+      targetGain: s.target_gain,
+      logoUrl,
+      nextMatchDate,
+      pendingBet: pending
+        ? {
+            id: pending.id,
+            betNumber: pending.bet_number,
+            odds: pending.odds,
+            stake: pending.stake,
+          }
+        : null,
+    };
+  });
+
+  // Soonest next match first (undated last); pending bets ahead of ties.
+  items.sort((a, b) => {
+    const at = a.nextMatchDate ? new Date(a.nextMatchDate).getTime() : Infinity;
+    const bt = b.nextMatchDate ? new Date(b.nextMatchDate).getTime() : Infinity;
+    if (at !== bt) return at - bt;
+    return (a.pendingBet ? 0 : 1) - (b.pendingBet ? 0 : 1);
+  });
+
+  return items;
+}
 export async function abandonSeries(seriesId: string) {
   const supabase = await createClient();
 

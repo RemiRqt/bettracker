@@ -11,6 +11,25 @@ export type BetInsert = Database["public"]["Tables"]["bets"]["Insert"];
 // Composite types
 export type SeriesWithBets = Series & { bets: Bet[] };
 
+// Dashboard "action items": active series needing attention on the dashboard.
+// If a série has a pending bet, show it directly; otherwise show the série
+// (next match + Parier button).
+export interface ActionItem {
+  seriesId: string;
+  subject: string;
+  betType: BetType;
+  sport: SportType;
+  targetGain: number;
+  logoUrl: string | null;
+  nextMatchDate: string | null;
+  pendingBet: {
+    id: string;
+    betNumber: number;
+    odds: number;
+    stake: number;
+  } | null;
+}
+
 // Domain enums
 export type BetType = "victoire" | "defaite" | "buteur" | "autre";
 export type SeriesStatus = "en_cours" | "gagnee" | "abandonnee";
