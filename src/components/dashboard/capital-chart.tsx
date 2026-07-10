@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -21,26 +21,6 @@ interface CapitalChartProps {
     valeur: number;
     encaisse: number;
   }[];
-}
-
-type Period = "1m" | "3m" | "tout";
-
-const PERIODS: { key: Period; label: string }[] = [
-  { key: "1m", label: "1M" },
-  { key: "3m", label: "3M" },
-  { key: "tout", label: "Tout" },
-];
-
-function getPeriodStart(period: Period): Date | null {
-  const now = new Date();
-  switch (period) {
-    case "1m":
-      return new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-    case "3m":
-      return new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
-    case "tout":
-      return null;
-  }
 }
 
 function formatDate(dateStr: string) {
@@ -90,37 +70,27 @@ function CustomTooltip({
 }
 
 export function CapitalChart({ data }: CapitalChartProps) {
-  const [period, setPeriod] = useState<Period>("tout");
-
-  const points = useMemo<Point[]>(() => {
-    const start = getPeriodStart(period);
-    const startTs = start?.getTime() ?? -Infinity;
-    const withMeta = data.map((d) => ({
-      ...d,
-      timestamp: new Date(d.date).getTime(),
-      profit: Math.round((d.valeur - d.deposits) * 100) / 100,
-    }));
-    const filtered = withMeta.filter((d) => d.timestamp >= startTs);
-    // Keep at least the last known point so the chart is never empty
-    if (filtered.length === 0 && withMeta.length > 0) {
-      return [withMeta[withMeta.length - 1]];
-    }
-    return filtered;
-  }, [data, period]);
+  const points = useMemo<Point[]>(
+    () =>
+      data.map((d) => ({
+        ...d,
+        timestamp: new Date(d.date).getTime(),
+        profit: Math.round((d.valeur - d.deposits) * 100) / 100,
+      })),
+    [data]
+  );
 
   const last = points[points.length - 1];
   const winning = (last?.profit ?? 0) >= 0;
   const gradId = winning ? "zoneUp" : "zoneDown";
   const zoneColor = winning ? "var(--color-primary)" : "var(--color-destructive)";
 
-  const markers = useMemo(() => {
-    const out: { ts: number; y: number; type: "depot" | "retrait" }[] = [];
+  // Deposit events only — withdrawals are now shown as the amber area.
+  const depots = useMemo(() => {
+    const out: { ts: number; y: number }[] = [];
     for (let i = 1; i < points.length; i++) {
       if (points[i].deposits > points[i - 1].deposits) {
-        out.push({ ts: points[i].timestamp, y: points[i].valeur, type: "depot" });
-      }
-      if (points[i].encaisse > points[i - 1].encaisse) {
-        out.push({ ts: points[i].timestamp, y: points[i].valeur, type: "retrait" });
+        out.push({ ts: points[i].timestamp, y: points[i].valeur });
       }
     }
     return out;
@@ -152,24 +122,6 @@ export function CapitalChart({ data }: CapitalChartProps) {
         )}
       </div>
 
-      {/* Period selector */}
-      <div className="grid grid-cols-3 gap-1 flex-shrink-0">
-        {PERIODS.map((p) => (
-          <button
-            key={p.key}
-            onClick={() => setPeriod(p.key)}
-            className={cn(
-              "py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95",
-              period === p.key
-                ? "bg-primary/20 text-primary"
-                : "bg-background text-muted-foreground hover:text-secondary-foreground"
-            )}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-
       {/* Chart */}
       {points.length === 0 ? (
         <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
@@ -179,7 +131,6 @@ export function CapitalChart({ data }: CapitalChartProps) {
         <div className="flex-1 min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
-              key={period}
               data={points}
               stackOffset="none"
               margin={{ top: 8, right: 6, left: -18, bottom: 0 }}
@@ -192,6 +143,10 @@ export function CapitalChart({ data }: CapitalChartProps) {
                 <linearGradient id="zoneDown" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="var(--color-destructive)" stopOpacity={0.35} />
                   <stop offset="100%" stopColor="var(--color-destructive)" stopOpacity={0.02} />
+                </linearGradient>
+                <linearGradient id="zoneRetrait" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--color-warning)" stopOpacity={0.45} />
+                  <stop offset="100%" stopColor="var(--color-warning)" stopOpacity={0.08} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-card)" />
@@ -209,6 +164,18 @@ export function CapitalChart({ data }: CapitalChartProps) {
                 animationDuration={900}
                 animationEasing="ease-out"
               />
+              {/* Withdrawals band: cumulative encaissé (banked profit), amber,
+                  drawn on top of the value area. Sits below the value curve
+                  since valeur = capital + encaissé, capital ≥ 0. */}
+              <Area
+                type="monotone"
+                dataKey="encaisse"
+                stroke="var(--color-warning)"
+                strokeWidth={1.5}
+                fill="url(#zoneRetrait)"
+                animationDuration={900}
+                animationEasing="ease-out"
+              />
               {/* Reference line: gross deposits (dashed, muted). The gap above
                   it reads as profit. */}
               <Area
@@ -220,13 +187,13 @@ export function CapitalChart({ data }: CapitalChartProps) {
                 fill="transparent"
                 isAnimationActive={false}
               />
-              {markers.map((m, i) => (
+              {depots.map((m, i) => (
                 <ReferenceDot
                   key={i}
                   x={m.ts}
                   y={m.y}
                   r={3}
-                  fill={m.type === "depot" ? "var(--color-info)" : "var(--color-warning)"}
+                  fill="var(--color-info)"
                   stroke="var(--color-background)"
                   strokeWidth={1.5}
                 />

@@ -28,7 +28,7 @@ async function DashboardContent() {
 
       <MoreStats stats={stats} />
 
-      <div className="flex h-[22rem] flex-col rounded-xl bg-card p-3">
+      <div className="flex h-56 flex-col rounded-xl bg-card p-3">
         <h3 className="mb-2 flex-shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">
           Évolution du capital
         </h3>
@@ -44,7 +44,7 @@ function DashboardSkeleton() {
   return (
     <>
       <Skeleton className="h-24 w-full rounded-xl" />
-      <Skeleton className="h-[22rem] w-full rounded-xl" />
+      <Skeleton className="h-56 w-full rounded-xl" />
       <Skeleton className="h-9 w-full rounded-xl" />
     </>
   );
