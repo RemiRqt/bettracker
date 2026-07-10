@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatEuros } from "@/lib/utils";
 import { RollingNumber } from "@/components/ui/rolling-number";
+import { CapitalChartLazy } from "@/components/dashboard/capital-chart-lazy";
 import type { DashboardStats } from "@/lib/types";
 import {
   Wallet,
@@ -69,22 +70,13 @@ export function StatsHero({ stats }: StatsProps) {
               Capital disponible
             </span>
           </div>
-          <div className="flex items-baseline gap-2">
-            <RollingNumber
-              value={stats.capitalDisponible}
-              format="euros"
-              className={`text-xl font-bold ${
-                capitalDispoPositive ? "text-primary" : "text-destructive"
-              }`}
-            />
-            <span
-              className={`text-xs font-semibold ${
-                stats.bettingProfit >= 0 ? "text-primary/70" : "text-destructive/70"
-              }`}
-            >
-              ({stats.bettingProfit >= 0 ? "+" : ""}{formatEuros(stats.bettingProfit)})
-            </span>
-          </div>
+          <RollingNumber
+            value={stats.capitalDisponible}
+            format="euros"
+            className={`text-xl font-bold ${
+              capitalDispoPositive ? "text-primary" : "text-destructive"
+            }`}
+          />
         </div>
         {stats.miseEnCours > 0 && (
           <div className="text-right">
@@ -116,6 +108,14 @@ export function StatsHero({ stats }: StatsProps) {
           )}
         </div>
       )}
+
+      {/* Capital evolution / monthly P&L chart, embedded in the hero card */}
+      <div className="mt-3 h-52">
+        <CapitalChartLazy
+          data={stats.capitalEvolution}
+          monthly={stats.monthlyPnl}
+        />
+      </div>
     </div>
   );
 }

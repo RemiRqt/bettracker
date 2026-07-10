@@ -283,6 +283,54 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     }
   }
 
+  // --- Monthly P/L + ROI (calendar months) ---
+  // Aggregated from settled bets and freebets. profit = realized winnings
+  // minus losses; freebet losses cost nothing. stake feeds the ROI denominator.
+  const monthAgg = new Map<
+    string,
+    { profit: number; stake: number; count: number }
+  >();
+  for (const entry of timeline) {
+    if (entry.kind === "transaction") continue;
+    const key = entry.created_at.slice(0, 7); // YYYY-MM
+    const cur = monthAgg.get(key) ?? { profit: 0, stake: 0, count: 0 };
+    const won = entry.result === "gagne";
+    if (entry.kind === "bet_settled") {
+      cur.profit += won ? entry.stake * entry.odds - entry.stake : -entry.stake;
+    } else {
+      // freebet: win adds profit, loss costs nothing
+      cur.profit += won ? entry.stake * entry.odds - entry.stake : 0;
+    }
+    cur.stake += entry.stake;
+    cur.count += 1;
+    monthAgg.set(key, cur);
+  }
+
+  const monthlyPnl: DashboardStats["monthlyPnl"] = [];
+  if (monthAgg.size > 0) {
+    const keys = [...monthAgg.keys()].sort();
+    const [minY, minM] = keys[0].split("-").map(Number);
+    const [maxY, maxM] = keys[keys.length - 1].split("-").map(Number);
+    let y = minY;
+    let m = minM;
+    while (y < maxY || (y === maxY && m <= maxM)) {
+      const key = `${y}-${String(m).padStart(2, "0")}`;
+      const agg = monthAgg.get(key) ?? { profit: 0, stake: 0, count: 0 };
+      monthlyPnl.push({
+        month: key,
+        profit: Math.round(agg.profit * 100) / 100,
+        stake: Math.round(agg.stake * 100) / 100,
+        roi: agg.stake > 0 ? Math.round((agg.profit / agg.stake) * 1000) / 10 : 0,
+        count: agg.count,
+      });
+      m += 1;
+      if (m > 12) {
+        m = 1;
+        y += 1;
+      }
+    }
+  }
+
   return {
     capital: capitalWithFreebets,
     capitalDisponible,
@@ -304,5 +352,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     freebetProfit,
     objectifDeGain,
     capitalEvolution,
+    monthlyPnl,
   };
 }

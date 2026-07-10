@@ -49,4 +49,11 @@ export interface DashboardStats {
     valeur: number;
     encaisse: number;
   }[];
+  monthlyPnl: {
+    month: string; // "YYYY-MM"
+    profit: number;
+    stake: number;
+    roi: number; // percent
+    count: number;
+  }[];
 }
