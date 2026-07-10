@@ -70,13 +70,21 @@ export function StatsHero({ stats }: StatsProps) {
               Capital disponible
             </span>
           </div>
-          <RollingNumber
-            value={stats.capitalDisponible}
-            format="euros"
-            className={`text-xl font-bold ${
-              capitalDispoPositive ? "text-primary" : "text-destructive"
-            }`}
-          />
+          <div className="flex items-center gap-2">
+            <RollingNumber
+              value={stats.capitalDisponible}
+              format="euros"
+              className={`text-xl font-bold ${
+                capitalDispoPositive ? "text-primary" : "text-destructive"
+              }`}
+            />
+            {stats.freebetBalance > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-1.5 py-0.5 text-xs font-medium text-warning">
+                <Ticket className="h-3.5 w-3.5" />
+                {formatEuros(stats.freebetBalance)}
+              </span>
+            )}
+          </div>
         </div>
         {stats.miseEnCours > 0 && (
           <div className="text-right">
@@ -95,20 +103,6 @@ export function StatsHero({ stats }: StatsProps) {
           </div>
         )}
       </div>
-      {stats.freebetBalance > 0 && (
-        <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-border/50">
-          <Ticket className="h-3.5 w-3.5 text-warning" />
-          <span className="text-xs text-warning font-medium">
-            Freebets : {formatEuros(stats.freebetBalance)}
-          </span>
-          {stats.freebetProfit > 0 && (
-            <span className="text-[10px] text-primary/70 ml-auto">
-              +{formatEuros(stats.freebetProfit)} gagné
-            </span>
-          )}
-        </div>
-      )}
-
       {/* Capital evolution / monthly P&L chart, embedded in the hero card */}
       <div className="mt-3 h-52">
         <CapitalChartLazy

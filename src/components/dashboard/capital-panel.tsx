@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LineChart, BarChart3, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CapitalChart } from "./capital-chart";
 import { MonthlyBarChart } from "./monthly-bar-chart";
@@ -8,9 +9,9 @@ import type { DashboardStats } from "@/lib/types";
 
 type View = "courbe" | "barres";
 
-const VIEWS: { key: View; label: string }[] = [
-  { key: "courbe", label: "Courbe" },
-  { key: "barres", label: "Barres" },
+const VIEWS: { key: View; label: string; Icon: LucideIcon }[] = [
+  { key: "courbe", label: "Courbe", Icon: LineChart },
+  { key: "barres", label: "Barres", Icon: BarChart3 },
 ];
 
 interface CapitalPanelProps {
@@ -30,14 +31,16 @@ export function CapitalPanel({ data, monthly }: CapitalPanelProps) {
             <button
               key={v.key}
               onClick={() => setView(v.key)}
+              aria-label={v.label}
+              title={v.label}
               className={cn(
-                "rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all active:scale-95",
+                "flex items-center justify-center rounded-md px-2 py-1 transition-all active:scale-95",
                 view === v.key
                   ? "bg-primary/20 text-primary"
                   : "text-muted-foreground hover:text-secondary-foreground"
               )}
             >
-              {v.label}
+              <v.Icon className="h-4 w-4" />
             </button>
           ))}
         </div>
