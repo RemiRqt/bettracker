@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         utcDate: string;
         homeTeam: { id: number; name: string; shortName: string; crest: string };
         awayTeam: { id: number; name: string; shortName: string; crest: string };
-        competition: { name: string; emblem: string };
+        competition: { name: string; emblem: string; code?: string };
       }) => ({
         id: match.id,
         date: match.utcDate,
@@ -67,6 +67,11 @@ export async function GET(request: NextRequest) {
         awayLogo: match.awayTeam.crest,
         league: match.competition.name,
         leagueLogo: match.competition.emblem || "",
+        homeTeamId: match.homeTeam.id,
+        awayTeamId: match.awayTeam.id,
+        homeTeamName: match.homeTeam.name,
+        awayTeamName: match.awayTeam.name,
+        competitionCode: match.competition.code ?? null,
       })
     );
 

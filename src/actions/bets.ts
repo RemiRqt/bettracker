@@ -11,6 +11,8 @@ import {
   objectiveFromStake,
   stakeFromObjective,
 } from "@/lib/bet-calc";
+import { summarize } from "@/lib/odds-matching";
+import { BOOKMAKER_KEYS } from "@/lib/odds-api";
 
 interface BetFormSubject {
   subject: string;
@@ -127,6 +129,13 @@ export async function getBetFormData(): Promise<{
 
 type BetMode = "resume" | "serie" | "unique";
 
+function marketOddsColumns(prices: Record<string, number> | null | undefined) {
+  const summary = prices ? summarize(prices, BOOKMAKER_KEYS) : null;
+  return summary
+    ? { market_odds_best: summary.best, market_odds_avg: summary.avg, market_odds_detail: summary.detail }
+    : {};
+}
+
 interface CreateBetInput {
   subject: string;
   betType: string;
@@ -143,6 +152,8 @@ interface CreateBetInput {
   };
   /** Match football-data rattaché (null = « Aucun match » ou pas d'équipe API). */
   fixture?: { id: number; kickoff: string } | null;
+  /** Cotes marché par bookmaker (déjà filtrées sur les bookmakers cochés). */
+  marketOdds?: Record<string, number> | null;
 }
 
 export async function createBetEntry(input: CreateBetInput) {
@@ -245,6 +256,7 @@ export async function createBetEntry(input: CreateBetInput) {
     fixture_id: input.fixture?.id ?? null,
     fixture_kickoff: input.fixture?.kickoff ?? null,
     resolution_status: input.fixture ? "pending" : "manual",
+    ...marketOddsColumns(input.marketOdds),
   });
   if (insertErr)
     return { error: `Erreur ajout pari: ${insertErr.message}` };

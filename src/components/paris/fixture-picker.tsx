@@ -7,6 +7,12 @@ import { cn } from "@/lib/utils";
 export interface PickedFixture {
   id: number;
   kickoff: string;
+  homeTeamId: number;
+  awayTeamId: number;
+  /** [nom complet, nom court] de chaque équipe (rapprochement des cotes). */
+  homeNames: string[];
+  awayNames: string[];
+  competitionCode: string | null;
 }
 
 interface ApiFixture {
@@ -14,6 +20,23 @@ interface ApiFixture {
   date: string;
   homeTeam: string;
   awayTeam: string;
+  homeTeamId: number;
+  awayTeamId: number;
+  homeTeamName: string;
+  awayTeamName: string;
+  competitionCode: string | null;
+}
+
+function toPicked(f: ApiFixture): PickedFixture {
+  return {
+    id: f.id,
+    kickoff: f.date,
+    homeTeamId: f.homeTeamId,
+    awayTeamId: f.awayTeamId,
+    homeNames: [f.homeTeamName, f.homeTeam].filter(Boolean),
+    awayNames: [f.awayTeamName, f.awayTeam].filter(Boolean),
+    competitionCode: f.competitionCode ?? null,
+  };
 }
 
 interface FixturePickerProps {
@@ -49,7 +72,7 @@ export function FixturePicker({ teamId, value, onChange }: FixturePickerProps) {
         if (cancelled) return;
         const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date));
         setFixtures(sorted);
-        onChange(sorted[0] ? { id: sorted[0].id, kickoff: sorted[0].date } : null);
+        onChange(sorted[0] ? toPicked(sorted[0]) : null);
       });
     return () => {
       cancelled = true;
@@ -71,7 +94,7 @@ export function FixturePicker({ teamId, value, onChange }: FixturePickerProps) {
             <button
               key={f.id}
               type="button"
-              onClick={() => onChange({ id: f.id, kickoff: f.date })}
+              onClick={() => onChange(toPicked(f))}
               className={cn(
                 CHIP,
                 value?.id === f.id
