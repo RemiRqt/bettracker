@@ -41,7 +41,11 @@ export interface MatchInfo extends MatchResult {
   utcDate: string;
 }
 
-async function apiGet<T>(path: string): Promise<T | null> {
+/**
+ * GET football-data. `null` = erreur transitoire (à réessayer).
+ * `onForbidden` : valeur renvoyée sur 403 (ressource hors offre gratuite, définitif).
+ */
+async function apiGet<T>(path: string, onForbidden?: T): Promise<T | null> {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) {
     console.error("[football-data] FOOTBALL_DATA_API_KEY is not set");
@@ -53,6 +57,7 @@ async function apiGet<T>(path: string): Promise<T | null> {
       signal: AbortSignal.timeout(TIMEOUT_MS),
       cache: "no-store",
     });
+    if (res.status === 403 && onForbidden !== undefined) return onForbidden;
     if (!res.ok) {
       console.error(`[football-data] ${res.status} on ${path}:`, await res.text());
       return null;
@@ -106,22 +111,33 @@ export async function fetchMatch(matchId: number): Promise<MatchInfo | null> {
 }
 
 /**
- * Premier match d'une équipe (tous statuts) dans les 10 jours suivant
- * `dateFrom` — secours pour les paris créés sans match rattaché.
- * `undefined` = erreur API, `null` = aucun match sur la fenêtre.
+ * Premier match d'une équipe après `dateFrom` (secours pour les paris créés
+ * sans match rattaché) : cherche sur 10 jours ; si la fenêtre atteint
+ * aujourd'hui sans match, prend le prochain match programmé.
+ * `undefined` = erreur API, `null` = aucun match (ou équipe hors offre).
  */
 export async function fetchTeamFirstMatchSince(
   teamId: number,
   dateFrom: Date,
 ): Promise<MatchInfo | null | undefined> {
+  const windowEnd = new Date(dateFrom.getTime() + 10 * 86_400_000);
   const from = dateFrom.toISOString().slice(0, 10);
-  const to = new Date(dateFrom.getTime() + 10 * 86_400_000).toISOString().slice(0, 10);
+  const to = windowEnd.toISOString().slice(0, 10);
   const json = await apiGet<{ matches?: ApiMatch[] }>(
     `/teams/${teamId}/matches?dateFrom=${from}&dateTo=${to}`,
+    { matches: [] },
   );
   if (!json) return undefined;
   const after = (json.matches ?? [])
     .filter((m) => new Date(m.utcDate).getTime() >= dateFrom.getTime())
     .sort((a, b) => a.utcDate.localeCompare(b.utcDate));
-  return after.length > 0 ? toMatchResult(after[0]) : null;
+  if (after.length > 0) return toMatchResult(after[0]);
+  if (windowEnd.getTime() < Date.now() - 86_400_000) return null;
+
+  const next = await apiGet<{ matches?: ApiMatch[] }>(
+    `/teams/${teamId}/matches?status=SCHEDULED&limit=1`,
+    { matches: [] },
+  );
+  if (!next) return undefined;
+  return next.matches?.[0] ? toMatchResult(next.matches[0]) : null;
 }

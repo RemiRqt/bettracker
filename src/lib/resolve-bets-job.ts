@@ -173,7 +173,7 @@ async function resolveLegacy(ctx: Ctx, bets: JobBet[], now: number, ignoreDelay:
       ctx.report.manual++;
       continue;
     }
-    if (ctx.calls + ids.length > MAX_API_CALLS) {
+    if (ctx.calls + ids.length * 2 > MAX_API_CALLS) {
       ctx.report.skipped++;
       continue;
     }
@@ -189,7 +189,7 @@ async function resolveLegacy(ctx: Ctx, bets: JobBet[], now: number, ignoreDelay:
  * `undefined` si une erreur API empêche de conclure.
  */
 async function firstMatchAcross(ctx: Ctx, ids: number[], since: Date): Promise<MatchInfo | null | undefined> {
-  ctx.calls += ids.length;
+  ctx.calls += ids.length * 2; // jusqu'à 2 appels par équipe (fenêtre + prochain match)
   const results = await Promise.all(ids.map((id) => fetchTeamFirstMatchSince(id, since)));
   const found = results.filter((m): m is MatchInfo => !!m).sort((x, y) => x.utcDate.localeCompare(y.utcDate));
   if (found.length > 0) return found[0];
