@@ -2,7 +2,8 @@
 
 import { useTransition } from "react";
 import type { CachedFixture } from "@/actions/teams";
-import type { ActiveSeriesInfo } from "@/app/(app)/calendar/page";
+import type { ActiveSeriesInfo, FixtureOdds } from "@/app/(app)/calendar/page";
+import { FixtureOddsLine } from "@/components/calendar/fixture-odds-line";
 import { refreshCalendarFixtures } from "@/actions/teams";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { BET_TYPES } from "@/lib/constants";
@@ -15,8 +16,10 @@ interface CalendarPageProps {
     fixture: CachedFixture;
     teamSubject: string;
     activeSeries: ActiveSeriesInfo[];
+    odds?: FixtureOdds;
   }[];
   lastUpdated: string | null;
+  oddsUpdatedAt?: string | null;
   teamCount?: number;
   teamNames?: string[];
 }
@@ -26,12 +29,14 @@ interface GroupedFixtures {
     fixture: CachedFixture;
     teamSubject: string;
     activeSeries: ActiveSeriesInfo[];
+    odds?: FixtureOdds;
   }[];
 }
 
 export function CalendarPage({
   fixtures,
   lastUpdated,
+  oddsUpdatedAt = null,
   teamCount = 0,
   teamNames = [],
 }: CalendarPageProps) {
@@ -101,6 +106,18 @@ export function CalendarPage({
             </p>
           </div>
         )}
+        {oddsUpdatedAt && (
+          <p className="mt-0.5 pl-[18px] text-xs text-muted-foreground">
+            Cotes du{" "}
+            {new Date(oddsUpdatedAt).toLocaleString("fr-FR", {
+              timeZone: "Europe/Paris",
+              day: "2-digit",
+              month: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
+        )}
       </div>
 
       {/* Empty state */}
@@ -162,6 +179,7 @@ function FixtureCard({
     fixture: CachedFixture;
     teamSubject: string;
     activeSeries: ActiveSeriesInfo[];
+    odds?: FixtureOdds;
   };
 }) {
   const { fixture, activeSeries } = item;
@@ -218,6 +236,10 @@ function FixtureCard({
           </span>
         </div>
       </div>
+
+      {item.odds && (
+        <FixtureOddsLine odds={item.odds} homeLabel={fixture.homeTeam} awayLabel={fixture.awayTeam} />
+      )}
 
       {/* Active series linked to this fixture */}
       {activeSeries.length > 0 && (

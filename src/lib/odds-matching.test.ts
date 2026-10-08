@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import fixture from "./__fixtures__/odds-ligue1.json";
 import {
+  bestPerOutcome,
   findEvent,
   normalizeTeamName,
   outcomePrices,
@@ -89,5 +90,19 @@ describe("summarize", () => {
   });
   it("aucun bookmaker disponible → null", () => {
     expect(summarize(prices, ["pmu_fr"])).toBeNull();
+  });
+});
+
+describe("bestPerOutcome", () => {
+  const psgEvent = events.find((e) => e.home_team === "Paris Saint Germain")!;
+  it("meilleure cote + bookmaker par issue, limité aux bookmakers cochés", () => {
+    expect(bestPerOutcome(psgEvent, ["winamax_fr", "betclic_fr"])).toEqual({
+      home: { price: 1.05, bookmaker: "winamax_fr" },
+      draw: { price: 12, bookmaker: "winamax_fr" },
+      away: { price: 23, bookmaker: "betclic_fr" },
+    });
+  });
+  it("aucun bookmaker coché disponible → null", () => {
+    expect(bestPerOutcome(psgEvent, ["pmu_fr"])).toBeNull();
   });
 });

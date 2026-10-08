@@ -24,6 +24,26 @@ export const SPORT_KEYS: Record<string, string> = {
   EC: "soccer_uefa_european_championship",
 };
 
+/** Repli pour les anciens caches de matchs sans `competitionCode` (nom football-data). */
+const LEAGUE_NAME_CODES: Record<string, string> = {
+  "Ligue 1": "FL1",
+  "Ligue 2": "FL2",
+  "Premier League": "PL",
+  "Primera Division": "PD",
+  "Serie A": "SA",
+  Bundesliga: "BL1",
+  "UEFA Champions League": "CL",
+  "UEFA Europa League": "EL",
+  "FIFA World Cup": "WC",
+  "European Championship": "EC",
+};
+
+/** sport_key The Odds API d'un match football-data (code compétition ou nom de ligue). */
+export function sportKeyFor(f: { competitionCode?: string | null; league?: string }): string | null {
+  const code = f.competitionCode ?? (f.league ? LEAGUE_NAME_CODES[f.league] : undefined);
+  return code ? SPORT_KEYS[code] ?? null : null;
+}
+
 /** Bookmakers FR disponibles (région `fr`), dans l'ordre d'affichage. */
 export const BOOKMAKERS: { key: string; label: string; note?: string }[] = [
   { key: "winamax_fr", label: "Winamax" },

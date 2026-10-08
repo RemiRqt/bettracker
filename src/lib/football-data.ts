@@ -17,6 +17,10 @@ export interface CachedFixture {
   awayLogo: string;
   league: string;
   leagueLogo: string;
+  /** Ajoutés le 2026-10-08 (cotes du calendrier) — absents des anciens caches. */
+  homeTeamName?: string;
+  awayTeamName?: string;
+  competitionCode?: string | null;
 }
 
 interface ApiTeam {
@@ -32,7 +36,7 @@ interface ApiMatch {
   status: string;
   homeTeam: ApiTeam;
   awayTeam: ApiTeam;
-  competition: { name: string; emblem: string };
+  competition: { name: string; emblem: string; code?: string };
   score?: { fullTime?: { home: number | null; away: number | null } };
 }
 
@@ -79,6 +83,9 @@ function toCachedFixture(m: ApiMatch): CachedFixture {
     awayLogo: m.awayTeam.crest || "",
     league: m.competition.name,
     leagueLogo: m.competition.emblem || "",
+    homeTeamName: m.homeTeam.name,
+    awayTeamName: m.awayTeam.name,
+    competitionCode: m.competition.code ?? null,
   };
 }
 

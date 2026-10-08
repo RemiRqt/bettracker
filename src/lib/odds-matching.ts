@@ -96,3 +96,26 @@ export function summarize(prices: Record<string, number>, allowed: string[]): Od
   const avg = round2(entries.reduce((s, [, p]) => s + p, 0) / entries.length);
   return { best, avg, bestBookmaker, detail };
 }
+
+export interface OutcomeBest {
+  price: number;
+  bookmaker: string;
+}
+
+/** Meilleure cote (et bookmaker) pour 1 / N / 2, limitée aux bookmakers cochés. */
+export function bestPerOutcome(
+  event: OddsEvent,
+  allowed: string[],
+): { home: OutcomeBest | null; draw: OutcomeBest | null; away: OutcomeBest | null } | null {
+  const names = { home: event.home_team, draw: "Draw", away: event.away_team };
+  const best: Record<keyof typeof names, OutcomeBest | null> = { home: null, draw: null, away: null };
+  for (const b of event.bookmakers) {
+    if (!allowed.includes(b.key)) continue;
+    const outcomes = b.markets.find((m) => m.key === "h2h")?.outcomes ?? [];
+    for (const side of ["home", "draw", "away"] as const) {
+      const o = outcomes.find((x) => x.name === names[side]);
+      if (o && (!best[side] || o.price > best[side]!.price)) best[side] = { price: o.price, bookmaker: b.key };
+    }
+  }
+  return best.home || best.draw || best.away ? best : null;
+}
