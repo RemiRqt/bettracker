@@ -1,16 +1,16 @@
 /**
  * Nouveautés affichées en onboarding à la 1re ouverture après une mise à jour.
  * RÈGLE : chaque mise à jour livrée ajoute une entrée EN TÊTE de RELEASES
- * (id = date AAAA-MM-JJ, croissant), avec un écran par nouveauté + comment l'utiliser.
+ * (id = date AAAA-MM-JJ, croissant) : 3 écrans max, visuel d'abord, titre court + 1 ligne.
  */
 
-export type ReleaseIcon = "sparkles" | "calendar" | "trending" | "bookmaker" | "bell" | "target";
+export type ReleaseVisual = "odds" | "result" | "settings";
 
+/** Un écran = une maquette visuelle + un titre court + une ligne. */
 export interface ReleaseSlide {
-  icon: ReleaseIcon;
+  visual: ReleaseVisual;
   title: string;
   text: string;
-  how: string;
   cta?: { label: string; href: string };
 }
 
@@ -26,35 +26,20 @@ export const RELEASES: Release[] = [
     title: "Fini la trêve, retour aux affaires !",
     slides: [
       {
-        icon: "sparkles",
-        title: "Le résultat se propose tout seul",
-        text: "2h après le coup d'envoi, l'app récupère le score et te propose le résultat : « 2-1 · Gagné ? ». Une notif te prévient.",
-        how: "Sur le dashboard (« À suivre »), touche Confirmer. Les boutons Gagné / Perdu restent là pour corriger.",
-      },
-      {
-        icon: "target",
-        title: "Choisis le match de ton pari",
-        text: "À la création d'un pari foot, le prochain match de l'équipe est présélectionné. C'est lui qui sert à proposer le résultat.",
-        how: "Touche + puis choisis ton équipe : le bloc « Match » apparaît. « Aucun match » si tu préfères valider toi-même.",
-      },
-      {
-        icon: "trending",
-        title: "Les cotes du marché en direct",
-        text: "Pour un pari Victoire ou Défaite, l'app affiche les cotes de tes bookmakers, préremplit la meilleure et compare ta cote au marché.",
-        how: "Touche un bookmaker pour reprendre sa cote. Après 3 paris, ta « Valeur vs marché » s'affiche sur le dashboard.",
-      },
-      {
-        icon: "calendar",
-        title: "Les cotes dans le Calendrier",
-        text: "Sous chaque match de tes équipes : la meilleure cote 1 / N / 2 et le bookmaker qui la propose. Mise à jour chaque jour à midi.",
-        how: "Ouvre l'onglet Calendrier.",
+        visual: "odds",
+        title: "Les cotes en temps réel",
+        text: "La meilleure cote de tes bookmakers, dans le Calendrier et à la création du pari.",
         cta: { label: "Voir le calendrier", href: "/calendar" },
       },
       {
-        icon: "bookmaker",
+        visual: "result",
+        title: "Le résultat en fin de match",
+        text: "2h après le match, on te propose le résultat. Un tap pour confirmer.",
+      },
+      {
+        visual: "settings",
         title: "Tes bookmakers, tes notifs",
-        text: "Choisis les bookmakers dont tu veux voir les cotes, et active les notifs « Résultats de paris ».",
-        how: "Profil → Mes bookmakers et Notifications.",
+        text: "Choisis tes bookmakers et tes notifs dans le Profil.",
         cta: { label: "Aller au Profil", href: "/profile" },
       },
     ],

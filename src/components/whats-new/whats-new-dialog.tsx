@@ -2,19 +2,10 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BellRing, CalendarDays, Crosshair, Sparkles, Store, TrendingUp, type LucideIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import type { Release, ReleaseIcon, ReleaseSlide } from "@/lib/releases";
-
-const ICONS: Record<ReleaseIcon, LucideIcon> = {
-  sparkles: Sparkles,
-  calendar: CalendarDays,
-  trending: TrendingUp,
-  bookmaker: Store,
-  bell: BellRing,
-  target: Crosshair,
-};
+import type { Release, ReleaseSlide } from "@/lib/releases";
+import { ReleaseVisualView } from "./release-visuals";
 
 interface WhatsNewDialogProps {
   releases: Release[];
@@ -22,7 +13,7 @@ interface WhatsNewDialogProps {
   onClose: () => void;
 }
 
-/** Carrousel des nouveautés (toutes les versions non vues, à la suite). */
+/** Carrousel des nouveautés : maquette visuelle, titre court, une ligne. */
 export function WhatsNewDialog({ releases, open, onClose }: WhatsNewDialogProps) {
   const slides: (ReleaseSlide & { release: string })[] = releases.flatMap((r) =>
     r.slides.map((s) => ({ ...s, release: r.title })),
@@ -34,13 +25,12 @@ export function WhatsNewDialog({ releases, open, onClose }: WhatsNewDialogProps)
   if (slides.length === 0) return null;
   const slide = slides[index];
   const last = index === slides.length - 1;
-  const Icon = ICONS[slide.icon];
   const go = (i: number) => setIndex(Math.min(Math.max(i, 0), slides.length - 1));
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
-        className="max-w-sm rounded-2xl border border-primary/30 bg-card p-0 overflow-hidden"
+        className="max-w-sm overflow-hidden rounded-2xl border border-primary/30 bg-card p-0"
         onTouchStart={(e) => (touchX.current = e.touches[0].clientX)}
         onTouchEnd={(e) => {
           if (touchX.current === null) return;
@@ -49,20 +39,21 @@ export function WhatsNewDialog({ releases, open, onClose }: WhatsNewDialogProps)
           touchX.current = null;
         }}
       >
-        <div className="bg-primary/10 px-5 pb-5 pt-6 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">{slide.release}</p>
-          <div className="mx-auto mt-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <Icon className="h-7 w-7" />
+        <div className="relative bg-primary/10 px-5 pb-6 pt-8">
+          <p className="absolute left-5 top-3 text-[10px] font-semibold uppercase tracking-wide text-primary">
+            {slide.release}
+          </p>
+          <span className="absolute right-12 top-3 text-[10px] font-semibold text-muted-foreground">
+            {index + 1}/{slides.length}
+          </span>
+          <div key={index} className="wn-slide-in flex min-h-[132px] items-center">
+            <ReleaseVisualView visual={slide.visual} />
           </div>
         </div>
 
-        <div className="space-y-3 px-5 pt-4">
-          <DialogTitle className="text-center text-lg font-bold text-foreground">{slide.title}</DialogTitle>
-          <DialogDescription className="text-center text-sm text-secondary-foreground">{slide.text}</DialogDescription>
-          <div className="rounded-xl bg-background p-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Comment faire</p>
-            <p className="mt-1 text-sm text-foreground">{slide.how}</p>
-          </div>
+        <div className="space-y-1.5 px-5 pt-4 text-center">
+          <DialogTitle className="text-lg font-bold text-foreground">{slide.title}</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">{slide.text}</DialogDescription>
           {slide.cta && (
             <button
               type="button"
@@ -70,14 +61,14 @@ export function WhatsNewDialog({ releases, open, onClose }: WhatsNewDialogProps)
                 onClose();
                 router.push(slide.cta!.href);
               }}
-              className="w-full text-sm font-medium text-primary"
+              className="pt-1 text-sm font-medium text-primary"
             >
               {slide.cta.label} →
             </button>
           )}
         </div>
 
-        <div className="flex justify-center gap-1.5 pt-4">
+        <div className="flex justify-center gap-1.5 pt-3">
           {slides.map((_, i) => (
             <button
               key={i}
@@ -91,11 +82,7 @@ export function WhatsNewDialog({ releases, open, onClose }: WhatsNewDialogProps)
 
         <div className="flex gap-2 p-5">
           {!last && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-11 flex-1 rounded-xl text-sm font-medium text-muted-foreground"
-            >
+            <button type="button" onClick={onClose} className="h-11 flex-1 rounded-xl text-sm font-medium text-muted-foreground">
               Passer
             </button>
           )}
