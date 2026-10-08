@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { RouteTransition } from "@/components/layout/route-transition";
 import { SplashScreen } from "@/components/layout/splash-screen";
 import { RoutePrefetcher } from "@/components/layout/route-prefetcher";
+import { WhatsNewLauncher } from "@/components/whats-new/whats-new-launcher";
 
 export default async function AppLayout({
   children,
@@ -42,6 +43,7 @@ export default async function AppLayout({
           </main>
           <BottomNav />
           <Toaster />
+          <WhatsNewLauncher />
         </div>
       </BetModalProvider>
     </ConfirmDialogProvider>

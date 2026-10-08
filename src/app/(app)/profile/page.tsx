@@ -10,6 +10,7 @@ import { SignOutButton } from "@/components/profile/sign-out-button";
 import { ThemeSelector } from "@/components/profile/theme-selector";
 import { ResultCheckButton } from "@/components/profile/result-check-button";
 import { BookmakerSettings } from "@/components/profile/bookmaker-settings";
+import { WhatsNewButton } from "@/components/whats-new/whats-new-button";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getOddsCredits } from "@/lib/odds-api";
 import { ADMIN_EMAILS } from "@/lib/constants";
@@ -115,6 +116,8 @@ export default async function ProfilePage() {
         </div>
         <ChevronRight className="h-4 w-4 text-muted-foreground" />
       </Link>
+
+      <WhatsNewButton />
 
       {/* Add transaction (popup) */}
       <TransactionForm />

@@ -319,6 +319,7 @@ export interface Database {
           notifications_enabled: boolean;
           result_notifications_enabled: boolean;
           bookmakers: string[];
+          last_seen_release: string | null;
           notification_lead_minutes: number;
           created_at: string;
           updated_at: string;
@@ -328,6 +329,7 @@ export interface Database {
           notifications_enabled?: boolean;
           result_notifications_enabled?: boolean;
           bookmakers?: string[];
+          last_seen_release?: string | null;
           notification_lead_minutes?: number;
           created_at?: string;
           updated_at?: string;
@@ -337,6 +339,7 @@ export interface Database {
           notifications_enabled?: boolean;
           result_notifications_enabled?: boolean;
           bookmakers?: string[];
+          last_seen_release?: string | null;
           notification_lead_minutes?: number;
           created_at?: string;
           updated_at?: string;
