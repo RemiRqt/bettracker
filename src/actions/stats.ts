@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type { DashboardStats, Bet } from "@/lib/types";
+import { computeMarketValue } from "@/lib/market-value";
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = await createClient();
@@ -60,12 +61,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   // Round 2: bets depend on the series ids fetched above.
   let allBets: Pick<
     Bet,
-    "id" | "series_id" | "odds" | "stake" | "result" | "bet_number" | "potential_net" | "created_at"
+    | "id" | "series_id" | "odds" | "stake" | "result" | "bet_number" | "potential_net" | "created_at"
+    | "market_odds_best" | "market_odds_avg"
   >[] = [];
   if (seriesIds.length > 0) {
     const { data: betsData, error: betsError } = await supabase
       .from("bets")
-      .select("id, series_id, odds, stake, result, bet_number, potential_net, created_at")
+      .select("id, series_id, odds, stake, result, bet_number, potential_net, created_at, market_odds_best, market_odds_avg")
       .in("series_id", seriesIds)
       .order("created_at", { ascending: true });
 
@@ -356,5 +358,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     objectifDeGain,
     capitalEvolution,
     monthlyPnl,
+    marketValue: computeMarketValue(allBets),
   };
 }

@@ -110,6 +110,16 @@ export function StatsHero({ stats }: StatsProps) {
           monthly={stats.monthlyPnl}
         />
       </div>
+      {stats.marketValue && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Valeur vs marché :{" "}
+          <span className={stats.marketValue.avgEdgePct >= 0 ? "font-semibold text-primary" : "font-semibold text-destructive"}>
+            {stats.marketValue.avgEdgePct > 0 ? "+" : ""}
+            {stats.marketValue.avgEdgePct.toLocaleString("fr-FR")} %
+          </span>{" "}
+          · {stats.marketValue.count} paris · meilleure cote prise {stats.marketValue.bestTaken}/{stats.marketValue.count}
+        </p>
+      )}
     </div>
   );
 }

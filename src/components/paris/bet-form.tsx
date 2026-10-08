@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { createBetEntry } from "@/actions/bets";
 import { BET_TYPES, SPORTS } from "@/lib/constants";
 import type { SportType } from "@/lib/types";
@@ -13,6 +13,8 @@ import {
 } from "@/components/teams/add-api-team-dialog";
 import { TeamSearch } from "./team-search";
 import { FixturePicker, type PickedFixture } from "./fixture-picker";
+import { MarketOdds } from "./market-odds";
+import { useMarketOdds } from "./use-market-odds";
 import { Loader2, Link2, Check } from "lucide-react";
 
 export interface ExistingSubject {
@@ -221,6 +223,13 @@ export function BetForm({
       ? apiTeam?.apiTeamId ?? selectedSubject?.apiTeamId ?? lockedSeries?.apiTeamId ?? null
       : null;
 
+  // Cotes du marché (The Odds API) : préremplit la cote si elle est vide.
+  const oddsRef = useRef(odds);
+  oddsRef.current = odds;
+  const market = useMarketOdds(fixtureTeamId ? fixture : null, fixtureTeamId, effectiveBetType, (best) => {
+    if (!oddsRef.current) onOddsChange(String(best));
+  });
+
   // La section type/sport apparaît pour une équipe "nouvelle" (nom libre ou mapping).
   const needTeamParams = !lockedSeries && !selectedSubject;
 
@@ -284,6 +293,7 @@ export function BetForm({
           }
         : undefined,
       fixture: fixtureTeamId ? fixture : null,
+      marketOdds: market.status === "ready" ? market.data.prices : null,
     };
 
     startTransition(async () => {
@@ -465,6 +475,15 @@ export function BetForm({
               onChange={setFixture}
             />
           )}
+
+          <MarketOdds
+            state={market}
+            outcomeLabel={`${(apiTeam?.subject ?? lockedSeries?.subject ?? name).trim()} ${
+              effectiveBetType === "defaite" ? "battu" : "vainqueur"
+            }`}
+            currentOdds={o}
+            onPick={(price) => onOddsChange(String(price))}
+          />
 
           {/* 3. Nouvelle série : objectif (slider à pas variables + saisie libre) */}
           {mode === "serie" && (

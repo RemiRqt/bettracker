@@ -17,7 +17,7 @@ const LABELS: [keyof ResolveReport, string][] = [
 ];
 
 /** Admin only : lance la suggestion de résultat sans attendre les 2h. */
-export function ResultCheckButton() {
+export function ResultCheckButton({ oddsCredits }: { oddsCredits: number | null }) {
   const [report, setReport] = useState<ResolveReport | null>(null);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -61,6 +61,9 @@ export function ResultCheckButton() {
         <p className="text-xs text-destructive">{report.errors.join(" · ")}</p>
       )}
       {error && <p className="text-xs text-destructive">{error}</p>}
+      <p className={`text-xs ${oddsCredits !== null && oddsCredits < 50 ? "text-destructive" : "text-muted-foreground"}`}>
+        Crédits Odds API restants : {oddsCredits ?? "—"}
+      </p>
     </div>
   );
 }

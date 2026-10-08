@@ -1,4 +1,5 @@
 import { Database } from "./database";
+import type { MarketValue } from "@/lib/market-value";
 
 // Row types (read from DB)
 export type Series = Database["public"]["Tables"]["series"]["Row"];
@@ -76,6 +77,7 @@ export interface DashboardStats {
     valeur: number;
     encaisse: number;
   }[];
+  marketValue: MarketValue | null;
   monthlyPnl: {
     month: string; // "YYYY-MM"
     profit: number;

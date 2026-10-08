@@ -9,6 +9,9 @@ import { NotificationSettings } from "@/components/profile/notification-settings
 import { SignOutButton } from "@/components/profile/sign-out-button";
 import { ThemeSelector } from "@/components/profile/theme-selector";
 import { ResultCheckButton } from "@/components/profile/result-check-button";
+import { BookmakerSettings } from "@/components/profile/bookmaker-settings";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { getOddsCredits } from "@/lib/odds-api";
 import { ADMIN_EMAILS } from "@/lib/constants";
 import { RollingNumber } from "@/components/ui/rolling-number";
 import { getServerTheme } from "@/lib/theme.server";
@@ -26,6 +29,12 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
 
   const theme = await getServerTheme();
+  const isAdmin = ADMIN_EMAILS.includes(user?.email ?? "");
+  const oddsCredits = isAdmin
+    ? await getOddsCredits(
+        createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!),
+      )
+    : null;
 
   const [transactions, teamMappings, notifSettings] = await Promise.all([
     getTransactions(),
@@ -116,7 +125,9 @@ export default async function ProfilePage() {
         initialResults={notifSettings.result_notifications_enabled}
       />
 
-      {ADMIN_EMAILS.includes(user?.email ?? "") && <ResultCheckButton />}
+      <BookmakerSettings initial={notifSettings.bookmakers} />
+
+      {isAdmin && <ResultCheckButton oddsCredits={oddsCredits} />}
 
       {/* Mes équipes */}
       <div className="rounded-xl bg-card p-4 md:p-6">
