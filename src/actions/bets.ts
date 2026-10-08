@@ -18,6 +18,7 @@ interface BetFormSubject {
   sport: string;
   lastStatus: string;
   logoUrl?: string;
+  apiTeamId?: number | null;
   activeSeries?: {
     id: string;
     targetGain: number;
@@ -78,9 +79,12 @@ export async function getBetFormData(): Promise<{
     entitiesBySubject.set(l.subject, arr);
   }
   const logoMap: Record<string, string> = {};
+  const apiIdMap: Record<string, number> = {};
   for (const [subject, entities] of entitiesBySubject) {
     const logo = entities[0]?.logo_url;
     if (logo) logoMap[subject] = logo;
+    const api = entities.find((e) => e.is_club && e.api_team_id) ?? entities.find((e) => e.api_team_id);
+    if (api?.api_team_id) apiIdMap[subject] = api.api_team_id;
   }
 
   const groups = new Map<string, BetFormSubject>();
@@ -94,6 +98,7 @@ export async function getBetFormData(): Promise<{
         sport: s.sport,
         lastStatus: s.status,
         logoUrl: logoMap[s.subject],
+        apiTeamId: apiIdMap[s.subject] ?? null,
       };
       groups.set(key, g);
     }
@@ -136,6 +141,8 @@ interface CreateBetInput {
     kind?: "club" | "national";
     country?: string;
   };
+  /** Match football-data rattaché (null = « Aucun match » ou pas d'équipe API). */
+  fixture?: { id: number; kickoff: string } | null;
 }
 
 export async function createBetEntry(input: CreateBetInput) {
@@ -235,6 +242,9 @@ export async function createBetEntry(input: CreateBetInput) {
     stake,
     potential_net,
     result: null,
+    fixture_id: input.fixture?.id ?? null,
+    fixture_kickoff: input.fixture?.kickoff ?? null,
+    resolution_status: input.fixture ? "pending" : "manual",
   });
   if (insertErr)
     return { error: `Erreur ajout pari: ${insertErr.message}` };
@@ -334,6 +344,7 @@ export async function validateResult(
     }
   }
 
+  revalidatePath("/");
   revalidatePath(`/series/${bet.series_id}`);
   revalidatePath("/series");
   revalidatePath("/series/new");

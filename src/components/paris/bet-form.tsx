@@ -12,6 +12,7 @@ import {
   type ApiTeamAdded,
 } from "@/components/teams/add-api-team-dialog";
 import { TeamSearch } from "./team-search";
+import { FixturePicker, type PickedFixture } from "./fixture-picker";
 import { Loader2, Link2, Check } from "lucide-react";
 
 export interface ExistingSubject {
@@ -20,6 +21,7 @@ export interface ExistingSubject {
   sport: string;
   lastStatus: string;
   logoUrl?: string;
+  apiTeamId?: number | null;
   activeSeries?: {
     id: string;
     targetGain: number;
@@ -43,6 +45,7 @@ export interface LockedSeries {
   targetGain: number;
   betCount: number;
   sumStakes: number;
+  apiTeamId?: number | null;
 }
 
 interface BetFormProps {
@@ -115,6 +118,7 @@ export function BetForm({
   const [stakeEdited, setStakeEdited] = useState(false);
   const [showList, setShowList] = useState(false);
   const [addTeamOpen, setAddTeamOpen] = useState(false);
+  const [fixture, setFixture] = useState<PickedFixture | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -211,6 +215,12 @@ export function BetForm({
     resetAmounts();
   }
 
+  // Équipe API connue → choix du match (suggestion auto du résultat).
+  const fixtureTeamId =
+    sport === "football"
+      ? apiTeam?.apiTeamId ?? selectedSubject?.apiTeamId ?? lockedSeries?.apiTeamId ?? null
+      : null;
+
   // La section type/sport apparaît pour une équipe "nouvelle" (nom libre ou mapping).
   const needTeamParams = !lockedSeries && !selectedSubject;
 
@@ -273,6 +283,7 @@ export function BetForm({
             country: apiTeam.country ?? undefined,
           }
         : undefined,
+      fixture: fixtureTeamId ? fixture : null,
     };
 
     startTransition(async () => {
@@ -444,6 +455,15 @@ export function BetForm({
                 </div>
               )}
             </div>
+          )}
+
+          {fixtureTeamId && (
+            <FixturePicker
+              key={fixtureTeamId}
+              teamId={fixtureTeamId}
+              value={fixture}
+              onChange={setFixture}
+            />
           )}
 
           {/* 3. Nouvelle série : objectif (slider à pas variables + saisie libre) */}

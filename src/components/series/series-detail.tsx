@@ -11,6 +11,7 @@ import { ValidateResultForm } from "@/components/bets/validate-result-form";
 
 interface SeriesDetailProps {
   series: SeriesWithBets;
+  apiTeamId: number | null;
 }
 
 const STATUS_BORDER: Record<SeriesStatus, string> = {
@@ -38,7 +39,7 @@ function StatTile({
   );
 }
 
-export function SeriesDetail({ series }: SeriesDetailProps) {
+export function SeriesDetail({ series, apiTeamId }: SeriesDetailProps) {
   const betTypeLabel = BET_TYPES[series.bet_type as BetType] ?? series.bet_type;
   const createdAt = new Date(series.created_at).toLocaleDateString("fr-FR", {
     day: "numeric",
@@ -133,6 +134,7 @@ export function SeriesDetail({ series }: SeriesDetailProps) {
                 targetGain: series.target_gain,
                 betCount: bets.length,
                 sumStakes: miseCumulee,
+                apiTeamId,
               }}
               existingSubjects={[]}
               teamMappings={[]}
@@ -144,6 +146,7 @@ export function SeriesDetail({ series }: SeriesDetailProps) {
               betId={lastBet.id}
               stake={lastBet.stake}
               potentialNet={lastBet.potential_net}
+              suggestion={lastBet}
             />
           )}
         </div>
