@@ -11,23 +11,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveBet, type Resolution } from "./bet-resolution";
 import { fetchMatch, fetchTeamFirstMatchSince, type MatchInfo } from "./football-data";
 import { sendPushToUser } from "./push";
+import {
+  DELAY_MS,
+  selectDue,
+  selectLegacy,
+  selectStale,
+  type JobBet,
+} from "./resolve-bets-queries";
 import { notificationText } from "./bet-notification";
 
-const DELAY_MS = 2 * 3600_000;
-const EXPIRY_MS = 24 * 3600_000;
 const MAX_API_CALLS = 8; // quota football-data gratuit : 10 req/min
-const BATCH_LIMIT = 20;
 
 type FinalStatus = "suggested" | "postponed" | "expired";
-
-interface JobBet {
-  id: string;
-  bet_number: number;
-  fixture_id: number | null;
-  fixture_kickoff: string | null;
-  created_at: string;
-  series: { user_id: string; subject: string; bet_type: string; sport: string };
-}
 
 export interface ResolveReport {
   checked: number;
@@ -48,9 +43,6 @@ interface Ctx {
   report: ResolveReport;
   calls: number;
 }
-
-const BET_SELECT =
-  "id, bet_number, fixture_id, fixture_kickoff, created_at, series!inner(user_id, subject, bet_type, sport)";
 
 export async function runResolveBets(
   supabase: SupabaseClient,
@@ -81,56 +73,6 @@ export async function runResolveBets(
   await resolveDue(ctx, due);
   await resolveLegacy(ctx, legacy, now, opts.ignoreDelay ?? false);
   return report;
-}
-
-// ---------- Sélections ----------
-
-function scoped<T extends { eq: (c: string, v: string) => T }>(q: T, userId?: string): T {
-  return userId ? q.eq("series.user_id", userId) : q;
-}
-
-async function selectDue(
-  supabase: SupabaseClient,
-  now: number,
-  opts: { ignoreDelay?: boolean; userId?: string },
-): Promise<JobBet[]> {
-  const threshold = new Date(now - (opts.ignoreDelay ? 0 : DELAY_MS)).toISOString();
-  const q = supabase
-    .from("bets")
-    .select(BET_SELECT)
-    .is("result", null)
-    .eq("resolution_status", "pending")
-    .lte("fixture_kickoff", threshold)
-    .gt("fixture_kickoff", new Date(now - EXPIRY_MS).toISOString())
-    .order("fixture_kickoff", { ascending: true })
-    .limit(BATCH_LIMIT);
-  const { data } = await scoped(q, opts.userId);
-  return (data ?? []) as unknown as JobBet[];
-}
-
-async function selectStale(supabase: SupabaseClient, now: number, userId?: string): Promise<JobBet[]> {
-  const q = supabase
-    .from("bets")
-    .select(BET_SELECT)
-    .is("result", null)
-    .eq("resolution_status", "pending")
-    .lte("fixture_kickoff", new Date(now - EXPIRY_MS).toISOString())
-    .limit(BATCH_LIMIT);
-  const { data } = await scoped(q, userId);
-  return (data ?? []) as unknown as JobBet[];
-}
-
-/** Paris antérieurs à la feature : jamais traités (`resolution_status` null). */
-async function selectLegacy(supabase: SupabaseClient, userId?: string): Promise<JobBet[]> {
-  const q = supabase
-    .from("bets")
-    .select(BET_SELECT)
-    .is("result", null)
-    .is("resolution_status", null)
-    .order("created_at", { ascending: true })
-    .limit(BATCH_LIMIT);
-  const { data } = await scoped(q, userId);
-  return (data ?? []) as unknown as JobBet[];
 }
 
 // ---------- Contexte ----------
@@ -222,21 +164,36 @@ async function applyResolution(ctx: Ctx, bet: JobBet, match: MatchInfo): Promise
 
 async function resolveLegacy(ctx: Ctx, bets: JobBet[], now: number, ignoreDelay: boolean): Promise<void> {
   for (const bet of bets) {
-    const teamId = bet.series.sport === "football" ? teamIdFor(ctx, bet) : null;
-    if (teamId === null) {
+    const ids =
+      bet.series.sport === "football"
+        ? ctx.teams.get(teamKey(bet.series.user_id, bet.series.subject)) ?? []
+        : [];
+    if (ids.length === 0) {
       await setStatus(ctx, bet.id, { resolution_status: "manual" });
       ctx.report.manual++;
       continue;
     }
-    if (ctx.calls >= MAX_API_CALLS) {
+    if (ctx.calls + ids.length > MAX_API_CALLS) {
       ctx.report.skipped++;
       continue;
     }
-    ctx.calls++;
-    const match = await fetchTeamFirstMatchSince(teamId, new Date(bet.created_at));
+    const match = await firstMatchAcross(ctx, ids, new Date(bet.created_at));
     if (match === undefined) ctx.report.skipped++;
     else await linkLegacy(ctx, bet, match, now, ignoreDelay);
   }
+}
+
+/**
+ * Un sujet peut être lié à plusieurs équipes (joueur : club + sélection) →
+ * on garde le match le plus proche après la création du pari.
+ * `undefined` si une erreur API empêche de conclure.
+ */
+async function firstMatchAcross(ctx: Ctx, ids: number[], since: Date): Promise<MatchInfo | null | undefined> {
+  ctx.calls += ids.length;
+  const results = await Promise.all(ids.map((id) => fetchTeamFirstMatchSince(id, since)));
+  const found = results.filter((m): m is MatchInfo => !!m).sort((x, y) => x.utcDate.localeCompare(y.utcDate));
+  if (found.length > 0) return found[0];
+  return results.some((m) => m === undefined) ? undefined : null;
 }
 
 /** Rattache un pari historique à son match puis le résout si l'heure est passée. */
