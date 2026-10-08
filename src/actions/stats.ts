@@ -58,7 +58,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const seriesIds = series.map((s) => s.id);
 
   // Round 2: bets depend on the series ids fetched above.
-  let allBets: Bet[] = [];
+  let allBets: Pick<
+    Bet,
+    "id" | "series_id" | "odds" | "stake" | "result" | "bet_number" | "potential_net" | "created_at"
+  >[] = [];
   if (seriesIds.length > 0) {
     const { data: betsData, error: betsError } = await supabase
       .from("bets")

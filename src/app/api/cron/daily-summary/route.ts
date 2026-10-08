@@ -1,53 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import webpush from "web-push";
-
-interface CachedFixture {
-  id: number;
-  date: string;
-  homeTeam: string;
-  awayTeam: string;
-  homeLogo?: string;
-  awayLogo?: string;
-  league: string;
-}
-
-interface FootballMatch {
-  id: number;
-  utcDate: string;
-  homeTeam: { name: string; shortName: string; crest: string };
-  awayTeam: { name: string; shortName: string; crest: string };
-  competition: { name: string; emblem: string };
-}
+import { ensureVapid, sendPushToUser } from "@/lib/push";
+import { fetchTeamFixtures, type CachedFixture } from "@/lib/football-data";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
-
-const FOOTBALL_DATA_BASE = "https://api.football-data.org/v4";
-
-async function fetchTeamNextEvents(
-  teamId: number,
-  apiKey: string,
-  maxCount: number,
-): Promise<CachedFixture[]> {
-  try {
-    const url = `${FOOTBALL_DATA_BASE}/teams/${teamId}/matches?status=SCHEDULED&limit=${maxCount}`;
-    const res = await fetch(url, { headers: { "X-Auth-Token": apiKey } });
-    if (!res.ok) return [];
-    const json = (await res.json()) as { matches?: FootballMatch[] };
-    return (json.matches ?? []).map((m: FootballMatch) => ({
-      id: m.id,
-      date: m.utcDate,
-      homeTeam: m.homeTeam.shortName || m.homeTeam.name,
-      homeLogo: m.homeTeam.crest || "",
-      awayTeam: m.awayTeam.shortName || m.awayTeam.name,
-      awayLogo: m.awayTeam.crest || "",
-      league: m.competition.name,
-    }));
-  } catch {
-    return [];
-  }
-}
 
 function parisDayBounds(now: Date): { startMs: number; endMs: number } {
   // Compute "today in Paris" using Intl, return UTC ms bounds
@@ -91,14 +48,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
-  const vapidSubject = process.env.VAPID_SUBJECT ?? "mailto:contact@bettracker.app";
   const footballApiKey = process.env.FOOTBALL_DATA_API_KEY;
-  if (!vapidPublic || !vapidPrivate) {
+  if (!ensureVapid()) {
     return NextResponse.json({ error: "VAPID keys not configured" }, { status: 500 });
   }
-  webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -120,11 +73,7 @@ export async function GET(request: NextRequest) {
     );
     await Promise.all(
       uniqueIds.map(async (c) => {
-        const fx = await fetchTeamNextEvents(
-          c.api_team_id as number,
-          footballApiKey,
-          c.next_matches_count ?? 5,
-        );
+        const fx = await fetchTeamFixtures(c.api_team_id as number, c.next_matches_count ?? 5);
         refreshedFixtures.set(c.api_team_id as number, fx);
       }),
     );
@@ -253,47 +202,15 @@ export async function GET(request: NextRequest) {
     const body = lines.join("\n");
     const icon = todays.length === 1 ? todays[0].clubLogo || undefined : undefined;
 
-    // Get push subs
-    const { data: subs } = await supabase
-      .from("push_subscriptions")
-      .select("endpoint, p256dh, auth")
-      .eq("user_id", userId);
-    if (!subs || subs.length === 0) continue;
-
-    const payload = JSON.stringify({
+    const res = await sendPushToUser(supabase, userId, {
       title,
       body,
       icon,
       url: "/calendar",
       tag: `daily-summary-${new Date(nowMs).toISOString().slice(0, 10)}`,
     });
-
-    const sendResults = await Promise.allSettled(
-      subs.map((s) =>
-        webpush.sendNotification(
-          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          payload,
-        ),
-      ),
-    );
-
-    for (let i = 0; i < sendResults.length; i++) {
-      const r = sendResults[i];
-      if (r.status === "rejected") {
-        const err = r.reason as { statusCode?: number; message?: string };
-        if (err?.statusCode === 410 || err?.statusCode === 404) {
-          await supabase
-            .from("push_subscriptions")
-            .delete()
-            .eq("user_id", userId)
-            .eq("endpoint", subs[i].endpoint);
-        } else {
-          errors.push(`User ${userId}: ${err?.message ?? "unknown"}`);
-        }
-      } else {
-        totalSent++;
-      }
-    }
+    totalSent += res.sent;
+    errors.push(...res.errors);
   }
 
   return NextResponse.json({

@@ -55,6 +55,11 @@ export interface Database {
           potential_net: number;
           result: string | null;
           created_at: string;
+          fixture_id: number | null;
+          fixture_kickoff: string | null;
+          suggested_result: string | null;
+          fixture_score: string | null;
+          resolution_status: string | null;
         };
         Insert: {
           id?: string;
@@ -65,6 +70,11 @@ export interface Database {
           potential_net: number;
           result?: string | null;
           created_at?: string;
+          fixture_id?: number | null;
+          fixture_kickoff?: string | null;
+          suggested_result?: string | null;
+          fixture_score?: string | null;
+          resolution_status?: string | null;
         };
         Update: {
           id?: string;
@@ -75,6 +85,11 @@ export interface Database {
           potential_net?: number;
           result?: string | null;
           created_at?: string;
+          fixture_id?: number | null;
+          fixture_kickoff?: string | null;
+          suggested_result?: string | null;
+          fixture_score?: string | null;
+          resolution_status?: string | null;
         };
         Relationships: [
           {
@@ -293,6 +308,7 @@ export interface Database {
         Row: {
           user_id: string;
           notifications_enabled: boolean;
+          result_notifications_enabled: boolean;
           notification_lead_minutes: number;
           created_at: string;
           updated_at: string;
@@ -300,6 +316,7 @@ export interface Database {
         Insert: {
           user_id: string;
           notifications_enabled?: boolean;
+          result_notifications_enabled?: boolean;
           notification_lead_minutes?: number;
           created_at?: string;
           updated_at?: string;
@@ -307,6 +324,7 @@ export interface Database {
         Update: {
           user_id?: string;
           notifications_enabled?: boolean;
+          result_notifications_enabled?: boolean;
           notification_lead_minutes?: number;
           created_at?: string;
           updated_at?: string;

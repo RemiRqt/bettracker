@@ -2,17 +2,10 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { fetchTeamFixtures } from "@/lib/football-data";
 
-export interface CachedFixture {
-  id: number;
-  date: string;
-  homeTeam: string;
-  homeLogo: string;
-  awayTeam: string;
-  awayLogo: string;
-  league: string;
-  leagueLogo: string;
-}
+export type { CachedFixture } from "@/lib/football-data";
+import type { CachedFixture } from "@/lib/football-data";
 
 export interface TeamMapping {
   id: string;
@@ -396,59 +389,7 @@ export async function getCalendarTeams(): Promise<TeamMapping[]> {
   return filtered;
 }
 
-const FOOTBALL_DATA_BASE = "https://api.football-data.org/v4";
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
-
-/**
- * Fetch upcoming fixtures for a single team via football-data.org.
- * Logos are direct URLs from the API response (no proxy needed).
- */
-async function fetchTeamNextEvents(
-  teamId: number,
-  maxCount: number
-): Promise<CachedFixture[]> {
-  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
-  if (!apiKey) {
-    console.error("[Calendar] FOOTBALL_DATA_API_KEY is not set");
-    return [];
-  }
-
-  try {
-    const url = `${FOOTBALL_DATA_BASE}/teams/${teamId}/matches?status=SCHEDULED&limit=${maxCount}`;
-    const res = await fetch(url, { headers: { "X-Auth-Token": apiKey } });
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error(`[Calendar] football-data.org error ${res.status} for team ${teamId}:`, text);
-      return [];
-    }
-
-    const json = await res.json();
-    const matches = json.matches ?? [];
-
-    return matches.map(
-      (match: {
-        id: number;
-        utcDate: string;
-        homeTeam: { name: string; shortName: string; crest: string };
-        awayTeam: { name: string; shortName: string; crest: string };
-        competition: { name: string; emblem: string };
-      }) => ({
-        id: match.id,
-        date: match.utcDate,
-        homeTeam: match.homeTeam.shortName || match.homeTeam.name,
-        homeLogo: match.homeTeam.crest || "",
-        awayTeam: match.awayTeam.shortName || match.awayTeam.name,
-        awayLogo: match.awayTeam.crest || "",
-        league: match.competition.name,
-        leagueLogo: match.competition.emblem || "",
-      })
-    );
-  } catch (error) {
-    console.error(`[Calendar] Failed to fetch fixtures for team ${teamId}:`, error);
-    return [];
-  }
-}
 
 export async function getCalendarFixtures(): Promise<
   { team: TeamMapping; fixtures: CachedFixture[] }[]
@@ -498,7 +439,7 @@ export async function getCalendarFixtures(): Promise<
   const fetchResults = await Promise.all(
     teams.map(async (team) => ({
       team,
-      fixtures: await fetchTeamNextEvents(team.api_team_id!, team.next_matches_count),
+      fixtures: await fetchTeamFixtures(team.api_team_id!, team.next_matches_count),
     }))
   );
 
