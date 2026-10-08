@@ -36,7 +36,7 @@ interface ApiMatch {
   score?: { fullTime?: { home: number | null; away: number | null } };
 }
 
-export interface FinishedMatch extends MatchResult {
+export interface MatchInfo extends MatchResult {
   id: number;
   utcDate: string;
 }
@@ -77,7 +77,7 @@ function toCachedFixture(m: ApiMatch): CachedFixture {
   };
 }
 
-function toMatchResult(m: ApiMatch): FinishedMatch {
+function toMatchResult(m: ApiMatch): MatchInfo {
   return {
     id: m.id,
     utcDate: m.utcDate,
@@ -100,23 +100,24 @@ export async function fetchTeamFixtures(teamId: number, limit: number): Promise<
 }
 
 /** Un match par son id. `null` en cas d'erreur (à réessayer plus tard). */
-export async function fetchMatch(matchId: number): Promise<FinishedMatch | null> {
+export async function fetchMatch(matchId: number): Promise<MatchInfo | null> {
   const json = await apiGet<ApiMatch>(`/matches/${matchId}`);
   return json ? toMatchResult(json) : null;
 }
 
 /**
- * Premier match terminé d'une équipe depuis `dateFrom` (secours pour les paris
- * créés sans match rattaché). `undefined` = erreur API, `null` = aucun match.
+ * Premier match d'une équipe (tous statuts) dans les 10 jours suivant
+ * `dateFrom` — secours pour les paris créés sans match rattaché.
+ * `undefined` = erreur API, `null` = aucun match sur la fenêtre.
  */
-export async function fetchTeamFirstFinishedSince(
+export async function fetchTeamFirstMatchSince(
   teamId: number,
   dateFrom: Date,
-): Promise<FinishedMatch | null | undefined> {
+): Promise<MatchInfo | null | undefined> {
   const from = dateFrom.toISOString().slice(0, 10);
-  const to = new Date().toISOString().slice(0, 10);
+  const to = new Date(dateFrom.getTime() + 10 * 86_400_000).toISOString().slice(0, 10);
   const json = await apiGet<{ matches?: ApiMatch[] }>(
-    `/teams/${teamId}/matches?status=FINISHED&dateFrom=${from}&dateTo=${to}`,
+    `/teams/${teamId}/matches?dateFrom=${from}&dateTo=${to}`,
   );
   if (!json) return undefined;
   const after = (json.matches ?? [])
