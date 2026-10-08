@@ -71,7 +71,7 @@ export async function runResolveBets(
 
   const ctx: Ctx = {
     supabase,
-    teams: await loadTeamIds(supabase, all),
+    teams: await loadTeamIds(supabase, all, report.errors),
     notifyUsers: await loadNotifyUsers(supabase, all),
     report,
     calls: 0,
@@ -138,13 +138,18 @@ async function selectLegacy(supabase: SupabaseClient, userId?: string): Promise<
 const teamKey = (userId: string, subject: string) => `${userId}|${subject}`;
 
 /** (user, subject) → api_team_ids liés, clubs en premier. */
-async function loadTeamIds(supabase: SupabaseClient, bets: JobBet[]): Promise<Map<string, number[]>> {
+async function loadTeamIds(
+  supabase: SupabaseClient,
+  bets: JobBet[],
+  errors: string[],
+): Promise<Map<string, number[]>> {
   const userIds = [...new Set(bets.map((b) => b.series.user_id))];
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("subject_links")
     .select("user_id, subject, team_mappings!inner(api_team_id, is_club)")
     .in("user_id", userIds)
     .not("team_mappings.api_team_id", "is", null);
+  if (error) errors.push(`subject_links: ${error.message}`);
 
   const rows = (data ?? []) as unknown as {
     user_id: string;
