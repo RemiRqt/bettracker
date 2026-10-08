@@ -7,9 +7,11 @@ import {
   savePushSubscription,
   deletePushSubscription,
 } from "@/actions/notifications";
+import { NotificationPrefs } from "./notification-prefs";
 
 interface Props {
   initialEnabled: boolean;
+  initialResults: boolean;
 }
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
@@ -26,7 +28,8 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   return buffer;
 }
 
-export function NotificationSettings({ initialEnabled }: Props) {
+export function NotificationSettings({ initialEnabled, initialResults }: Props) {
+  // `enabled` = cet appareil est abonné aux push (les préférences fines sont dessous).
   const [enabled, setEnabled] = useState(initialEnabled);
   const [permission, setPermission] = useState<NotificationPermission | "default">("default");
   const [isPending, startTransition] = useTransition();
@@ -47,6 +50,13 @@ export function NotificationSettings({ initialEnabled }: Props) {
       // @ts-expect-error iOS Safari proprietary
       window.navigator.standalone === true;
     setInstalled(isStandalone);
+    if (isSupported) {
+      navigator.serviceWorker
+        .getRegistration()
+        .then((reg) => reg?.pushManager.getSubscription())
+        .then((sub) => setEnabled(Boolean(sub)))
+        .catch(() => {});
+    }
   }, []);
 
   async function handleEnable() {
@@ -149,7 +159,7 @@ export function NotificationSettings({ initialEnabled }: Props) {
           ) : (
             <BellOff className="h-4 w-4 text-muted-foreground" />
           )}
-          <h2 className="text-sm font-semibold text-foreground">Notifications matchs</h2>
+          <h2 className="text-sm font-semibold text-foreground">Notifications</h2>
         </div>
         <button
           onClick={enabled ? handleDisable : handleEnable}
@@ -169,6 +179,10 @@ export function NotificationSettings({ initialEnabled }: Props) {
           )}
         </button>
       </div>
+
+      {enabled && (
+        <NotificationPrefs initialMatches={initialEnabled} initialResults={initialResults} />
+      )}
 
       {!installed && (
         <p className="text-xs text-warning">

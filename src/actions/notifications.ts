@@ -5,7 +5,13 @@ import { revalidatePath } from "next/cache";
 
 export interface UserNotificationSettings {
   notifications_enabled: boolean;
+  result_notifications_enabled: boolean;
 }
+
+const DEFAULT_SETTINGS: UserNotificationSettings = {
+  notifications_enabled: false,
+  result_notifications_enabled: true,
+};
 
 export async function getNotificationSettings(): Promise<UserNotificationSettings> {
   const supabase = await createClient();
@@ -14,16 +20,16 @@ export async function getNotificationSettings(): Promise<UserNotificationSetting
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { notifications_enabled: false };
+    return DEFAULT_SETTINGS;
   }
 
   const { data } = await supabase
     .from("user_settings")
-    .select("notifications_enabled")
+    .select("notifications_enabled, result_notifications_enabled")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  return data ?? { notifications_enabled: false };
+  return data ?? DEFAULT_SETTINGS;
 }
 
 export async function saveNotificationSettings(enabled: boolean) {
@@ -41,6 +47,35 @@ export async function saveNotificationSettings(enabled: boolean) {
     {
       user_id: user.id,
       notifications_enabled: enabled,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (error) {
+    return { error: `Erreur: ${error.message}` };
+  }
+
+  revalidatePath("/profile");
+  return { success: true };
+}
+
+/** Toggle « Résultats de paris » (notifs de suggestion de résultat). */
+export async function saveResultNotifications(enabled: boolean) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { error: "Non connecte." };
+  }
+
+  const { error } = await supabase.from("user_settings").upsert(
+    {
+      user_id: user.id,
+      result_notifications_enabled: enabled,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id" },

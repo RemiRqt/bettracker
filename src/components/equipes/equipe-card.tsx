@@ -16,6 +16,7 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
+import { SuggestedResultBadge } from "@/components/bets/suggested-result-badge";
 
 export interface MergedEquipe {
   equipeId: string;
@@ -193,6 +194,11 @@ export function EquipeCard({
             {lostPct > 0 && <div className="bg-destructive" style={{ width: `${lostPct}%` }} />}
             {pendingPct > 0 && <div className="bg-info" style={{ width: `${pendingPct}%` }} />}
           </div>
+        )}
+
+        {/* Résultat proposé (suggestion auto) */}
+        {pendingBet && (
+          <SuggestedResultBadge bet={pendingBet} onConfirm={(r) => onValidate(pendingBet.id, r)} />
         )}
 
         {/* Pari en cours (sous la barre de progression) */}

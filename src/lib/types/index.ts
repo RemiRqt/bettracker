@@ -27,7 +27,15 @@ export interface ActionItem {
     betNumber: number;
     odds: number;
     stake: number;
+    suggestion: BetSuggestion;
   } | null;
+}
+
+// Suggestion auto du résultat (colonnes bets, migration 00020)
+export interface BetSuggestion {
+  resolution_status: string | null;
+  suggested_result: string | null;
+  fixture_score: string | null;
 }
 
 // Domain enums

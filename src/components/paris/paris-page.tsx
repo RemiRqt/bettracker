@@ -3,6 +3,7 @@
 import { useState, useTransition, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle, XCircle, Trash2, ChevronUp, ChevronDown, Pencil, Inbox } from "lucide-react";
+import { SuggestedResultBadge } from "@/components/bets/suggested-result-badge";
 import { validateResult, deleteBet, updateBet } from "@/actions/bets";
 import { BET_TYPES, SPORT_EMOJIS } from "@/lib/constants";
 import { formatEuros, cn } from "@/lib/utils";
@@ -41,6 +42,9 @@ interface Bet {
   created_at: string;
   series_id: string;
   series: Series;
+  resolution_status: string | null;
+  suggested_result: string | null;
+  fixture_score: string | null;
 }
 
 interface ParisPageProps {
@@ -344,6 +348,15 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
                     </div>
                   </div>
                 </div>
+
+                {bet.result === null && (
+                  <SuggestedResultBadge
+                    bet={bet}
+                    disabled={isPending}
+                    onConfirm={(r) => (r === "gagne" ? handleWin(bet) : handleValidate(bet.id, "perdu"))}
+                    className="mt-2"
+                  />
+                )}
 
                 {/* Pending: Gagné / Perdu below the card */}
                 {bet.result === null && (

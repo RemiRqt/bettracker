@@ -6,17 +6,20 @@ import { formatEuros } from "@/lib/utils";
 import { fireConfetti } from "@/lib/confetti";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { SuggestedResultBadge, type BetSuggestion } from "@/components/bets/suggested-result-badge";
 
 interface ValidateResultFormProps {
   betId: string;
   stake: number;
   potentialNet: number;
+  suggestion?: BetSuggestion;
 }
 
 export function ValidateResultForm({
   betId,
   stake,
   potentialNet,
+  suggestion,
 }: ValidateResultFormProps) {
   const [isPending, startTransition] = useTransition();
 
@@ -45,6 +48,10 @@ export function ValidateResultForm({
           </span>
         </div>
       </div>
+
+      {suggestion && (
+        <SuggestedResultBadge bet={suggestion} disabled={isPending} onConfirm={handleValidate} />
+      )}
 
       {/* Boutons de validation */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -10,6 +10,7 @@ import { BET_TYPES } from "@/lib/constants";
 import { formatEuros } from "@/lib/utils";
 import { CalendarClock, Plus, CheckCircle, XCircle } from "lucide-react";
 import type { ActionItem } from "@/lib/types";
+import { SuggestedResultBadge } from "@/components/bets/suggested-result-badge";
 
 function formatFixtureDateTime(iso: string): string {
   const d = new Date(iso);
@@ -55,6 +56,12 @@ function ActionCard({ item, onBet, onValidate }: ActionCardProps) {
           </span>
         </div>
 
+        {pending && (
+          <SuggestedResultBadge
+            bet={pending.suggestion}
+            onConfirm={(r) => onValidate(pending.id, r)}
+          />
+        )}
         {pending ? (
           /* Pari en cours: cote/mise + validation */
           <div className="flex items-center justify-between gap-2 rounded-lg border border-info/20 bg-info/10 p-2">

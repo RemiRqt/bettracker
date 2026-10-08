@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { ChevronDown, ChevronRight, Trash2, Ban, RotateCcw, CheckCircle, XCircle } from "lucide-react";
+import { SuggestedResultBadge } from "@/components/bets/suggested-result-badge";
 import { SeriesStatusBadge } from "@/components/series/series-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { formatEuros, formatPercent, cn } from "@/lib/utils";
@@ -202,6 +203,14 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
                       Mise : <span className="font-medium">{formatEuros(bet.stake)}</span>
                     </span>
                   </div>
+                  {bet.result === null && (
+                    <SuggestedResultBadge
+                      bet={bet}
+                      disabled={isPending}
+                      onConfirm={(r) => handleValidate(bet.id, r)}
+                      className="mt-1.5"
+                    />
+                  )}
                 </div>
 
                 {/* Résultat : badge, ou boutons Gagné/Perdu si en attente */}

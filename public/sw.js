@@ -42,11 +42,15 @@ self.addEventListener("notificationclick", (event) => {
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clients) => {
-        // Focus an existing window if available
-        for (const client of clients) {
-          if (client.url.includes(url) && "focus" in client) {
-            return client.focus();
-          }
+        // Reuse an existing window: navigate it to the target, then focus
+        const client = clients.find((c) => "focus" in c);
+        if (client) {
+          const target = new URL(url, self.location.origin).href;
+          const nav =
+            client.url !== target && "navigate" in client
+              ? client.navigate(target).catch(() => client)
+              : Promise.resolve(client);
+          return nav.then((c) => (c || client).focus());
         }
         // Otherwise open a new window
         if (self.clients.openWindow) {

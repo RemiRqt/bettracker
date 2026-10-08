@@ -15,6 +15,9 @@ export type EquipeSeries = {
     potential_net: number;
     result: string | null;
     created_at: string;
+    resolution_status: string | null;
+    suggested_result: string | null;
+    fixture_score: string | null;
   }[];
   totalStake: number;
   netProfit: number;

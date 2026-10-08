@@ -32,7 +32,7 @@ export async function getActionItems(): Promise<ActionItem[]> {
       supabase
         .from("series")
         .select(
-          "id, subject, bet_type, sport, target_gain, created_at, bets(id, bet_number, odds, stake, result)"
+          "id, subject, bet_type, sport, target_gain, created_at, bets(id, bet_number, odds, stake, result, resolution_status, suggested_result, fixture_score)"
         )
         .eq("user_id", user.id)
         .eq("status", "en_cours")
@@ -94,6 +94,11 @@ export async function getActionItems(): Promise<ActionItem[]> {
             betNumber: pending.bet_number,
             odds: pending.odds,
             stake: pending.stake,
+            suggestion: {
+              resolution_status: pending.resolution_status,
+              suggested_result: pending.suggested_result,
+              fixture_score: pending.fixture_score,
+            },
           }
         : null,
     };
