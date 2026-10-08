@@ -60,6 +60,9 @@ export interface Database {
           suggested_result: string | null;
           fixture_score: string | null;
           resolution_status: string | null;
+          market_odds_best: number | null;
+          market_odds_avg: number | null;
+          market_odds_detail: Record<string, number> | null;
         };
         Insert: {
           id?: string;
@@ -75,6 +78,9 @@ export interface Database {
           suggested_result?: string | null;
           fixture_score?: string | null;
           resolution_status?: string | null;
+          market_odds_best?: number | null;
+          market_odds_avg?: number | null;
+          market_odds_detail?: Record<string, number> | null;
         };
         Update: {
           id?: string;
@@ -90,6 +96,9 @@ export interface Database {
           suggested_result?: string | null;
           fixture_score?: string | null;
           resolution_status?: string | null;
+          market_odds_best?: number | null;
+          market_odds_avg?: number | null;
+          market_odds_detail?: Record<string, number> | null;
         };
         Relationships: [
           {
@@ -309,6 +318,7 @@ export interface Database {
           user_id: string;
           notifications_enabled: boolean;
           result_notifications_enabled: boolean;
+          bookmakers: string[];
           notification_lead_minutes: number;
           created_at: string;
           updated_at: string;
@@ -317,6 +327,7 @@ export interface Database {
           user_id: string;
           notifications_enabled?: boolean;
           result_notifications_enabled?: boolean;
+          bookmakers?: string[];
           notification_lead_minutes?: number;
           created_at?: string;
           updated_at?: string;
@@ -325,9 +336,31 @@ export interface Database {
           user_id?: string;
           notifications_enabled?: boolean;
           result_notifications_enabled?: boolean;
+          bookmakers?: string[];
           notification_lead_minutes?: number;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      odds_cache: {
+        Row: {
+          sport_key: string;
+          events: unknown;
+          fetched_at: string;
+          requests_remaining: number | null;
+        };
+        Insert: {
+          sport_key: string;
+          events: unknown;
+          fetched_at: string;
+          requests_remaining?: number | null;
+        };
+        Update: {
+          sport_key?: string;
+          events?: unknown;
+          fetched_at?: string;
+          requests_remaining?: number | null;
         };
         Relationships: [];
       };

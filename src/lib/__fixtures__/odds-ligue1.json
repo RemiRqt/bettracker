@@ -1,0 +1,390 @@
+[
+ {
+  "id": "17694e68f399fdf9c5030021ec9bb595",
+  "sport_key": "soccer_france_ligue_one",
+  "commence_time": "2026-10-09T18:45:00Z",
+  "home_team": "RC Lens",
+  "away_team": "Lyon",
+  "bookmakers": [
+   {
+    "key": "winamax_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "Lyon",
+        "price": 2.65
+       },
+       {
+        "name": "RC Lens",
+        "price": 2.25
+       },
+       {
+        "name": "Draw",
+        "price": 3.7
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "unibet_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "Lyon",
+        "price": 2.55
+       },
+       {
+        "name": "RC Lens",
+        "price": 2.35
+       },
+       {
+        "name": "Draw",
+        "price": 3.8
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "betclic_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "Lyon",
+        "price": 2.68
+       },
+       {
+        "name": "RC Lens",
+        "price": 2.32
+       },
+       {
+        "name": "Draw",
+        "price": 3.63
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "netbet_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "Lyon",
+        "price": 2.67
+       },
+       {
+        "name": "RC Lens",
+        "price": 2.32
+       },
+       {
+        "name": "Draw",
+        "price": 3.55
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "c2c64ebfc5810226f807c1920d580392",
+  "sport_key": "soccer_france_ligue_one",
+  "commence_time": "2026-10-10T18:45:00Z",
+  "home_team": "AS Monaco",
+  "away_team": "Toulouse",
+  "bookmakers": [
+   {
+    "key": "winamax_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "AS Monaco",
+        "price": 1.52
+       },
+       {
+        "name": "Toulouse",
+        "price": 4.9
+       },
+       {
+        "name": "Draw",
+        "price": 4.4
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "unibet_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "AS Monaco",
+        "price": 1.53
+       },
+       {
+        "name": "Toulouse",
+        "price": 4.9
+       },
+       {
+        "name": "Draw",
+        "price": 4.1
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "betclic_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "AS Monaco",
+        "price": 1.53
+       },
+       {
+        "name": "Toulouse",
+        "price": 5.0
+       },
+       {
+        "name": "Draw",
+        "price": 4.2
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "netbet_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "AS Monaco",
+        "price": 1.53
+       },
+       {
+        "name": "Toulouse",
+        "price": 5.0
+       },
+       {
+        "name": "Draw",
+        "price": 4.1
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "2849460eb4d15adbb20ec15927a0fd4a",
+  "sport_key": "soccer_france_ligue_one",
+  "commence_time": "2026-10-10T18:45:00Z",
+  "home_team": "Paris Saint Germain",
+  "away_team": "Le Mans FC",
+  "bookmakers": [
+   {
+    "key": "winamax_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "Le Mans FC",
+        "price": 17.0
+       },
+       {
+        "name": "Paris Saint Germain",
+        "price": 1.05
+       },
+       {
+        "name": "Draw",
+        "price": 12.0
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "unibet_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "Le Mans FC",
+        "price": 22.0
+       },
+       {
+        "name": "Paris Saint Germain",
+        "price": 1.04
+       },
+       {
+        "name": "Draw",
+        "price": 12.0
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "betclic_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "Le Mans FC",
+        "price": 23.0
+       },
+       {
+        "name": "Paris Saint Germain",
+        "price": 1.05
+       },
+       {
+        "name": "Draw",
+        "price": 10.5
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "netbet_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "Le Mans FC",
+        "price": 20.0
+       },
+       {
+        "name": "Paris Saint Germain",
+        "price": 1.04
+       },
+       {
+        "name": "Draw",
+        "price": 12.0
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "3aa72885e0aa107c62843749f7930a9a",
+  "sport_key": "soccer_france_ligue_one",
+  "commence_time": "2026-10-10T18:45:00Z",
+  "home_team": "Lorient",
+  "away_team": "Paris FC",
+  "bookmakers": [
+   {
+    "key": "winamax_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "Lorient",
+        "price": 3.1
+       },
+       {
+        "name": "Paris FC",
+        "price": 2.2
+       },
+       {
+        "name": "Draw",
+        "price": 3.25
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "unibet_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "Lorient",
+        "price": 3.1
+       },
+       {
+        "name": "Paris FC",
+        "price": 2.15
+       },
+       {
+        "name": "Draw",
+        "price": 3.2
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "betclic_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "Lorient",
+        "price": 3.1
+       },
+       {
+        "name": "Paris FC",
+        "price": 2.17
+       },
+       {
+        "name": "Draw",
+        "price": 3.27
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "key": "netbet_fr",
+    "markets": [
+     {
+      "key": "h2h",
+      "outcomes": [
+       {
+        "name": "Lorient",
+        "price": 3.15
+       },
+       {
+        "name": "Paris FC",
+        "price": 2.15
+       },
+       {
+        "name": "Draw",
+        "price": 3.25
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+]
