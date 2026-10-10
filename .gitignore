@@ -40,3 +40,6 @@ next-env.d.ts
 
 .vercel
 /public/icons/icon-source.png
+
+# Claude Code — permissions locales (peuvent contenir des secrets)
+.claude/settings.local.json
