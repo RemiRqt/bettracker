@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { Freebet, FreebetBet } from "@/lib/types";
 
@@ -10,7 +10,7 @@ export async function addFreebet(formData: FormData) {
   if (!amount || amount <= 0) return { error: "Le montant doit être positif." };
 
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez être connecté.");
 
   const { error } = await supabase.from("freebets").insert({
@@ -29,7 +29,7 @@ export async function addFreebet(formData: FormData) {
 
 export async function getFreebets(): Promise<Freebet[]> {
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) return [];
 
   const { data } = await supabase
@@ -43,7 +43,7 @@ export async function getFreebets(): Promise<Freebet[]> {
 
 export async function deleteFreebet(id: string) {
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez être connecté.");
 
   const { data: pending } = await supabase
@@ -72,7 +72,7 @@ export async function deleteFreebet(id: string) {
 
 export async function getFreebetBets(): Promise<(FreebetBet & { freebet_source: string })[]> {
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) return [];
 
   const { data } = await supabase
@@ -101,7 +101,7 @@ export async function placeFreebetBet(data: {
   if (stake <= 0) return { error: "La mise doit être positive." };
 
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez être connecté.");
 
   const roundedStake = Math.round(stake * 100) / 100;
@@ -179,7 +179,7 @@ export async function placeFreebetBet(data: {
 
 export async function validateFreebetResult(betId: string, result: "gagne" | "perdu") {
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez être connecté.");
 
   const { data: bet } = await supabase
@@ -206,7 +206,7 @@ export async function validateFreebetResult(betId: string, result: "gagne" | "pe
 
 export async function deleteFreebetBet(betId: string) {
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez être connecté.");
 
   const { data: bet } = await supabase

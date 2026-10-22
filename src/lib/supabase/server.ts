@@ -1,6 +1,8 @@
+import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { Database } from "@/lib/types/database";
+import { userFromClaims } from "./auth-user";
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -26,3 +28,13 @@ export async function createClient() {
     }
   );
 }
+
+/**
+ * Utilisateur connecté, lu dans le jeton signé (clés ES256 : vérification locale, sans
+ * appel réseau à Supabase Auth). Mis en cache pour la durée de la requête.
+ */
+export const getAuthUser = cache(async () => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getClaims();
+  return { user: userFromClaims(data?.claims), error };
+});

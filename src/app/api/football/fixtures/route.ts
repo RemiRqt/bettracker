@@ -1,15 +1,11 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 const FOOTBALL_DATA_BASE = "https://api.football-data.org/v4";
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     return NextResponse.json({ error: "Non authentifie." }, { status: 401 });

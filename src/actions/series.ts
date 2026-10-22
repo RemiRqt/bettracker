@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import {
   getSubjectLinks,
@@ -18,10 +18,7 @@ import type { ActionItem, BetType, SportType } from "@/lib/types";
 export async function getActionItems(): Promise<ActionItem[]> {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");
@@ -117,10 +114,7 @@ export async function getActionItems(): Promise<ActionItem[]> {
 export async function abandonSeries(seriesId: string) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");
@@ -156,10 +150,7 @@ export async function abandonSeries(seriesId: string) {
 export async function reopenSeries(seriesId: string) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");
@@ -199,10 +190,7 @@ export async function reopenSeries(seriesId: string) {
 export async function deleteSeries(seriesId: string) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");

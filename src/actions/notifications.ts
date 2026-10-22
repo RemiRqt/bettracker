@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { BOOKMAKER_KEYS } from "@/lib/odds-api";
 
@@ -18,9 +18,7 @@ const DEFAULT_SETTINGS: UserNotificationSettings = {
 
 export async function getNotificationSettings(): Promise<UserNotificationSettings> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser();
 
   if (!user) {
     return DEFAULT_SETTINGS;
@@ -37,10 +35,7 @@ export async function getNotificationSettings(): Promise<UserNotificationSetting
 
 export async function saveNotificationSettings(enabled: boolean) {
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     return { error: "Non connecte." };
@@ -66,10 +61,7 @@ export async function saveNotificationSettings(enabled: boolean) {
 /** Toggle « Résultats de paris » (notifs de suggestion de résultat). */
 export async function saveResultNotifications(enabled: boolean) {
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     return { error: "Non connecte." };
@@ -98,10 +90,7 @@ export async function saveBookmakers(keys: string[]) {
   if (valid.length === 0) return { error: "Garde au moins un bookmaker." };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) return { error: "Non connecte." };
 
   const { error } = await supabase.from("user_settings").upsert(
@@ -120,10 +109,7 @@ export async function savePushSubscription(subscription: {
   userAgent?: string;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     return { error: "Non connecte." };
@@ -149,10 +135,7 @@ export async function savePushSubscription(subscription: {
 
 export async function deletePushSubscription(endpoint: string) {
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     return { error: "Non connecte." };

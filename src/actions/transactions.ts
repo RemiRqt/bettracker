@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function addTransaction(formData: FormData) {
@@ -22,9 +22,7 @@ export async function addTransaction(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser();
 
   if (!user) {
     return { error: "Vous devez être connecté." };
@@ -49,9 +47,7 @@ export async function addTransaction(formData: FormData) {
 
 export async function getTransactions() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser();
 
   if (!user) {
     return [];
@@ -69,9 +65,7 @@ export async function getTransactions() {
 
 export async function deleteTransaction(id: string) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser();
 
   if (!user) {
     return { error: "Vous devez être connecté." };

@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient as createServiceClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { BOOKMAKER_KEYS, SPORT_KEYS, getLeagueOdds } from "@/lib/odds-api";
 import { findEvent, outcomePrices, summarize, type OddsSummary } from "@/lib/odds-matching";
 
@@ -26,9 +26,7 @@ export async function getMarketOdds(input: MarketOddsInput): Promise<MarketOddsR
   if (!sportKey || (input.betType !== "victoire" && input.betType !== "defaite")) return null;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser();
   if (!user) return null;
 
   const { data: settings } = await supabase

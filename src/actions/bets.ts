@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { SportType } from "@/lib/types";
 import { getSubjectLinks, getTeamMappings } from "@/actions/teams";
@@ -43,9 +43,7 @@ export async function getBetFormData(): Promise<{
   }[];
 }> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser();
   if (!user) return { existingSubjects: [], teamMappings: [] };
 
   const [{ data: bets }, { data: allSeries }, links, mappings] =
@@ -164,10 +162,7 @@ export async function createBetEntry(input: CreateBetInput) {
   if (!odds || odds <= 1) return { error: "La cote doit etre superieure a 1." };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez etre connecte.");
 
   const name = subject.trim();
@@ -310,10 +305,7 @@ export async function validateResult(
 ) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");
@@ -367,10 +359,7 @@ export async function validateResult(
 export async function deleteBet(betId: string) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");
@@ -422,10 +411,7 @@ export async function updateBet(
 ) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");

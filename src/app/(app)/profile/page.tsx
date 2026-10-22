@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { getTransactions } from "@/actions/transactions";
 import { ensureTeamMappings } from "@/actions/teams";
 import { getNotificationSettings } from "@/actions/notifications";
@@ -24,10 +24,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon Profil | BetTracker" };
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser();
 
   const theme = await getServerTheme();
   const isAdmin = ADMIN_EMAILS.includes(user?.email ?? "");

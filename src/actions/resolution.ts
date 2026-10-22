@@ -2,7 +2,7 @@
 
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { ADMIN_EMAILS } from "@/lib/constants";
 import { runResolveBets, type ResolveReport } from "@/lib/resolve-bets-job";
 
@@ -11,10 +11,7 @@ import { runResolveBets, type ResolveReport } from "@/lib/resolve-bets-job";
  * résultat sur les paris de l'utilisateur courant, sans attendre les 2h.
  */
 export async function runResultCheckNow(): Promise<{ report?: ResolveReport; error?: string }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser();
   if (!user || !ADMIN_EMAILS.includes(user.email ?? "")) {
     return { error: "Réservé aux admins." };
   }

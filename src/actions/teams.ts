@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { fetchTeamFixtures } from "@/lib/football-data";
 
@@ -35,10 +35,7 @@ function revalidateTeamPaths() {
 export async function getTeamMappings(): Promise<TeamMapping[]> {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");
@@ -60,10 +57,7 @@ export async function getTeamMappings(): Promise<TeamMapping[]> {
 export async function getFollowedTeams(): Promise<TeamMapping[]> {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");
@@ -95,10 +89,7 @@ export async function upsertTeamMapping(
 ) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");
@@ -141,7 +132,7 @@ export async function addClub(
 ) {
   const supabase = await createClient();
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez etre connecte.");
 
   const { data: existing } = await supabase
@@ -187,10 +178,7 @@ export async function addClub(
 export async function toggleFollow(subject: string) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");
@@ -240,10 +228,7 @@ export async function toggleFollow(subject: string) {
 export async function updateMatchesCount(subject: string, count: number) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");
@@ -273,10 +258,7 @@ export async function updateMatchesCount(subject: string, count: number) {
 export async function deleteTeamMapping(id: string) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");
@@ -299,10 +281,7 @@ export async function deleteTeamMapping(id: string) {
 export async function ensureTeamMappings(): Promise<TeamMapping[]> {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     return [];
@@ -361,10 +340,7 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
 export async function getCalendarTeams(): Promise<TeamMapping[]> {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     return [];
@@ -478,10 +454,7 @@ export async function getCalendarFixtures(): Promise<
 export async function refreshCalendarFixtures() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     return { error: "Non connecte." };
@@ -508,7 +481,7 @@ export interface SubjectLink {
 
 export async function getSubjectLinks(): Promise<SubjectLink[]> {
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez etre connecte.");
 
   const { data, error } = await supabase
@@ -521,7 +494,7 @@ export async function getSubjectLinks(): Promise<SubjectLink[]> {
 
 export async function linkSubject(subject: string, teamMappingId: string) {
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez etre connecte.");
   if (!subject?.trim()) return { error: "Le sujet est requis." };
 
@@ -539,7 +512,7 @@ export async function linkSubject(subject: string, teamMappingId: string) {
 
 export async function unlinkSubject(subject: string, teamMappingId: string) {
   const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez etre connecte.");
 
   const { error } = await supabase

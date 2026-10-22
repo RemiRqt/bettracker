@@ -29,9 +29,10 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Jeton vérifié localement (clés ES256) : pas d'appel réseau à Supabase Auth à chaque
+  // requête. getClaims rafraîchit aussi la session quand le jeton a expiré.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims ?? null;
 
   if (
     !user &&

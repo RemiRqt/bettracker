@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 const FOOTBALL_DATA_BASE = "https://api.football-data.org/v4";
@@ -8,12 +8,8 @@ const cache = new Map<string, { data: unknown; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hours (teams don't change often)
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     return NextResponse.json({ error: "Non authentifie." }, { status: 401 });

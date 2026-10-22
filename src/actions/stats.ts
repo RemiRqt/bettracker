@@ -1,16 +1,13 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import type { DashboardStats, Bet } from "@/lib/types";
 import { computeMarketValue } from "@/lib/market-value";
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");

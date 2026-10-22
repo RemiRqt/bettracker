@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function updateEquipeSport(id: string, sport: string) {
@@ -10,10 +10,7 @@ export async function updateEquipeSport(id: string, sport: string) {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez etre connecte.");
 
   const { error } = await supabase
@@ -31,10 +28,7 @@ export async function updateEquipeSport(id: string, sport: string) {
 export async function deleteEquipe(id: string) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");

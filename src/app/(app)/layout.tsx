@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthUser } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/layout/app-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
@@ -7,7 +7,6 @@ import { BetModalProvider } from "@/components/paris/bet-modal-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { RouteTransition } from "@/components/layout/route-transition";
 import { SplashScreen } from "@/components/layout/splash-screen";
-import { RoutePrefetcher } from "@/components/layout/route-prefetcher";
 import { WhatsNewLauncher } from "@/components/whats-new/whats-new-launcher";
 
 export default async function AppLayout({
@@ -15,10 +14,7 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser();
 
   if (!user) {
     redirect("/login");
@@ -29,7 +25,6 @@ export default async function AppLayout({
       <BetModalProvider>
         <div className="min-h-screen bg-background">
           <SplashScreen />
-          <RoutePrefetcher />
           <AppHeader email={user.email!} />
           <RouteTransition />
           <main
