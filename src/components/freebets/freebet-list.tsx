@@ -94,10 +94,10 @@ export function FreebetList({ freebets }: FreebetListProps) {
               />
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-2xs text-muted-foreground">
                 {new Date(fb.created_at).toLocaleDateString("fr-FR")}
               </span>
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-2xs text-muted-foreground">
                 {Math.round(usedPercent)}% utilisé
               </span>
             </div>
@@ -140,7 +140,7 @@ export function FreebetList({ freebets }: FreebetListProps) {
                     <span className="text-xs font-medium text-muted-foreground">
                       {formatEuros(fb.initial_amount)}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-2xs text-muted-foreground">
                       {new Date(fb.created_at).toLocaleDateString("fr-FR")}
                     </span>
                   </div>

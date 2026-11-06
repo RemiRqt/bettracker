@@ -68,7 +68,7 @@ export default async function ProfilePage() {
 
         <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border/50 pt-3">
           <div className="text-center">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            <p className="text-2xs uppercase tracking-wide text-muted-foreground">
               Dépôts
             </p>
             <p className="text-sm font-bold text-primary">
@@ -76,7 +76,7 @@ export default async function ProfilePage() {
             </p>
           </div>
           <div className="text-center">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            <p className="text-2xs uppercase tracking-wide text-muted-foreground">
               Retraits
             </p>
             <p className="text-sm font-bold text-destructive">
@@ -84,7 +84,7 @@ export default async function ProfilePage() {
             </p>
           </div>
           <div className="text-center">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            <p className="text-2xs uppercase tracking-wide text-muted-foreground">
               Solde en cours
             </p>
             <p

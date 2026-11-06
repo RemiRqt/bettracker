@@ -71,7 +71,7 @@ function BarTooltip({
         Bénéf : {positive ? "+" : ""}
         {formatEuros(p.profit)}
       </p>
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-2xs text-muted-foreground">
         {p.count} pari{p.count > 1 ? "s" : ""}
       </p>
     </div>

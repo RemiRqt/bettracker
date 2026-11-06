@@ -57,7 +57,7 @@ export function TeamSearch({
         />
         {apiSelected && (
           <span
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-2xs px-1.5 py-0.5 rounded bg-primary/15 text-primary"
             title="Équipe liée à l'API"
           >
             API
@@ -84,7 +84,7 @@ export function TeamSearch({
                 />
                 {s.logoUrl && <TeamLogo logoUrl={s.logoUrl} size="sm" />}
                 <span className="text-sm text-foreground truncate">{s.subject}</span>
-                <span className="ml-auto flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] bg-muted text-muted-foreground">
+                <span className="ml-auto flex-shrink-0 px-1.5 py-0.5 rounded text-2xs bg-muted text-muted-foreground">
                   {BET_TYPES[s.betType as keyof typeof BET_TYPES] ?? s.betType}
                 </span>
               </button>
@@ -98,7 +98,7 @@ export function TeamSearch({
               >
                 {m.logoUrl && <TeamLogo logoUrl={m.logoUrl} size="sm" />}
                 <span className="text-sm text-foreground truncate">{m.subject}</span>
-                <span className="ml-auto text-[10px] text-muted-foreground">équipe</span>
+                <span className="ml-auto text-2xs text-muted-foreground">équipe</span>
               </button>
             ))}
             {showAddTeam && (

@@ -119,7 +119,7 @@ export function ParisTri({ tri }: { tri: Tri }) {
             }
             onClick={() => handleSort(s.key)}
             className={cn(
-              "relative before:absolute before:-top-1.5 before:-bottom-2.5 before:inset-x-0 flex items-center justify-center gap-0.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors border",
+              "relative before:absolute before:-top-1.5 before:-bottom-2.5 before:inset-x-0 flex items-center justify-center gap-0.5 py-1.5 rounded-lg text-2xs font-medium transition-colors border",
               isActive
                 ? "bg-primary/20 text-primary border-primary/30"
                 : "bg-card text-muted-foreground border-border hover:border-border/80"

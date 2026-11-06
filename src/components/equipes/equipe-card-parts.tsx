@@ -108,7 +108,7 @@ export function PendingBetBlock({ bet, onValidate }: { bet: PendingBet; onValida
       <SuggestedResultBadge bet={bet} onConfirm={(r) => onValidate(bet.id, r)} />
       <div className="flex items-center justify-between gap-2 rounded-lg bg-info/10 border border-info/20 p-2">
         <div className="flex items-center gap-2 min-w-0 text-xs text-secondary-foreground">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-info/20 text-info text-[11px] font-bold">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-info/20 text-info text-2xs font-bold">
             {bet.bet_number}
           </span>
           <span>Cote {bet.odds.toFixed(2)}</span>
@@ -118,14 +118,14 @@ export function PendingBetBlock({ bet, onValidate }: { bet: PendingBet; onValida
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onValidate(bet.id, "gagne"); }}
-            className="relative flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-[11px] font-semibold text-primary hover:bg-primary/25 transition-colors"
+            className="relative flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-2xs font-semibold text-primary hover:bg-primary/25 transition-colors"
           >
             <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" /> Gagné
           </button>
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onValidate(bet.id, "perdu"); }}
-            className="relative flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-[11px] font-semibold text-destructive hover:bg-destructive/25 transition-colors"
+            className="relative flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-2xs font-semibold text-destructive hover:bg-destructive/25 transition-colors"
           >
             <XCircle className="h-3.5 w-3.5" aria-hidden="true" /> Perdu
           </button>

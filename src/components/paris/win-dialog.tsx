@@ -17,7 +17,7 @@ export function WinDialog({ bet, fermer }: { bet: Bet | null; fermer: () => void
           </DialogDescription>
         </DialogHeader>
         <div className="rounded-xl bg-primary/10 px-4 py-3 text-center">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Bénéfice net</p>
+          <p className="text-2xs uppercase tracking-wide text-muted-foreground">Bénéfice net</p>
           <p className="text-2xl font-bold text-primary">
             +<RollingNumber value={bet?.potential_net ?? 0} format="euros" />
           </p>

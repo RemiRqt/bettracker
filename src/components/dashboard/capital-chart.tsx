@@ -52,7 +52,7 @@ function CustomTooltip({
       <p className="text-sm font-bold text-foreground">
         Valeur : {formatEuros(p.valeur)}
       </p>
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-2xs text-muted-foreground">
         Capital : {formatEuros(p.capital)}
         {p.encaisse > 0 && ` · encaissé ${formatEuros(p.encaisse)}`}
       </p>

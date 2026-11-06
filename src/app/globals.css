@@ -51,6 +51,9 @@
   --text-base: 1rem;
   --text-sm: 0.9375rem;
   --text-xs: 0.8125rem;
+  /* Plancher de lisibilité (audit a11y 2026-11-06) : rien sous 12 px, sauf la barre du bas. */
+  --text-2xs: 0.75rem;
+  --text-2xs--line-height: 1rem;
 }
 
 /* ===== Thèmes (accent = --color-primary de chaque thème) ===== */

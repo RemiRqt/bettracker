@@ -32,11 +32,11 @@ function BetCardInfos({ bet, logoUrl }: { bet: Bet; logoUrl?: string }) {
       <div className="flex items-center gap-2">
         <TeamLogo logoUrl={logoUrl} size="sm" className="flex-shrink-0" />
         <span className="font-semibold text-foreground text-sm truncate">{bet.series.subject}</span>
-        <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-secondary-foreground">
+        <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-2xs font-medium bg-muted text-secondary-foreground">
           {typeLabel}
         </span>
         {bet.series.kind === "unique" && (
-          <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/15 text-primary">
+          <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-2xs font-medium bg-primary/15 text-primary">
             Unique
           </span>
         )}

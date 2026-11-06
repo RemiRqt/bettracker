@@ -19,7 +19,7 @@ export default async function ParisRoute() {
     supabase
       .from("bets")
       .select(
-        "*, series!inner(id, subject, bet_type, status, target_gain, user_id, kind, sport)"
+        "id, bet_number, odds, stake, potential_net, result, created_at, series_id, resolution_status, suggested_result, fixture_score, series!inner(id, subject, bet_type, status, target_gain, user_id, kind, sport)"
       )
       .eq("series.user_id", user.id)
       .order("created_at", { ascending: false }),

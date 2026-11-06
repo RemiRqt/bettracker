@@ -67,7 +67,7 @@ export function NavLinks({
               </span>
               <span
                 className={cn(
-                  "text-[10px] leading-tight transition-colors",
+                  "text-2xs leading-tight transition-colors",
                   isActive
                     ? "text-primary font-medium"
                     : "text-muted-foreground group-hover:text-secondary-foreground"

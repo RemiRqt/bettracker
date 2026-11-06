@@ -21,7 +21,10 @@ export default async function EquipesRoute() {
         .order("name", { ascending: true }),
       supabase
         .from("series")
-        .select("*, bets(*)")
+        .select(
+          // Colonnes affichées seulement (pas les cotes du marché en jsonb).
+          "*, bets(id, series_id, bet_number, odds, stake, potential_net, result, created_at, resolution_status, suggested_result, fixture_score)"
+        )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
       getSubjectLinks(),

@@ -20,9 +20,9 @@ function OddsVisual() {
               c.best && "ring-1 ring-primary",
             )}
           >
-            <span className="text-[10px] text-muted-foreground">{c.label}</span>
+            <span className="text-2xs text-muted-foreground">{c.label}</span>
             <span className="text-base font-bold text-foreground">{c.price}</span>
-            <span className="text-[10px] text-muted-foreground">{c.bk}</span>
+            <span className="text-2xs text-muted-foreground">{c.bk}</span>
           </div>
         ))}
       </div>
@@ -42,12 +42,12 @@ function ResultVisual() {
   return (
     <div className="w-full space-y-2">
       <div className="flex items-center gap-2 rounded-xl bg-background/80 p-2 shadow-sm">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-[10px] font-black text-primary-foreground">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-2xs font-black text-primary-foreground">
           BT
         </div>
         <div className="min-w-0 text-left">
           <p className="text-xs font-semibold text-foreground">PSG 2-1</p>
-          <p className="truncate text-[11px] text-muted-foreground">Pari n°3 gagné ? Confirme en un tap</p>
+          <p className="truncate text-2xs text-muted-foreground">Pari n°3 gagné ? Confirme en un tap</p>
         </div>
       </div>
       <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-2">
@@ -119,8 +119,8 @@ function SheetVisual() {
         <div className="mx-auto h-1 w-8 rounded-full bg-muted" />
         <p className="text-xs font-semibold text-foreground">Nouveau pari</p>
         <div className="flex gap-1.5">
-          <span className="flex-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground">Cote 1,85</span>
-          <span className="flex-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground">Mise 10 €</span>
+          <span className="flex-1 rounded-md border border-border px-2 py-1 text-2xs text-muted-foreground">Cote 1,85</span>
+          <span className="flex-1 rounded-md border border-border px-2 py-1 text-2xs text-muted-foreground">Mise 10 €</span>
         </div>
       </div>
     </div>

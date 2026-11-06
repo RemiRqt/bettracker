@@ -65,7 +65,7 @@ function ResultBadge({ result }: { result: string | null }) {
     return (
       <Badge
         variant="secondary"
-        className="bg-muted text-secondary-foreground text-[10px] md:text-xs"
+        className="bg-muted text-secondary-foreground text-2xs md:text-xs"
       >
         En attente
       </Badge>
@@ -74,14 +74,14 @@ function ResultBadge({ result }: { result: string | null }) {
 
   if (result === "gagne") {
     return (
-      <Badge className="bg-primary/20 text-primary hover:bg-primary/30 text-[10px] md:text-xs">
+      <Badge className="bg-primary/20 text-primary hover:bg-primary/30 text-2xs md:text-xs">
         {BET_RESULTS.gagne}
       </Badge>
     );
   }
 
   return (
-    <Badge className="bg-destructive/20 text-destructive hover:bg-destructive/30 text-[10px] md:text-xs">
+    <Badge className="bg-destructive/20 text-destructive hover:bg-destructive/30 text-2xs md:text-xs">
       {BET_RESULTS.perdu}
     </Badge>
   );

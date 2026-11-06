@@ -63,7 +63,7 @@ export function SeriesBetRow({ bet, disabled, onValidate }: SeriesBetRowProps) {
             type="button"
             onClick={() => onValidate(bet.id, "gagne")}
             disabled={disabled}
-            className="relative flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-[11px] font-semibold text-primary hover:bg-primary/25 transition-colors disabled:opacity-50"
+            className="relative flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-2xs font-semibold text-primary hover:bg-primary/25 transition-colors disabled:opacity-50"
           >
             <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" /> Gagné
           </button>
@@ -71,13 +71,13 @@ export function SeriesBetRow({ bet, disabled, onValidate }: SeriesBetRowProps) {
             type="button"
             onClick={() => onValidate(bet.id, "perdu")}
             disabled={disabled}
-            className="relative flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-[11px] font-semibold text-destructive hover:bg-destructive/25 transition-colors disabled:opacity-50"
+            className="relative flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-2xs font-semibold text-destructive hover:bg-destructive/25 transition-colors disabled:opacity-50"
           >
             <XCircle className="h-3.5 w-3.5" aria-hidden="true" /> Perdu
           </button>
         </div>
       ) : (
-        <Badge className={cn("shrink-0 text-[10px] px-1.5 py-0", resultat.className)}>{resultat.label}</Badge>
+        <Badge className={cn("shrink-0 text-2xs px-1.5 py-0", resultat.className)}>{resultat.label}</Badge>
       )}
     </div>
   );

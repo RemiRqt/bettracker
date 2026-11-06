@@ -26,7 +26,7 @@ export function Item({
       className="scroll-mt-32 rounded-lg border border-border/60 bg-background/40 p-4"
     >
       <div className="mb-3 flex items-baseline gap-2">
-        <span className="inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-md bg-primary/15 px-1.5 font-mono text-[11px] font-bold text-primary ring-1 ring-primary/30">
+        <span className="inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-md bg-primary/15 px-1.5 font-mono text-2xs font-bold text-primary ring-1 ring-primary/30">
           {id}
         </span>
         <span className="text-sm font-medium text-secondary-foreground">{label}</span>

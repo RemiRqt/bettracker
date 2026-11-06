@@ -257,10 +257,10 @@ function FixtureCard({
             >
               <TrendingUp className="h-3.5 w-3.5 text-primary flex-shrink-0" />
               <span className="text-xs text-foreground truncate">{s.subject}</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-secondary-foreground">
+              <span className="text-2xs px-1.5 py-0.5 rounded-full bg-muted text-secondary-foreground">
                 {BET_TYPES[s.bet_type as keyof typeof BET_TYPES] ?? s.bet_type}
               </span>
-              <span className="text-[10px] text-muted-foreground ml-auto">
+              <span className="text-2xs text-muted-foreground ml-auto">
                 {s.target_gain}€/pari
               </span>
             </Link>

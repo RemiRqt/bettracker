@@ -118,7 +118,7 @@ function BetCard({
               <XCircle className="h-3 w-3" /> Perdu
             </span>
           )}
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-2xs text-muted-foreground">
             {new Date(bet.created_at).toLocaleDateString("fr-FR")}
           </span>
         </div>

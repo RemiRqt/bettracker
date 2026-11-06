@@ -40,10 +40,10 @@ export function WhatsNewDialog({ releases, open, onClose }: WhatsNewDialogProps)
         }}
       >
         <div className="relative bg-primary/10 px-5 pb-6 pt-8">
-          <p className="absolute left-5 top-3 text-[10px] font-semibold uppercase tracking-wide text-primary">
+          <p className="absolute left-5 top-3 text-2xs font-semibold uppercase tracking-wide text-primary">
             {slide.release}
           </p>
-          <span className="absolute right-12 top-3 text-[10px] font-semibold text-muted-foreground">
+          <span className="absolute right-12 top-3 text-2xs font-semibold text-muted-foreground">
             {index + 1}/{slides.length}
           </span>
           <div key={index} className="wn-slide-in flex min-h-[132px] items-center">

@@ -12,6 +12,10 @@ import { ParisFiltres, ParisTri, useParisTri } from "./paris-filters";
 import { BetCard } from "./bet-card";
 import { EditBetPopup } from "./edit-bet-popup";
 import { WinDialog } from "./win-dialog";
+import { Bouton } from "@/components/kit/Bouton";
+
+/** Paris affichés par paquet : la liste complète reste triée/filtrée, le rendu est progressif. */
+const PAQUET = 30;
 import type { Bet, FilterKey } from "./paris-types";
 
 interface ParisPageProps {
@@ -25,6 +29,10 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
   const confirm = useConfirm();
   const { open: openBetModal } = useBetModal();
   const tri = useParisTri(bets, initialFilter);
+  // Revient au premier paquet quand le filtre ou le tri change.
+  const triKey = `${tri.filter}-${tri.sortBy}-${tri.sortAsc}`;
+  const [affiches, setAffiches] = useState({ key: triKey, n: PAQUET });
+  const n = affiches.key === triKey ? affiches.n : PAQUET;
 
   const [isPending, startTransition] = useTransition();
   const [editBet, setEditBet] = useState<Bet | null>(null);
@@ -93,7 +101,7 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          {tri.sorted.map((bet) => (
+          {tri.sorted.slice(0, n).map((bet) => (
             <BetCard
               key={bet.id}
               bet={bet}
@@ -105,6 +113,15 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
               onLose={() => handleValidate(bet.id, "perdu")}
             />
           ))}
+          {tri.sorted.length > n && (
+            <Bouton
+              variant="outline"
+              className="h-11 w-full"
+              onClick={() => setAffiches({ key: triKey, n: n + PAQUET })}
+            >
+              Voir plus ({tri.sorted.length - n})
+            </Bouton>
+          )}
         </div>
       )}
 

@@ -38,7 +38,7 @@ function StatCard({
     <div className="rounded-xl bg-card px-3 py-2 h-full">
       <div className="flex items-center gap-1.5 mb-0.5">
         {icon}
-        <span className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">
+        <span className="text-2xs uppercase tracking-wide text-muted-foreground leading-tight">
           {label}
         </span>
       </div>
@@ -66,7 +66,7 @@ export function StatsHero({ stats }: StatsProps) {
                 }`}
               />
             </div>
-            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            <span className="text-2xs uppercase tracking-wide text-muted-foreground">
               Capital disponible
             </span>
           </div>
@@ -90,7 +90,7 @@ export function StatsHero({ stats }: StatsProps) {
           <div className="text-right">
             <div className="flex items-center gap-1 mb-1 justify-end">
               <Target className="h-3.5 w-3.5 text-info" />
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              <span className="text-2xs uppercase tracking-wide text-muted-foreground">
                 Objectif
               </span>
             </div>
@@ -99,7 +99,7 @@ export function StatsHero({ stats }: StatsProps) {
               format="euros"
               className="text-lg font-bold text-info"
             />
-            <p className="text-[10px] text-muted-foreground">si tout gagné</p>
+            <p className="text-2xs text-muted-foreground">si tout gagné</p>
           </div>
         )}
       </div>

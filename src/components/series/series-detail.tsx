@@ -31,7 +31,7 @@ function StatTile({
 }) {
   return (
     <div className="rounded-xl bg-background px-3 py-2">
-      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+      <p className="text-2xs uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <p className={cn("text-sm md:text-base font-bold", color)}>{value}</p>

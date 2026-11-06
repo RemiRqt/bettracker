@@ -115,7 +115,7 @@ export function EquipeCard({
               className="flex items-center gap-2 min-w-0 text-left"
             >
               <span className="text-base font-bold text-foreground truncate">{eq.name}</span>
-              <Badge className="shrink-0 bg-primary/20 text-primary border-primary/30 text-[10px] px-1.5 py-0">
+              <Badge className="shrink-0 bg-primary/20 text-primary border-primary/30 text-2xs px-1.5 py-0">
                 {betTypeLabel}
               </Badge>
             </button>

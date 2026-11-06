@@ -51,7 +51,7 @@ function ActionCard({ item, onBet, onValidate }: ActionCardProps) {
           <span className="truncate text-base font-bold text-foreground">
             {item.subject}
           </span>
-          <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+          <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 text-2xs font-medium text-primary">
             {betTypeLabel}
           </span>
         </div>
@@ -66,7 +66,7 @@ function ActionCard({ item, onBet, onValidate }: ActionCardProps) {
           /* Pari en cours: cote/mise + validation */
           <div className="flex items-center justify-between gap-2 rounded-lg border border-info/20 bg-info/10 p-2">
             <div className="flex min-w-0 items-center gap-2 text-xs text-secondary-foreground">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-info/20 text-[11px] font-bold text-info">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-info/20 text-2xs font-bold text-info">
                 {pending.betNumber}
               </span>
               <span>Cote {pending.odds.toFixed(2)}</span>
@@ -78,14 +78,14 @@ function ActionCard({ item, onBet, onValidate }: ActionCardProps) {
               <button
                 type="button"
                 onClick={() => onValidate(pending.id, "gagne")}
-                className="flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/25"
+                className="flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 text-2xs font-semibold text-primary transition-colors hover:bg-primary/25"
               >
                 <CheckCircle className="h-3.5 w-3.5" /> Gagné
               </button>
               <button
                 type="button"
                 onClick={() => onValidate(pending.id, "perdu")}
-                className="flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 text-[11px] font-semibold text-destructive transition-colors hover:bg-destructive/25"
+                className="flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 text-2xs font-semibold text-destructive transition-colors hover:bg-destructive/25"
               >
                 <XCircle className="h-3.5 w-3.5" /> Perdu
               </button>
@@ -124,10 +124,10 @@ export function ActionItems({ items }: { items: ActionItem[] }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
-        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+        <span className="text-2xs uppercase tracking-wide text-muted-foreground">
           À suivre
         </span>
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-2xs text-muted-foreground">
           {items.length} en cours
         </span>
       </div>

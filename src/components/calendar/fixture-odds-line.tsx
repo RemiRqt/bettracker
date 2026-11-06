@@ -10,9 +10,9 @@ interface FixtureOddsLineProps {
 function Cell({ label, best }: { label: string; best: OutcomeBest | null }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center rounded-lg bg-background px-1.5 py-1">
-      <span className="max-w-full truncate text-[10px] text-muted-foreground">{label}</span>
+      <span className="max-w-full truncate text-2xs text-muted-foreground">{label}</span>
       <span className="text-sm font-bold text-foreground">{best ? best.price.toFixed(2) : "—"}</span>
-      <span className="max-w-full truncate text-[10px] text-muted-foreground">
+      <span className="max-w-full truncate text-2xs text-muted-foreground">
         {best ? bookmakerLabel(best.bookmaker) : ""}
       </span>
     </div>

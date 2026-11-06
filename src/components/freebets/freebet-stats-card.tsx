@@ -18,7 +18,7 @@ export function FreebetStatsCard({ balance, used, realGains }: FreebetStatsCardP
           <Ticket className="h-4 w-4 text-warning" />
         </div>
         <div>
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          <span className="text-2xs uppercase tracking-wide text-muted-foreground">
             Freebets disponibles
           </span>
           <RollingNumber
@@ -34,7 +34,7 @@ export function FreebetStatsCard({ balance, used, realGains }: FreebetStatsCardP
         <div className="rounded-lg bg-background px-2.5 py-2">
           <div className="flex items-center gap-1 mb-0.5">
             <CircleDollarSign className="h-3 w-3 text-muted-foreground" />
-            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            <span className="text-2xs uppercase tracking-wide text-muted-foreground">
               Utilisé
             </span>
           </div>
@@ -47,7 +47,7 @@ export function FreebetStatsCard({ balance, used, realGains }: FreebetStatsCardP
         <div className="rounded-lg bg-background px-2.5 py-2">
           <div className="flex items-center gap-1 mb-0.5">
             <TrendingUp className="h-3 w-3 text-primary" />
-            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            <span className="text-2xs uppercase tracking-wide text-muted-foreground">
               Gagné
             </span>
           </div>
@@ -60,7 +60,7 @@ export function FreebetStatsCard({ balance, used, realGains }: FreebetStatsCardP
         <div className="rounded-lg bg-background px-2.5 py-2">
           <div className="flex items-center gap-1 mb-0.5">
             <BarChart3 className="h-3 w-3 text-info" />
-            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            <span className="text-2xs uppercase tracking-wide text-muted-foreground">
               Conversion
             </span>
           </div>

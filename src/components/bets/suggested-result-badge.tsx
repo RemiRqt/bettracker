@@ -21,7 +21,7 @@ export function SuggestedResultBadge({ bet, onConfirm, disabled, className }: Su
   const status = bet.resolution_status;
   if (status === "postponed" || status === "expired") {
     return (
-      <div className={cn("flex items-center gap-1.5 text-[11px] text-muted-foreground", className)}>
+      <div className={cn("flex items-center gap-1.5 text-2xs text-muted-foreground", className)}>
         <CalendarX className="h-3.5 w-3.5" />
         {status === "postponed" ? "Match reporté — à valider à la main" : "Résultat introuvable — à valider à la main"}
       </div>
@@ -34,7 +34,7 @@ export function SuggestedResultBadge({ bet, onConfirm, disabled, className }: Su
 
   if (!suggested) {
     return (
-      <div className={cn("flex items-center gap-1.5 text-[11px] text-info", className)}>
+      <div className={cn("flex items-center gap-1.5 text-2xs text-info", className)}>
         <Sparkles className="h-3.5 w-3.5" /> Terminé {score}
       </div>
     );
@@ -61,7 +61,7 @@ export function SuggestedResultBadge({ bet, onConfirm, disabled, className }: Su
           onConfirm(suggested);
         }}
         className={cn(
-          "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors disabled:opacity-50",
+          "rounded-lg px-2.5 py-1 text-2xs font-semibold transition-colors disabled:opacity-50",
           win
             ? "bg-primary text-primary-foreground hover:bg-primary/90"
             : "bg-destructive text-destructive-foreground hover:bg-destructive/90",
