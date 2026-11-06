@@ -204,6 +204,10 @@ function FixtureCard({
               <img
                 src={fixture.leagueLogo}
                 alt=""
+                width={20}
+                height={20}
+                loading="lazy"
+                decoding="async"
                 className="h-full w-full object-contain"
               />
             </div>

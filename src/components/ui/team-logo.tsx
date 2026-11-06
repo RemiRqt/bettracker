@@ -13,6 +13,8 @@ const sizeClasses = {
   lg: "h-10 w-10",
 };
 
+const sizePx = { sm: 24, md: 32, lg: 40 };
+
 const emojiSizeClasses = {
   sm: "text-sm",
   md: "text-base",
@@ -32,6 +34,10 @@ export function TeamLogo({
       <img
         src={logoUrl}
         alt=""
+        width={sizePx[size]}
+        height={sizePx[size]}
+        loading="lazy"
+        decoding="async"
         className={`${sizeClasses[size]} rounded-full object-contain ${className}`}
       />
     );

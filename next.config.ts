@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ["recharts", "lucide-react"],
+    // Cache routeur côté client : revenir sur un onglet ne refait pas le rendu serveur.
+    // Les mutations appellent revalidatePath, qui vide ce cache.
+    staleTimes: { dynamic: 30, static: 180 },
   },
 };
 

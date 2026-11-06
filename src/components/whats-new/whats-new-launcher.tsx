@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { getUnseenReleases, markReleasesSeen } from "@/actions/releases";
 import type { Release } from "@/lib/releases";
-import { WhatsNewDialog } from "./whats-new-dialog";
+import dynamic from "next/dynamic";
+
+const WhatsNewDialog = dynamic(
+  () => import("./whats-new-dialog").then((m) => m.WhatsNewDialog),
+  { ssr: false },
+);
 
 /** Monté dans le layout : ouvre les nouveautés non vues après le chargement (sans bloquer le rendu). */
 export function WhatsNewLauncher() {
@@ -25,5 +30,6 @@ export function WhatsNewLauncher() {
     markReleasesSeen().catch(() => {});
   }
 
+  if (releases.length === 0) return null;
   return <WhatsNewDialog releases={releases} open={open} onClose={close} />;
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { LATEST_RELEASE_ID, unseenReleases, type Release } from "@/lib/releases";
 
 /**
@@ -8,11 +8,9 @@ import { LATEST_RELEASE_ID, unseenReleases, type Release } from "@/lib/releases"
  * pas l'historique (on le marque à jour directement).
  */
 export async function getUnseenReleases(): Promise<Release[]> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser();
   if (!user) return [];
+  const supabase = await createClient();
 
   const { data } = await supabase
     .from("user_settings")
@@ -21,19 +19,24 @@ export async function getUnseenReleases(): Promise<Release[]> {
     .maybeSingle();
   const lastSeen = data?.last_seen_release ?? null;
 
-  if (!lastSeen && user.created_at.slice(0, 10) > LATEST_RELEASE_ID) {
+  if (!lastSeen && (await accountCreatedAfterLatestRelease())) {
     await markReleasesSeen();
     return [];
   }
   return unseenReleases(lastSeen);
 }
 
-export async function markReleasesSeen(): Promise<void> {
+/** Seul cas où on interroge Supabase Auth (created_at absent du jeton) : jamais vu de nouveautés. */
+async function accountCreatedAfterLatestRelease(): Promise<boolean> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getUser();
+  return !!data.user && data.user.created_at.slice(0, 10) > LATEST_RELEASE_ID;
+}
+
+export async function markReleasesSeen(): Promise<void> {
+  const { user } = await getAuthUser();
   if (!user) return;
+  const supabase = await createClient();
   await supabase
     .from("user_settings")
     .upsert(

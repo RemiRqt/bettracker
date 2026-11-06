@@ -15,11 +15,17 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { getBetFormData } from "@/actions/bets";
-import {
-  BetForm,
-  type ExistingSubject,
-  type TeamMappingLite,
+import dynamic from "next/dynamic";
+import type {
+  ExistingSubject,
+  TeamMappingLite,
 } from "@/components/paris/bet-form";
+
+// Formulaire lourd chargé à la première ouverture, pas avec chaque page.
+const BetForm = dynamic(
+  () => import("@/components/paris/bet-form").then((m) => m.BetForm),
+  { ssr: false },
+);
 
 export interface BetPrefill {
   subject: string;

@@ -166,3 +166,8 @@
 @media (prefers-reduced-motion: reduce) {
   .wn-slide-in { animation: none; }
 }
+
+/* Zoom autorisé : champs à 16 px mini sur écran tactile pour éviter le zoom auto d'iOS au focus. */
+@media (pointer: coarse) {
+  input, textarea, select { font-size: max(16px, 1em); }
+}

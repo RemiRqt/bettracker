@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 
 export function SplashScreen() {
   const [hidden, setHidden] = useState(false);
+  // Masqué dès l'hydratation (300 ms mini pour éviter le flash) au lieu d'une attente fixe.
   useEffect(() => {
-    const t = setTimeout(() => setHidden(true), 1300);
+    const t = setTimeout(() => setHidden(true), 300);
     return () => clearTimeout(t);
   }, []);
 
@@ -14,8 +15,8 @@ export function SplashScreen() {
       aria-hidden
       className="fixed inset-0 z-[100] flex items-center justify-center bg-background"
       style={{
-        animation: hidden ? "splash-out .45s ease forwards" : undefined,
-        pointerEvents: hidden ? "none" : "auto",
+        animation: hidden ? "splash-out .25s ease forwards" : undefined,
+        pointerEvents: "none",
       }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
