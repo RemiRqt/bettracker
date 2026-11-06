@@ -6,20 +6,14 @@ import {
   useState,
   useCallback,
 } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Popup } from "@/components/kit/Popup";
 import { Loader2 } from "lucide-react";
 import { getBetFormData } from "@/actions/bets";
 import dynamic from "next/dynamic";
 import type {
   ExistingSubject,
   TeamMappingLite,
-} from "@/components/paris/bet-form";
+} from "@/components/paris/bet-form-types";
 
 // Formulaire lourd chargé à la première ouverture, pas avec chaque page.
 const BetForm = dynamic(
@@ -71,29 +65,27 @@ export function BetModalProvider({ children }: { children: React.ReactNode }) {
   return (
     <BetModalContext.Provider value={{ open: openModal }}>
       {children}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="bg-card border border-border max-h-[90vh] overflow-y-auto rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Nouveau pari</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Recherche une équipe ou un joueur
-            </DialogDescription>
-          </DialogHeader>
-          {loading || !data ? (
-            <div className="flex items-center justify-center py-10 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : (
-            <BetForm
-              key={prefill?.subject ?? "new"}
-              existingSubjects={data.existingSubjects}
-              teamMappings={data.teamMappings}
-              prefill={prefill ?? undefined}
-              onSuccess={() => setOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      <Popup
+        ouvert={open}
+        fermer={() => setOpen(false)}
+        titre="Nouveau pari"
+        description="Recherche une équipe ou un joueur"
+      >
+        {loading || !data ? (
+          <div role="status" className="flex items-center justify-center py-10 text-muted-foreground">
+            <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
+            <span className="sr-only">Chargement…</span>
+          </div>
+        ) : (
+          <BetForm
+            key={prefill?.subject ?? "new"}
+            existingSubjects={data.existingSubjects}
+            teamMappings={data.teamMappings}
+            prefill={prefill ?? undefined}
+            onSuccess={() => setOpen(false)}
+          />
+        )}
+      </Popup>
     </BetModalContext.Provider>
   );
 }

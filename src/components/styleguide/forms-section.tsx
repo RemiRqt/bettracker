@@ -1,5 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ChampNombre } from "@/components/kit/ChampNombre";
+import { Puces } from "@/components/kit/Puces";
+import { Bouton } from "@/components/kit/Bouton";
 import {
   Select,
   SelectContent,
@@ -19,7 +24,21 @@ import {
 } from "@/components/ui/table";
 import { Item, Section } from "./item";
 
+const SPORTS_DEMO = ["Football", "Tennis", "Rugby", "Basket"] as const;
+
 export function FormsSection() {
+  const [mise, setMise] = useState("");
+  const [cote, setCote] = useState("");
+  const [sports, setSports] = useState<string[]>(["Football"]);
+  const [enCours, setEnCours] = useState(false);
+
+  const basculerSport = (s: string) =>
+    setSports((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
+  const simulerEnvoi = () => {
+    setEnCours(true);
+    setTimeout(() => setEnCours(false), 1500);
+  };
+
   return (
     <Section
       anchor="forms"
@@ -30,16 +49,15 @@ export function FormsSection() {
       <Item id={100} label="Input" hint="texte" className="block">
         <Input placeholder="Nom de la série" />
       </Item>
-      <Item id={101} label="Input — nombre" hint="type number" className="block">
-        <Input type="number" placeholder="Mise (€)" />
+      <Item id={101} label="ChampNombre" hint="kit · clavier décimal, virgule → point" className="block">
+        <ChampNombre aria-label="Mise" placeholder="Mise" valeur={mise} surValeur={setMise} unite="€" />
       </Item>
       <Item id={102} label="Input — désactivé" hint="disabled" className="block">
         <Input placeholder="Verrouillé" disabled />
       </Item>
-      <Item id={103} label="Label + champ" hint="Label" className="block">
-        <div className="w-full space-y-1.5">
-          <Label htmlFor="sg-cote">Cote</Label>
-          <Input id="sg-cote" type="number" placeholder="1.85" />
+      <Item id={103} label="ChampNombre + libellé" hint="kit · libelle" className="block">
+        <div className="w-full">
+          <ChampNombre libelle="Cote" placeholder="1.85" valeur={cote} surValeur={setCote} />
         </div>
       </Item>
 
@@ -106,6 +124,16 @@ export function FormsSection() {
             </TableRow>
           </TableBody>
         </Table>
+      </Item>
+
+      <Item id={108} label="Puces" hint="kit · aria-pressed" className="block">
+        <Puces options={SPORTS_DEMO} selection={sports} surChoix={basculerSport} libelle="Sports" />
+      </Item>
+
+      <Item id={109} label="Bouton — en cours" hint="kit · enCours" className="block">
+        <Bouton enCours={enCours} onClick={simulerEnvoi}>
+          {enCours ? "Enregistrement…" : "Enregistrer"}
+        </Bouton>
       </Item>
     </Section>
   );

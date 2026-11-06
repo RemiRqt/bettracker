@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { BET_TYPES } from "@/lib/constants";
 import { Search, Plus } from "lucide-react";
-import type { ExistingSubject, TeamMappingLite } from "./bet-form";
+import type { ExistingSubject, TeamMappingLite } from "./bet-form-types";
 
 const STATUS_DOT: Record<string, string> = {
   en_cours: "bg-info",

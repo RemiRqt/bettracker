@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useTransition, useCallback, useId } from "react";
+import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteEquipe, updateEquipeSport } from "@/actions/equipes";
 import { validateResult } from "@/actions/bets";
@@ -9,42 +9,10 @@ import { useBetModal } from "@/components/paris/bet-modal-provider";
 import { FollowedTeams } from "@/components/profile/followed-teams";
 import { EquipeCard, type MergedEquipe } from "./equipe-card";
 import type { TeamMapping } from "@/actions/teams";
-import { SPORTS, SPORT_EMOJIS } from "@/lib/constants";
-import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  Search,
-  ChevronDown,
-  ChevronUp,
-  Inbox,
-  Users,
-} from "lucide-react";
-
-type SortKey = "date" | "gains" | "paris";
-type FilterKey = "en_cours" | "gagne" | "perdu" | null;
-
-const SORT_OPTIONS: { key: SortKey; label: string; srLabel: string }[] = [
-  { key: "date", label: "Récent", srLabel: "date" },
-  { key: "gains", label: "Gains", srLabel: "gains" },
-  { key: "paris", label: "Paris", srLabel: "nombre de paris" },
-];
-
-const FILTER_OPTIONS: {
-  key: "en_cours" | "gagne" | "perdu";
-  label: string;
-  color: string;
-  activeColor: string;
-}[] = [
-  { key: "en_cours", label: "En cours", color: "text-info border-info/30", activeColor: "bg-info/20" },
-  { key: "gagne", label: "Gagné", color: "text-primary border-primary/30", activeColor: "bg-primary/20" },
-  { key: "perdu", label: "Perdu", color: "text-destructive border-destructive/30", activeColor: "bg-destructive/20" },
-];
+import { Popup } from "@/components/kit/Popup";
+import { EtatVide } from "@/components/kit/EtatVide";
+import { EquipesToolbar, type SortKey, type FilterKey } from "./equipes-toolbar";
+import { EditSportPopup } from "./edit-sport-popup";
 
 interface EquipesPageProps {
   equipes: MergedEquipe[];
@@ -69,7 +37,6 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
   const [seriesShowAll, setSeriesShowAll] = useState<Set<string>>(new Set());
 
   const { open: openBetModal } = useBetModal();
-  const sportLabelId = useId();
 
   // === Sort/Filter logic ===
 
@@ -163,165 +130,47 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
   return (
     <div className="space-y-4 md:space-y-6">
       <h1 className="sr-only">Mes équipes</h1>
-      {/* Search (toggle) */}
-      {searchOpen && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
-          <input
-            type="search"
-            aria-label="Rechercher une équipe"
-            placeholder="Rechercher..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            autoFocus
-            className="w-full h-10 pl-10 pr-4 rounded-xl bg-card border border-border text-sm text-secondary-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-          />
-        </div>
-      )}
-
-      {/* Filter tabs + Mes équipes (droite) */}
-      <div className="flex items-center gap-1.5">
-        <div
-          role="group"
-          aria-label="Filtrer les équipes"
-          className="flex gap-1.5 overflow-x-auto -my-2.5 pt-2.5 pb-3.5 scrollbar-none flex-1"
-        >
-          {FILTER_OPTIONS.map((opt) => {
-            const isActive = filterBy === opt.key;
-            return (
-              <button
-                key={opt.key}
-                type="button"
-                aria-pressed={isActive}
-                onClick={() => setFilterBy(isActive ? null : opt.key)}
-                className={cn(
-                  "relative flex-shrink-0 px-2.5 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 rounded-lg text-xs font-medium transition-colors border",
-                  isActive
-                    ? `${opt.activeColor} ${opt.color}`
-                    : "bg-transparent text-muted-foreground border-border/50 hover:border-border"
-                )}
-              >
-                {opt.label}
-                <span className="ml-1 opacity-60">{counts[opt.key]}</span>
-              </button>
-            );
-          })}
-        </div>
-        <button
-          type="button"
-          onClick={() => setMyTeamsOpen(true)}
-          className="flex-shrink-0 flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:border-primary/50 transition-colors"
-        >
-          <Users className="h-3.5 w-3.5" aria-hidden="true" /> Mes équipes
-        </button>
-      </div>
-
-      {/* Sort + search (loupe à droite) */}
-      <div role="group" aria-label="Trier les équipes" className="flex items-stretch gap-1.5">
-        {SORT_OPTIONS.map((opt) => {
-          const isActive = sortBy === opt.key;
-          return (
-            <button
-              key={opt.key}
-              type="button"
-              aria-pressed={isActive}
-              aria-label={`Trier par ${opt.srLabel}${isActive ? (sortAsc ? ", croissant" : ", décroissant") : ""}`}
-              onClick={() => handleSort(opt.key)}
-              className={cn(
-                "relative flex-1 before:absolute before:-inset-y-2 before:inset-x-0 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-colors border",
-                isActive
-                  ? "bg-primary/20 text-primary border-primary/30"
-                  : "bg-card text-muted-foreground border-border hover:border-border/80"
-              )}
-            >
-              {opt.label}
-              {isActive && (sortAsc ? <ChevronUp className="h-3 w-3" aria-hidden="true" /> : <ChevronDown className="h-3 w-3" aria-hidden="true" />)}
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          onClick={() => setSearchOpen((o) => !o)}
-          aria-label="Rechercher une équipe"
-          aria-expanded={searchOpen}
-          className={cn(
-            "relative flex-shrink-0 w-11 before:absolute before:-inset-y-2 before:inset-x-0 flex items-center justify-center rounded-lg border transition-colors",
-            searchOpen
-              ? "bg-primary/10 border-primary/40 text-primary"
-              : "bg-card border-border text-secondary-foreground hover:text-foreground"
-          )}
-        >
-          <Search className="h-4 w-4" aria-hidden="true" />
-        </button>
-      </div>
+      <EquipesToolbar
+        search={search}
+        onSearch={setSearch}
+        searchOpen={searchOpen}
+        onToggleSearch={() => setSearchOpen((o) => !o)}
+        filterBy={filterBy}
+        onFilter={setFilterBy}
+        counts={counts}
+        sortBy={sortBy}
+        sortAsc={sortAsc}
+        onSort={handleSort}
+        onOpenMyTeams={() => setMyTeamsOpen(true)}
+      />
 
       {/* List */}
       {sorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <Inbox className="h-10 w-10 mb-3 text-muted-foreground" aria-hidden="true" />
-          <p className="text-sm">Aucune equipe trouvee.</p>
-        </div>
+        <EtatVide>Aucune équipe trouvée.</EtatVide>
       ) : (
         <div className="space-y-2">
           {sorted.map((eq) => renderCard(eq, ""))}
         </div>
       )}
 
-      {/* === Mes équipes Dialog === */}
-      <Dialog open={myTeamsOpen} onOpenChange={setMyTeamsOpen}>
-        <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto max-h-[90vh] overflow-y-auto rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Mes équipes</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Ajoute des équipes API et gère tes favoris
-            </DialogDescription>
-          </DialogHeader>
-          <FollowedTeams teamMappings={teamMappings} />
-        </DialogContent>
-      </Dialog>
+      <Popup
+        ouvert={myTeamsOpen}
+        fermer={() => setMyTeamsOpen(false)}
+        titre="Mes équipes"
+        description="Ajoute des équipes API et gère tes favoris"
+      >
+        <FollowedTeams teamMappings={teamMappings} />
+      </Popup>
 
-      {/* === Edit Equipe Dialog (sport) === */}
-      <Dialog open={editEquipe !== null} onOpenChange={(open) => { if (!open) setEditEquipe(null); }}>
-        <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">
-              Modifier {editEquipe?.name}
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Sport de l&apos;équipe
-            </DialogDescription>
-          </DialogHeader>
-          {editEquipe && (
-            <div>
-              <p id={sportLabelId} className="text-xs text-muted-foreground mb-1.5 block">Sport</p>
-              <div role="group" aria-labelledby={sportLabelId} className="grid grid-cols-2 gap-2">
-                {(Object.entries(SPORTS) as [string, string][]).map(([sKey, sLabel]) => (
-                  <button
-                    key={sKey}
-                    type="button"
-                    aria-pressed={editEquipe.sport === sKey}
-                    onClick={async () => {
-                      await updateEquipeSport(editEquipe.equipeId, sKey);
-                      setEditEquipe(null);
-                      startTransition(() => { router.refresh(); });
-                    }}
-                    className={cn(
-                      "flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium transition-colors border",
-                      editEquipe.sport === sKey
-                        ? "bg-primary/20 text-primary border-primary/30"
-                        : "bg-background text-muted-foreground border-border hover:border-border/80"
-                    )}
-                  >
-                    <span aria-hidden="true">{SPORT_EMOJIS[sKey]}</span>
-                    {sLabel}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
+      <EditSportPopup
+        equipe={editEquipe}
+        fermer={() => setEditEquipe(null)}
+        surChoix={async (equipe, sport) => {
+          await updateEquipeSport(equipe.equipeId, sport);
+          setEditEquipe(null);
+          startTransition(() => { router.refresh(); });
+        }}
+      />
     </div>
   );
 }

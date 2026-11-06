@@ -1,53 +1,33 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState } from "react";
 import { abandonSeries } from "@/actions/series";
-import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
+import { Bouton } from "@/components/kit/Bouton";
+import { Confirmation } from "@/components/kit/Confirmation";
 
 interface AbandonDialogProps {
   seriesId: string;
 }
 
+// Abandon d'une série (fiche série) : irréversible → Confirmation du kit.
 export function AbandonDialog({ seriesId }: AbandonDialogProps) {
-  const [isPending, startTransition] = useTransition();
-
-  function handleAbandon() {
-    startTransition(async () => {
-      await abandonSeries(seriesId);
-    });
-  }
+  const [ouvert, setOuvert] = useState(false);
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="destructive">Abandonner la serie</Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Abandonner cette serie ?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Cette action est irreversible. Tous les paris en attente seront
-            marques comme perdus.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Annuler</AlertDialogCancel>
-          <AlertDialogAction onClick={handleAbandon} disabled={isPending}>
-            {isPending ? "Abandon en cours..." : "Confirmer l'abandon"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      <Bouton variant="destructive" onClick={() => setOuvert(true)}>
+        Abandonner la série
+      </Bouton>
+      <Confirmation
+        ouvert={ouvert}
+        fermer={() => setOuvert(false)}
+        titre="Abandonner cette série ?"
+        message="Cette action est irréversible. Tous les paris en attente seront marqués comme perdus."
+        libelleAction="Abandonner la série"
+        surConfirmer={async () => {
+          await abandonSeries(seriesId);
+        }}
+      />
+    </>
   );
 }

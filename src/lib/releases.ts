@@ -4,7 +4,7 @@
  * (id = date AAAA-MM-JJ, croissant) : 3 écrans max, visuel d'abord, titre court + 1 ligne.
  */
 
-export type ReleaseVisual = "odds" | "result" | "settings";
+export type ReleaseVisual = "odds" | "result" | "settings" | "speed" | "sheet";
 
 /** Un écran = une maquette visuelle + un titre court + une ligne. */
 export interface ReleaseSlide {
@@ -21,6 +21,22 @@ export interface Release {
 }
 
 export const RELEASES: Release[] = [
+  {
+    id: "2026-11-06",
+    title: "Plus rapide, plus confortable",
+    slides: [
+      {
+        visual: "speed",
+        title: "Une app plus rapide",
+        text: "Elle s'ouvre presque tout de suite, et un onglet déjà vu s'affiche sans attendre.",
+      },
+      {
+        visual: "sheet",
+        title: "Les formulaires montent du bas",
+        text: "Pari, transaction, freebet : ils s'ouvrent en bas de l'écran. Glisse vers le bas pour fermer.",
+      },
+    ],
+  },
   {
     id: "2026-10-08",
     title: "Fini la trêve, retour aux affaires !",

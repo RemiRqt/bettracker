@@ -1,4 +1,4 @@
-import { Bell, Sparkles, Star } from "lucide-react";
+import { Bell, Sparkles, Star, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ReleaseVisual } from "@/lib/releases";
 
@@ -91,10 +91,48 @@ function SettingsVisual() {
   );
 }
 
+function SpeedVisual() {
+  return (
+    <div className="w-full space-y-2">
+      {[
+        { label: "Ouverture", avant: "1,8 s", apres: "0,3 s" },
+        { label: "Retour sur un onglet", avant: "~1 s", apres: "instantané" },
+      ].map((l) => (
+        <div key={l.label} className="flex items-center justify-between rounded-lg bg-background px-3 py-1.5">
+          <span className="text-sm text-foreground">{l.label}</span>
+          <span className="flex items-center gap-1.5 text-xs">
+            <span className="text-muted-foreground line-through">{l.avant}</span>
+            <span className="flex items-center gap-0.5 font-semibold text-primary">
+              <Zap className="h-3 w-3 fill-current" aria-hidden="true" /> {l.apres}
+            </span>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SheetVisual() {
+  return (
+    <div className="relative h-28 w-full overflow-hidden rounded-xl bg-background">
+      <div className="absolute inset-x-2 bottom-0 space-y-1.5 rounded-t-2xl bg-card px-3 pt-1.5 pb-2.5 shadow-sm">
+        <div className="mx-auto h-1 w-8 rounded-full bg-muted" />
+        <p className="text-xs font-semibold text-foreground">Nouveau pari</p>
+        <div className="flex gap-1.5">
+          <span className="flex-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground">Cote 1,85</span>
+          <span className="flex-1 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground">Mise 10 €</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const VISUALS: Record<ReleaseVisual, () => React.ReactElement> = {
   odds: OddsVisual,
   result: ResultVisual,
   settings: SettingsVisual,
+  speed: SpeedVisual,
+  sheet: SheetVisual,
 };
 
 export function ReleaseVisualView({ visual }: { visual: ReleaseVisual }) {

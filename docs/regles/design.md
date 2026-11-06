@@ -8,7 +8,7 @@ Modèle : finitopipo (`~/projects/finitopipo/docs/regles/design.md`). Audit d'or
 | Dossier | Contenu | Règle |
 |---|---|---|
 | `src/components/ui/` | **shadcn/ui** (Radix) : `button`, `card`, `input`, `textarea`, `label`, `badge`, `dialog`, `alert-dialog`, `drawer`, `collapsible`, `select`, `tabs`, `toast`… | `npx shadcn@latest add <nom>` (`components.json`), puis **remplacer `import { cn } from "cn"` par `@/lib/utils`** et désinstaller le paquet `cn` s'il revient. Ne modifier que pour le thème ou le tactile. |
-| `src/components/kit/` | Composants de l'app, en français, sur `ui/` : `Popup` (feuille du bas sur téléphone, fenêtre sur ordinateur, chargée à la demande), `Confirmation`, `Bouton` (`enCours`), `Champ` / `ZoneTexte` (libellé relié), `Puces` (`aria-pressed`), `Section` (repliable), `EtatVide` | **Premier réflexe** pour toute nouvelle interface. Un besoin répété dans deux écrans → il rejoint le kit. |
+| `src/components/kit/` | Composants de l'app, en français, sur `ui/` : `Popup` (feuille du bas sur téléphone, fenêtre sur ordinateur, chargée à la demande), `Confirmation`, `Bouton` (`enCours`), `Champ` / `ZoneTexte` (libellé relié), `ChampNombre` (clavier décimal, virgule → point), `Puces` (`aria-pressed`), `Section` (repliable), `EtatVide` | **Premier réflexe** pour toute nouvelle interface. Un besoin répété dans deux écrans → il rejoint le kit. |
 | `src/components/[feature]/` | Écrans | Construits avec le kit. |
 
 ## Couleurs
@@ -34,5 +34,6 @@ Modèle : finitopipo (`~/projects/finitopipo/docs/regles/design.md`). Audit d'or
 
 ## Garde-fous
 
-- `npm run lint` (ESLint flat config) : couleurs en dur (erreur), imports serveur dans un composant (erreur), fichier ≤ 300 lignes / composant ≤ 200 lignes (**avertissement** jusqu'au découpage du lot 5, puis erreur).
+- `npm run lint` (ESLint flat config) : couleurs en dur (erreur), imports serveur dans un composant (erreur), fichier ≤ 300 lignes / composant ≤ 200 lignes (erreur).
+- **Aucune saisie native** : pas d'`<input type="number|date|time|checkbox|radio">` ni `<select>` → `ChampNombre`, `Puces`, `Popup`.
 - Gate avant push : `npm run lint && npx tsc --noEmit && npm test && npm run build`.

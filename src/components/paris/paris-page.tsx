@@ -1,145 +1,34 @@
 "use client";
 
-import { useState, useTransition, useMemo, useId } from "react";
+import { useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle, XCircle, Trash2, ChevronUp, ChevronDown, Pencil, Inbox } from "lucide-react";
-import { SuggestedResultBadge } from "@/components/bets/suggested-result-badge";
+import { Inbox } from "lucide-react";
 import { validateResult, deleteBet, updateBet } from "@/actions/bets";
-import { BET_TYPES, SPORT_EMOJIS } from "@/lib/constants";
-import { formatEuros, cn } from "@/lib/utils";
 import { fireConfetti } from "@/lib/confetti";
-import { RollingNumber } from "@/components/ui/rolling-number";
-import { TeamLogo } from "@/components/ui/team-logo";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { useBetModal } from "@/components/paris/bet-modal-provider";
 import { ParisEquipesSwitch } from "@/components/paris/paris-equipes-switch";
-
-interface Series {
-  id: string;
-  subject: string;
-  bet_type: string;
-  status: string;
-  target_gain: number;
-  user_id: string;
-  kind: string;
-  sport: string;
-}
-
-interface Bet {
-  id: string;
-  bet_number: number;
-  odds: number;
-  stake: number;
-  potential_net: number;
-  result: string | null;
-  created_at: string;
-  series_id: string;
-  series: Series;
-  resolution_status: string | null;
-  suggested_result: string | null;
-  fixture_score: string | null;
-}
+import { ParisFiltres, ParisTri, useParisTri } from "./paris-filters";
+import { BetCard } from "./bet-card";
+import { EditBetPopup } from "./edit-bet-popup";
+import { WinDialog } from "./win-dialog";
+import type { Bet, FilterKey } from "./paris-types";
 
 interface ParisPageProps {
   bets: Bet[];
   logoMap?: Record<string, string>;
 }
 
-type FilterValue = "en_cours" | "gagne" | "perdu";
-type FilterKey = FilterValue | null;
-type SortKey = "date" | "gains" | "mise" | "cote";
-
-const FILTERS: { key: FilterValue; label: string; color: string; activeColor: string }[] = [
-  { key: "en_cours", label: "En cours", color: "text-info border-info/30", activeColor: "bg-info/20" },
-  { key: "gagne", label: "Gagné", color: "text-primary border-primary/30", activeColor: "bg-primary/20" },
-  { key: "perdu", label: "Perdu", color: "text-destructive border-destructive/30", activeColor: "bg-destructive/20" },
-];
-
-const SORTS: { key: SortKey; label: string; srLabel: string }[] = [
-  { key: "date", label: "Date", srLabel: "date" },
-  { key: "gains", label: "Gains", srLabel: "gains" },
-  { key: "mise", label: "Mise", srLabel: "mise" },
-  { key: "cote", label: "Cote", srLabel: "cote" },
-];
-
 export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
   const searchParams = useSearchParams();
   const initialFilter = (searchParams.get("filter") as FilterKey) || null;
   const confirm = useConfirm();
   const { open: openBetModal } = useBetModal();
+  const tri = useParisTri(bets, initialFilter);
 
   const [isPending, startTransition] = useTransition();
-  const [filter, setFilter] = useState<FilterKey>(initialFilter);
-  const [sortBy, setSortBy] = useState<SortKey>("date");
-  const [sortAsc, setSortAsc] = useState(false);
-
-  // Edit bet dialog
   const [editBet, setEditBet] = useState<Bet | null>(null);
   const [winBet, setWinBet] = useState<Bet | null>(null);
-  const [editOdds, setEditOdds] = useState("");
-  const [editStake, setEditStake] = useState("");
-  const editOddsId = useId();
-  const editStakeId = useId();
-
-  function handleSort(key: SortKey) {
-    if (sortBy === key) {
-      setSortAsc(!sortAsc);
-    } else {
-      setSortBy(key);
-      setSortAsc(false);
-    }
-  }
-
-  const counts = useMemo(() => ({
-    en_cours: bets.filter((b) => b.result === null).length,
-    gagne: bets.filter((b) => b.result === "gagne").length,
-    perdu: bets.filter((b) => b.result === "perdu").length,
-  }), [bets]);
-
-  const filtered = useMemo(() => {
-    if (filter === null) return bets;
-    return bets.filter((b) => {
-      switch (filter) {
-        case "en_cours": return b.result === null;
-        case "gagne": return b.result === "gagne";
-        case "perdu": return b.result === "perdu";
-      }
-    });
-  }, [bets, filter]);
-
-  const sorted = useMemo(() => {
-    const arr = [...filtered];
-    arr.sort((a, b) => {
-      // "en cours" (résultat null) toujours en haut
-      const aPending = a.result === null ? 0 : 1;
-      const bPending = b.result === null ? 0 : 1;
-      if (aPending !== bPending) return aPending - bPending;
-      let cmp = 0;
-      switch (sortBy) {
-        case "date":
-          cmp = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-          break;
-        case "gains":
-          cmp = b.potential_net - a.potential_net;
-          break;
-        case "mise":
-          cmp = b.stake - a.stake;
-          break;
-        case "cote":
-          cmp = b.odds - a.odds;
-          break;
-      }
-      return sortAsc ? -cmp : cmp;
-    });
-    return arr;
-  }, [filtered, sortBy, sortAsc]);
 
   function handleValidate(betId: string, result: "gagne" | "perdu") {
     startTransition(async () => {
@@ -173,98 +62,26 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
     });
   }
 
-  function openEdit(bet: Bet) {
-    setEditBet(bet);
-    setEditOdds(bet.odds.toString());
-    setEditStake(bet.stake.toString());
-  }
-
-  function handleEditSave() {
-    if (!editBet) return;
-    const odds = parseFloat(editOdds);
-    const stake = parseFloat(editStake);
-    if (isNaN(odds) || odds <= 1) return;
-    if (isNaN(stake) || stake <= 0) return;
+  function handleEditSave(bet: Bet, values: { odds: number; stake: number }) {
     startTransition(async () => {
-      await updateBet(editBet.id, { odds, stake });
+      await updateBet(bet.id, values);
       setEditBet(null);
     });
-  }
-
-  function formatDate(dateStr: string) {
-    const d = new Date(dateStr);
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = String(d.getFullYear()).slice(-2);
-    return `${day}/${month}/${year}`;
   }
 
   return (
     <div className="space-y-3">
       <h1 className="sr-only">Mes paris</h1>
-      {/* Header */}
       <ParisEquipesSwitch active="paris" />
 
-      {/* Filters 1/3 */}
-      <div role="group" aria-label="Filtrer les paris" className="grid grid-cols-3 gap-1.5">
-        {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            aria-pressed={filter === f.key}
-            onClick={() => setFilter(filter === f.key ? null : f.key)}
-            className={cn(
-              "relative py-2 before:absolute before:-inset-y-1.5 before:inset-x-0 rounded-xl text-xs font-semibold transition-colors border",
-              filter === f.key
-                ? `${f.activeColor} ${f.color}`
-                : "bg-transparent text-muted-foreground border-border/50 hover:border-border"
-            )}
-          >
-            {f.label}
-            <span className="ml-1 opacity-60">{counts[f.key]}</span>
-          </button>
-        ))}
-      </div>
+      <ParisFiltres tri={tri} />
+      <ParisTri tri={tri} />
 
-      {/* Sorts 1/4 reversible */}
-      <div role="group" aria-label="Trier les paris" className="grid grid-cols-4 gap-1">
-        {SORTS.map((s) => {
-          const isActive = sortBy === s.key;
-          return (
-            <button
-              key={s.key}
-              type="button"
-              aria-pressed={isActive}
-              aria-label={
-                isActive
-                  ? `Trier par ${s.srLabel}, ${sortAsc ? "croissant" : "décroissant"}`
-                  : `Trier par ${s.srLabel}`
-              }
-              onClick={() => handleSort(s.key)}
-              className={cn(
-                "relative before:absolute before:-top-1.5 before:-bottom-2.5 before:inset-x-0 flex items-center justify-center gap-0.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors border",
-                isActive
-                  ? "bg-primary/20 text-primary border-primary/30"
-                  : "bg-card text-muted-foreground border-border hover:border-border/80"
-              )}
-            >
-              {s.label}
-              {isActive && (
-                sortAsc
-                  ? <ChevronUp className="h-3 w-3" aria-hidden="true" />
-                  : <ChevronDown className="h-3 w-3" aria-hidden="true" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Bets list */}
-      {sorted.length === 0 ? (
+      {tri.sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <Inbox className="h-10 w-10 mb-3 text-muted-foreground" aria-hidden="true" />
-          <p className="text-sm">Aucun pari{filter ? " pour ce filtre" : ""}.</p>
-          {!filter && (
+          <p className="text-sm">Aucun pari{tri.filter ? " pour ce filtre" : ""}.</p>
+          {!tri.filter && (
             <button
               type="button"
               onClick={() => openBetModal()}
@@ -276,201 +93,23 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          {sorted.map((bet) => {
-            const typeLabel =
-              BET_TYPES[bet.series.bet_type as keyof typeof BET_TYPES] ??
-              bet.series.bet_type;
-
-            return (
-              <div
-                key={bet.id}
-                className={cn(
-                  "bg-card rounded-xl p-3 border",
-                  bet.result === null
-                    ? "border-info/20"
-                    : "border-transparent"
-                )}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  {/* Left */}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <TeamLogo logoUrl={logoMap[bet.series.subject]} size="sm" className="flex-shrink-0" />
-                      <span className="font-semibold text-foreground text-sm truncate">
-                        {bet.series.subject}
-                      </span>
-                      <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-secondary-foreground">
-                        {typeLabel}
-                      </span>
-                      {bet.series.kind === "unique" && (
-                        <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/15 text-primary">
-                          Unique
-                        </span>
-                      )}
-                      {bet.series.sport && bet.series.sport !== "football" && (
-                        <span className="flex-shrink-0 text-xs" role="img" aria-label={bet.series.sport} title={bet.series.sport}>
-                          {SPORT_EMOJIS[bet.series.sport] ?? SPORT_EMOJIS.default}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(bet.created_at)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        Pari #{bet.bet_number}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Right */}
-                  <div className="flex-shrink-0 text-right">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>
-                        <span className="text-foreground">{formatEuros(bet.stake)}</span>
-                      </span>
-                      <span>
-                        ×<span className="text-foreground ml-0.5">{bet.odds.toFixed(2)}</span>
-                      </span>
-                    </div>
-                    <div className="mt-1.5 flex items-center justify-end gap-1.5">
-                      {bet.result !== null && (
-                        <span className={cn(
-                          "px-2 py-0.5 rounded-full text-xs font-medium",
-                          bet.result === "gagne"
-                            ? "bg-primary/20 text-primary"
-                            : "bg-destructive/20 text-destructive"
-                        )}>
-                          {bet.result === "gagne" ? "Gagne" : "Perdu"}
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => openEdit(bet)}
-                        disabled={isPending}
-                        aria-label={`Modifier le pari #${bet.bet_number} sur ${bet.series.subject}`}
-                        className="inline-flex size-11 -my-3.5 -mx-2 items-center justify-center text-muted-foreground hover:text-muted-foreground/80 transition-colors disabled:opacity-50"
-                      >
-                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(bet.id)}
-                        disabled={isPending}
-                        aria-label={`Supprimer le pari #${bet.bet_number} sur ${bet.series.subject}`}
-                        className="inline-flex size-11 -my-3.5 -mx-2 items-center justify-center text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {bet.result === null && (
-                  <SuggestedResultBadge
-                    bet={bet}
-                    disabled={isPending}
-                    onConfirm={(r) => (r === "gagne" ? handleWin(bet) : handleValidate(bet.id, "perdu"))}
-                    className="mt-2"
-                  />
-                )}
-
-                {/* Pending: Gagné / Perdu below the card */}
-                {bet.result === null && (
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleWin(bet)}
-                      disabled={isPending}
-                      className="relative before:absolute before:-inset-y-1 before:inset-x-0 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-primary/15 text-primary text-sm font-semibold hover:bg-primary/25 transition-colors disabled:opacity-50"
-                    >
-                      <CheckCircle className="h-4 w-4" aria-hidden="true" /> Gagné
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleValidate(bet.id, "perdu")}
-                      disabled={isPending}
-                      className="relative before:absolute before:-inset-y-1 before:inset-x-0 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-destructive/15 text-destructive text-sm font-semibold hover:bg-destructive/25 transition-colors disabled:opacity-50"
-                    >
-                      <XCircle className="h-4 w-4" aria-hidden="true" /> Perdu
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {tri.sorted.map((bet) => (
+            <BetCard
+              key={bet.id}
+              bet={bet}
+              logoUrl={logoMap[bet.series.subject]}
+              disabled={isPending}
+              onEdit={() => setEditBet(bet)}
+              onDelete={() => handleDelete(bet.id)}
+              onWin={() => handleWin(bet)}
+              onLose={() => handleValidate(bet.id, "perdu")}
+            />
+          ))}
         </div>
       )}
 
-      {/* Win celebration popup */}
-      <Dialog open={winBet !== null} onOpenChange={(open) => { if (!open) setWinBet(null); }}>
-        <DialogContent className="bg-card border border-primary/30 max-w-xs mx-auto rounded-2xl">
-          <DialogHeader className="items-center text-center">
-            <div className="text-5xl animate-bounce" aria-hidden="true">🎉</div>
-            <DialogTitle className="text-lg text-primary">
-              Pari gagné !
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              {winBet?.series.subject} · Pari #{winBet?.bet_number} · cote{" "}
-              {winBet?.odds.toFixed(2)}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="rounded-xl bg-primary/10 px-4 py-3 text-center">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-              Bénéfice net
-            </p>
-            <p className="text-2xl font-bold text-primary">
-              +<RollingNumber value={winBet?.potential_net ?? 0} format="euros" />
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit bet dialog */}
-      <Dialog open={editBet !== null} onOpenChange={(open) => { if (!open) setEditBet(null); }}>
-        <DialogContent className="bg-card border border-border max-w-sm mx-auto rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Modifier le pari</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              {editBet && `${editBet.series.subject} - Pari #${editBet.bet_number}`}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <label htmlFor={editOddsId} className="text-xs text-muted-foreground mb-1 block">Cote</label>
-              <input
-                id={editOddsId}
-                inputMode="decimal"
-                type="number"
-                step="0.01"
-                value={editOdds}
-                onChange={(e) => setEditOdds(e.target.value)}
-                className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-            <div>
-              <label htmlFor={editStakeId} className="text-xs text-muted-foreground mb-1 block">Mise</label>
-              <input
-                id={editStakeId}
-                inputMode="decimal"
-                type="number"
-                step="0.01"
-                value={editStake}
-                onChange={(e) => setEditStake(e.target.value)}
-                className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={handleEditSave}
-              disabled={isPending}
-              className="w-full py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors disabled:opacity-50"
-            >
-              Enregistrer
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <WinDialog bet={winBet} fermer={() => setWinBet(null)} />
+      <EditBetPopup bet={editBet} fermer={() => setEditBet(null)} enCours={isPending} onSave={handleEditSave} />
     </div>
   );
 }

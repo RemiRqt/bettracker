@@ -52,8 +52,7 @@ const eslintConfig = defineConfig([
     },
   },
   { files: ["src/**/*.{ts,tsx}"], rules: { "no-restricted-syntax": regleCouleur("error") } },
-  // Tailles en avertissement jusqu'au découpage des gros écrans (audit 2026-11-06, lot 5), puis "error".
-  { files: INTERFACE, ignores: ["src/components/ui/**", "src/app/api/**"], rules: reglesTaille("warn") },
+  { files: INTERFACE, ignores: ["src/components/ui/**", "src/app/api/**"], rules: reglesTaille("error") },
   { files: ["src/components/**/*.{ts,tsx}"], rules: { "no-restricted-imports": ["error", IMPORTS_SERVEUR] } },
   // Seules exceptions aux couleurs en dur : src/lib/theme.ts et les tests.
   { files: ["src/lib/theme.ts", "src/**/*.test.ts", "src/components/styleguide/colors-section.tsx"], rules: { "no-restricted-syntax": "off" } },
