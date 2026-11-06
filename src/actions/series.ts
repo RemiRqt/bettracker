@@ -3,11 +3,11 @@
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import {
-  getSubjectLinks,
   getTeamMappings,
   type CachedFixture,
   type TeamMapping,
 } from "@/actions/teams";
+import { getSubjectLinks } from "@/actions/subject-links";
 import type { ActionItem, BetType, SportType } from "@/lib/types";
 
 /**

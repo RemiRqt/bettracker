@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import type { CachedFixture } from "@/actions/teams";
 import type { ActiveSeriesInfo, FixtureOdds } from "@/app/(app)/calendar/page";
 import { FixtureOddsLine } from "@/components/calendar/fixture-odds-line";
-import { refreshCalendarFixtures } from "@/actions/teams";
+import { refreshCalendarFixtures } from "@/actions/team-calendar";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { BET_TYPES } from "@/lib/constants";
 import { CalendarDays, Clock, RefreshCw, TrendingUp } from "lucide-react";

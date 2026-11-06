@@ -19,7 +19,6 @@ export function SplashScreen() {
         pointerEvents: "none",
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/icons/icon-512.png"
         alt=""

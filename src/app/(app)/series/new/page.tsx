@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { ParisPage } from "@/components/paris/paris-page";
-import { getSubjectLinks, getTeamMappings } from "@/actions/teams";
+import { getTeamMappings } from "@/actions/teams";
+import { getSubjectLinks } from "@/actions/subject-links";
 
 export const dynamic = "force-dynamic";
 

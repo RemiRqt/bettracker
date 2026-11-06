@@ -11,7 +11,7 @@ import {
 import { SeriesStatusBadge } from "@/components/series/series-status-badge";
 import { formatEuros, formatPercent, cn } from "@/lib/utils";
 import { deleteSeries, abandonSeries, reopenSeries } from "@/actions/series";
-import { validateResult } from "@/actions/bets";
+import { validateResult } from "@/actions/bet-results";
 import { fireConfetti } from "@/lib/confetti";
 import { canDeleteSeries } from "@/lib/series-utils";
 import { SeriesBetRow } from "@/components/series/series-bet-row";

@@ -1,0 +1,316 @@
+// Calculs purs du tableau de bord (sans accès base) : utilisés par l'action getDashboardStats.
+import type { DashboardStats, Bet } from "@/lib/types";
+import { computeMarketValue } from "@/lib/market-value";
+
+export type StatsBet = Pick<
+  Bet,
+  | "id" | "series_id" | "odds" | "stake" | "result" | "bet_number" | "potential_net" | "created_at"
+  | "market_odds_best" | "market_odds_avg"
+>;
+
+export interface StatsInput {
+  series: { status: string }[];
+  bets: StatsBet[];
+  transactions: { type: string; amount: number; created_at: string }[];
+  freebets: { remaining_amount: number }[];
+  freebetBets: { odds: number; stake: number; result: string | null; created_at: string }[];
+}
+
+type TimelineEntry =
+  | { kind: "transaction"; created_at: string; type: string; amount: number }
+  | { kind: "bet_settled"; created_at: string; result: string; stake: number; odds: number }
+  | { kind: "freebet_settled"; created_at: string; result: string; stake: number; odds: number };
+
+type Snapshot = {
+  capital: number;
+  deposits: number;
+  valeur: number;
+  encaisse: number;
+};
+
+export function computeDashboardStats({
+  series,
+  bets: allBets,
+  transactions: allTransactions,
+  freebets: allFreebets,
+  freebetBets: allFreebetBets,
+}: StatsInput): DashboardStats {
+  // --- Transaction totals ---
+  const totalDeposits = allTransactions
+    .filter((t) => t.type === "depot")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalWithdrawals = allTransactions
+    .filter((t) => t.type === "retrait")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  // --- Bets by category ---
+  const settledBets = allBets.filter((b) => b.result !== null);
+  const wonBets = allBets.filter((b) => b.result === "gagne");
+  const lostBets = allBets.filter((b) => b.result === "perdu");
+  const pendingBets = allBets.filter((b) => b.result === null);
+
+  // --- Capital en cours (net profit) ---
+  const totalWon = wonBets.reduce((sum, b) => sum + b.stake * b.odds, 0);
+  const totalStakedSettled = settledBets.reduce((sum, b) => sum + b.stake, 0);
+  const bettingProfit =
+    Math.round((totalWon - totalStakedSettled) * 100) / 100;
+  // --- Total Mise (all stakes including pending) ---
+  const totalStakes =
+    Math.round(allBets.reduce((sum, b) => sum + b.stake, 0) * 100) / 100;
+
+  // --- Total Gains (sum of stake * odds for won bets) ---
+  const totalGains = Math.round(totalWon * 100) / 100;
+
+  // --- Rendement = (total gains - total mise) / total mise * 100 ---
+  const roi =
+    totalStakes > 0
+      ? Math.round(((totalGains - totalStakes) / totalStakes) * 100000) / 1000
+      : 0;
+
+  // --- Mise en cours (pending stakes) ---
+  const miseEnCours =
+    Math.round(pendingBets.reduce((sum, b) => sum + b.stake, 0) * 100) / 100;
+
+  // --- Gains potentiels (for pending bets: stake * odds) ---
+  const gainsPotentiels =
+    Math.round(
+      pendingBets.reduce((sum, b) => sum + b.stake * b.odds, 0) * 100
+    ) / 100;
+
+  // --- Series en cours ---
+  const seriesEnCours = series.filter((s) => s.status === "en_cours").length;
+
+  // --- Paris gagnes / perdus ---
+  const parisGagnes = wonBets.length;
+  const parisPerdu = lostBets.length;
+
+  // --- Cote moyenne ---
+  const coteMoyenne =
+    allBets.length > 0
+      ? Math.round(
+          (allBets.reduce((sum, b) => sum + b.odds, 0) / allBets.length) * 100
+        ) / 100
+      : 0;
+
+  // --- Mise moyenne ---
+  const miseMoyenne =
+    allBets.length > 0
+      ? Math.round(
+          (allBets.reduce((sum, b) => sum + b.stake, 0) / allBets.length) * 100
+        ) / 100
+      : 0;
+
+  // --- Freebet stats ---
+  const freebetBalance =
+    Math.round(allFreebets.reduce((sum, f) => sum + f.remaining_amount, 0) * 100) / 100;
+
+  const wonFreebetBets = allFreebetBets.filter((b) => b.result === "gagne");
+  const pendingFreebetBets = allFreebetBets.filter((b) => b.result === null);
+
+  const freebetProfit =
+    Math.round(
+      wonFreebetBets.reduce((sum, b) => sum + (b.stake * b.odds - b.stake), 0) * 100
+    ) / 100;
+
+  const freebetGainsPotentiels =
+    Math.round(
+      pendingFreebetBets.reduce((sum, b) => sum + (b.stake * b.odds - b.stake), 0) * 100
+    ) / 100;
+
+  // Capital including freebet profit
+  const capitalWithFreebets =
+    Math.round((totalDeposits - totalWithdrawals + bettingProfit + freebetProfit) * 100) / 100;
+
+  const capitalDisponible =
+    Math.round((capitalWithFreebets - miseEnCours) * 100) / 100;
+
+  const objectifDeGain =
+    Math.round((capitalDisponible + gainsPotentiels + freebetGainsPotentiels) * 100) / 100;
+
+  const timeline = buildTimeline(allTransactions, settledBets, allFreebetBets);
+
+  return {
+    capital: capitalWithFreebets,
+    capitalDisponible,
+    totalStakes,
+    totalGains,
+    roi,
+    miseEnCours,
+    gainsPotentiels,
+    seriesEnCours,
+    parisEnCours: pendingBets.length,
+    parisGagnes,
+    parisPerdu,
+    coteMoyenne,
+    miseMoyenne,
+    totalDeposits,
+    totalWithdrawals,
+    bettingProfit,
+    freebetBalance,
+    freebetProfit,
+    objectifDeGain,
+    capitalEvolution: computeCapitalEvolution(timeline),
+    monthlyPnl: computeMonthlyPnl(timeline),
+    marketValue: computeMarketValue(allBets),
+  };
+}
+
+// --- Capital evolution + Invested evolution ---
+// Capital = bankroll (deposits - withdrawals + winnings - losses)
+// Invested = net deposits (deposits - withdrawals only) — the money the user put in
+function buildTimeline(
+  allTransactions: StatsInput["transactions"],
+  settledBets: StatsBet[],
+  allFreebetBets: StatsInput["freebetBets"],
+): TimelineEntry[] {
+  const settledFreebetBets = allFreebetBets.filter((b) => b.result !== null);
+
+  return [
+    ...allTransactions.map((t) => ({
+      kind: "transaction" as const,
+      created_at: t.created_at,
+      type: t.type,
+      amount: t.amount,
+    })),
+    ...settledBets.map((b) => ({
+      kind: "bet_settled" as const,
+      created_at: b.created_at,
+      result: b.result as string,
+      stake: b.stake,
+      odds: b.odds,
+    })),
+    ...settledFreebetBets.map((b) => ({
+      kind: "freebet_settled" as const,
+      created_at: b.created_at,
+      result: b.result as string,
+      stake: b.stake,
+      odds: b.odds,
+    })),
+  ].sort(
+    (a, b) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+}
+
+function computeCapitalEvolution(timeline: TimelineEntry[]): DashboardStats["capitalEvolution"] {
+  // Build daily snapshots from timeline events.
+  // capital  = bankroll currently in the account
+  // deposits = gross cumulative deposits (only grows)
+  // encaisse = cumulative withdrawals (banked profit)
+  // valeur   = capital + encaisse → unaffected by a withdrawal (money just
+  //            moves from the account to "banked"), so the gap valeur - deposits
+  //            reads as total lifetime winnings.
+  let runningCapital = 0;
+  let runningDeposits = 0;
+  let runningWithdrawals = 0;
+  const dailySnapshot = new Map<string, Snapshot>();
+
+  for (const entry of timeline) {
+    if (entry.kind === "transaction") {
+      if (entry.type === "depot") {
+        runningCapital += entry.amount;
+        runningDeposits += entry.amount;
+      } else if (entry.type === "retrait") {
+        runningCapital -= entry.amount;
+        runningWithdrawals += entry.amount;
+      }
+    } else if (entry.kind === "bet_settled") {
+      if (entry.result === "gagne") {
+        runningCapital += entry.stake * entry.odds - entry.stake;
+      } else {
+        runningCapital -= entry.stake;
+      }
+    } else if (entry.kind === "freebet_settled") {
+      // Freebet wins add profit to capital (not deposits)
+      if (entry.result === "gagne") {
+        runningCapital += entry.stake * entry.odds - entry.stake;
+      }
+      // Freebet losses don't affect real capital
+    }
+    const dayKey = entry.created_at.slice(0, 10);
+    dailySnapshot.set(dayKey, {
+      capital: Math.round(runningCapital * 100) / 100,
+      deposits: Math.round(runningDeposits * 100) / 100,
+      valeur: Math.round((runningCapital + runningWithdrawals) * 100) / 100,
+      encaisse: Math.round(runningWithdrawals * 100) / 100,
+    });
+  }
+
+  // Fill every day from first event to today
+  const capitalEvolution: ({ date: string } & Snapshot)[] = [];
+
+  if (dailySnapshot.size > 0) {
+    const sortedDays = [...dailySnapshot.keys()].sort();
+    const startDate = new Date(sortedDays[0]);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let prev: Snapshot = { capital: 0, deposits: 0, valeur: 0, encaisse: 0 };
+    const current = new Date(startDate);
+
+    while (current <= today) {
+      const key = current.toISOString().slice(0, 10);
+      const snap = dailySnapshot.get(key);
+      if (snap) {
+        prev = snap;
+      }
+      capitalEvolution.push({ date: `${key}T12:00:00`, ...prev });
+      current.setDate(current.getDate() + 1);
+    }
+  }
+
+  return capitalEvolution;
+}
+
+function computeMonthlyPnl(timeline: TimelineEntry[]): DashboardStats["monthlyPnl"] {
+  // --- Monthly P/L + ROI (calendar months) ---
+  // Aggregated from settled bets and freebets. profit = realized winnings
+  // minus losses; freebet losses cost nothing. stake feeds the ROI denominator.
+  const monthAgg = new Map<
+    string,
+    { profit: number; stake: number; count: number }
+  >();
+  for (const entry of timeline) {
+    if (entry.kind === "transaction") continue;
+    const key = entry.created_at.slice(0, 7); // YYYY-MM
+    const cur = monthAgg.get(key) ?? { profit: 0, stake: 0, count: 0 };
+    const won = entry.result === "gagne";
+    if (entry.kind === "bet_settled") {
+      cur.profit += won ? entry.stake * entry.odds - entry.stake : -entry.stake;
+    } else {
+      // freebet: win adds profit, loss costs nothing
+      cur.profit += won ? entry.stake * entry.odds - entry.stake : 0;
+    }
+    cur.stake += entry.stake;
+    cur.count += 1;
+    monthAgg.set(key, cur);
+  }
+
+  const monthlyPnl: DashboardStats["monthlyPnl"] = [];
+  if (monthAgg.size > 0) {
+    const keys = [...monthAgg.keys()].sort();
+    const [minY, minM] = keys[0].split("-").map(Number);
+    const [maxY, maxM] = keys[keys.length - 1].split("-").map(Number);
+    let y = minY;
+    let m = minM;
+    while (y < maxY || (y === maxY && m <= maxM)) {
+      const key = `${y}-${String(m).padStart(2, "0")}`;
+      const agg = monthAgg.get(key) ?? { profit: 0, stake: 0, count: 0 };
+      monthlyPnl.push({
+        month: key,
+        profit: Math.round(agg.profit * 100) / 100,
+        stake: Math.round(agg.stake * 100) / 100,
+        roi: agg.stake > 0 ? Math.round((agg.profit / agg.stake) * 1000) / 10 : 0,
+        count: agg.count,
+      });
+      m += 1;
+      if (m > 12) {
+        m = 1;
+        y += 1;
+      }
+    }
+  }
+
+  return monthlyPnl;
+}

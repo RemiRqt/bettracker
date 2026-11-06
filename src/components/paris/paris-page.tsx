@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { Inbox } from "lucide-react";
-import { validateResult, deleteBet, updateBet } from "@/actions/bets";
+import { validateResult, deleteBet, updateBet } from "@/actions/bet-results";
 import { fireConfetti } from "@/lib/confetti";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useBetModal } from "@/components/paris/bet-modal-provider";

@@ -1,10 +1,7 @@
 import { createClient, getAuthUser } from "@/lib/supabase/server";
-import {
-  getCalendarFixtures,
-  getCalendarTeams,
-  getSubjectLinks,
-  type CachedFixture,
-} from "@/actions/teams";
+import type { CachedFixture } from "@/actions/teams";
+import { getCalendarFixtures, getCalendarTeams } from "@/actions/team-calendar";
+import { getSubjectLinks } from "@/actions/subject-links";
 import { CalendarPage } from "@/components/calendar/calendar-page";
 import { getNotificationSettings } from "@/actions/notifications";
 import { sportKeyFor } from "@/lib/odds-api";

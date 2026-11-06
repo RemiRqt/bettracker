@@ -3,7 +3,7 @@
 import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteEquipe, updateEquipeSport } from "@/actions/equipes";
-import { validateResult } from "@/actions/bets";
+import { validateResult } from "@/actions/bet-results";
 import { fireConfetti } from "@/lib/confetti";
 import { useBetModal } from "@/components/paris/bet-modal-provider";
 import { FollowedTeams } from "@/components/profile/followed-teams";

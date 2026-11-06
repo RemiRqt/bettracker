@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { validateResult } from "@/actions/bets";
+import { validateResult } from "@/actions/bet-results";
 import { formatEuros } from "@/lib/utils";
 import { fireConfetti } from "@/lib/confetti";
 import { Button } from "@/components/ui/button";

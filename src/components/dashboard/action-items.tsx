@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { useBetModal } from "@/components/paris/bet-modal-provider";
-import { validateResult } from "@/actions/bets";
+import { validateResult } from "@/actions/bet-results";
 import { fireConfetti } from "@/lib/confetti";
 import { BET_TYPES } from "@/lib/constants";
 import { formatEuros } from "@/lib/utils";

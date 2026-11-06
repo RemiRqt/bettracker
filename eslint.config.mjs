@@ -53,6 +53,12 @@ const eslintConfig = defineConfig([
   },
   { files: ["src/**/*.{ts,tsx}"], rules: { "no-restricted-syntax": regleCouleur("error") } },
   { files: INTERFACE, ignores: ["src/components/ui/**", "src/app/api/**"], rules: reglesTaille("error") },
+  // Actions serveur et lib : mêmes limites de taille (hors tests et types Supabase générés).
+  {
+    files: ["src/actions/**/*.ts", "src/lib/**/*.ts"],
+    ignores: ["src/**/*.test.ts", "src/lib/types/database.ts"],
+    rules: reglesTaille("error"),
+  },
   { files: ["src/components/**/*.{ts,tsx}"], rules: { "no-restricted-imports": ["error", IMPORTS_SERVEUR] } },
   // Seules exceptions aux couleurs en dur : src/lib/theme.ts et les tests.
   { files: ["src/lib/theme.ts", "src/**/*.test.ts", "src/components/styleguide/colors-section.tsx"], rules: { "no-restricted-syntax": "off" } },

@@ -2,7 +2,8 @@ import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { EquipesPage } from "@/components/equipes/equipes-page";
 import { ParisEquipesSwitch } from "@/components/paris/paris-equipes-switch";
 import type { SeriesWithBets } from "@/lib/types";
-import { getSubjectLinks, getTeamMappings, type CachedFixture, type TeamMapping } from "@/actions/teams";
+import { getTeamMappings, type CachedFixture, type TeamMapping } from "@/actions/teams";
+import { getSubjectLinks } from "@/actions/subject-links";
 
 export const dynamic = "force-dynamic";
 

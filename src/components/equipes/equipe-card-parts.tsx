@@ -41,7 +41,7 @@ export function ActiveSeriesBanner({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onOpenBet(); }}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors"
+          className="relative flex items-center gap-1 px-2.5 py-1 rounded-lg before:absolute before:-inset-y-2.5 before:inset-x-0 before:content-[''] bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors"
         >
           <Plus className="h-3 w-3" aria-hidden="true" />
           Ajouter pari
@@ -170,7 +170,7 @@ export function EquipeSeriesPanel({
             <button
               type="button"
               onClick={onOpenBet}
-              className="w-full mt-1.5 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+              className="w-full mt-1.5 flex min-h-11 items-center justify-center gap-1.5 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               Parier
@@ -182,7 +182,7 @@ export function EquipeSeriesPanel({
         <button
           type="button"
           onClick={onToggleShowAllSeries}
-          className="w-full py-1 text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="w-full min-h-11 py-1 text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           {showAllSeries ? "Voir moins" : `Voir plus (${ordered.length - 1})`}
         </button>

@@ -1,13 +1,8 @@
 "use client";
 
 import { useState, useTransition, useCallback, useEffect, useMemo } from "react";
-import {
-  toggleFollow,
-  linkSubject,
-  unlinkSubject,
-  getSubjectLinks,
-  deleteTeamMapping,
-} from "@/actions/teams";
+import { toggleFollow, deleteTeamMapping } from "@/actions/teams";
+import { linkSubject, unlinkSubject, getSubjectLinks } from "@/actions/subject-links";
 import type { TeamMapping, SubjectLink } from "@/actions/teams";
 import type { ApiTeamAdded } from "@/components/teams/add-api-team-dialog";
 import { useConfirm } from "@/components/ui/confirm-dialog";
