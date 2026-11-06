@@ -8,9 +8,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Paris | BetTracker" };
 
 export default async function ParisRoute() {
-  const supabase = await createClient();
-
-  const { user } = await getAuthUser();
+  const [supabase, { user }] = await Promise.all([createClient(), getAuthUser()]);
 
   if (!user) {
     return null;

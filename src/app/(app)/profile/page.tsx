@@ -26,15 +26,15 @@ export const metadata = { title: "Mon Profil | BetTracker" };
 export default async function ProfilePage() {
   const { user } = await getAuthUser();
 
-  const theme = await getServerTheme();
   const isAdmin = ADMIN_EMAILS.includes(user?.email ?? "");
-  const oddsCredits = isAdmin
-    ? await getOddsCredits(
-        createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!),
-      )
-    : null;
 
-  const [transactions, teamMappings, notifSettings] = await Promise.all([
+  const [theme, oddsCredits, transactions, teamMappings, notifSettings] = await Promise.all([
+    getServerTheme(),
+    isAdmin
+      ? getOddsCredits(
+          createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!),
+        )
+      : Promise.resolve(null),
     getTransactions(),
     ensureTeamMappings(),
     getNotificationSettings(),

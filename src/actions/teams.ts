@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { fetchTeamFixtures } from "@/lib/football-data";
@@ -26,32 +27,57 @@ export interface TeamMapping {
   updated_at: string;
 }
 
+const MAPPING_COLS =
+  "id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, fixtures_updated_at";
+const MAPPING_COLS_WITH_FIXTURES = `${MAPPING_COLS}, cached_fixtures`;
+
+/** Mappings du user, mis en cache pour la requête (plusieurs appelants par page). */
+const loadTeamMappings = cache(async (userId: string, withFixtures: boolean) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("team_mappings")
+    .select(withFixtures ? MAPPING_COLS_WITH_FIXTURES : MAPPING_COLS)
+    .eq("user_id", userId)
+    .order("subject", { ascending: true });
+  if (error) throw new Error(`Erreur lors de la recuperation des equipes: ${error.message}`);
+  return ((data ?? []) as unknown as TeamMapping[]).map((m) =>
+    withFixtures ? m : { ...m, cached_fixtures: null },
+  );
+});
+
+/** Clubs suivis avec id API (calendrier), filtrés en base, mis en cache pour la requête. */
+const loadCalendarTeams = cache(async (userId: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("team_mappings")
+    .select(MAPPING_COLS_WITH_FIXTURES)
+    .eq("user_id", userId)
+    .eq("is_club", true)
+    .eq("is_followed", true)
+    .not("api_team_id", "is", null);
+  return ((data ?? []) as unknown as TeamMapping[]);
+});
+
 function revalidateTeamPaths() {
   revalidatePath("/profile");
   revalidatePath("/series");
   revalidatePath("/calendar");
 }
 
-export async function getTeamMappings(): Promise<TeamMapping[]> {
-  const supabase = await createClient();
-
+/**
+ * Mappings du user. Sans `withFixtures`, le jsonb `cached_fixtures` (lourd) n'est pas lu :
+ * seuls les écrans qui calculent le prochain match en ont besoin.
+ */
+export async function getTeamMappings(
+  opts: { withFixtures?: boolean } = {},
+): Promise<TeamMapping[]> {
   const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     throw new Error("Vous devez etre connecte.");
   }
 
-  const { data, error } = await supabase
-    .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
-    .eq("user_id", user.id)
-    .order("subject", { ascending: true });
-
-  if (error) {
-    throw new Error(`Erreur lors de la recuperation des equipes: ${error.message}`);
-  }
-
-  return (data as TeamMapping[]) || [];
+  return loadTeamMappings(user.id, !!opts.withFixtures);
 }
 
 export async function getFollowedTeams(): Promise<TeamMapping[]> {
@@ -299,7 +325,8 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
   const { data: existingMappings } = await supabase
     .from("team_mappings")
     .select("id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .order("subject", { ascending: true });
 
   const existingSubjects = new Set(
     (existingMappings || []).map((m: { subject: string }) => m.subject)
@@ -310,8 +337,13 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
     (subject) => !existingSubjects.has(subject)
   );
 
+  // Cas courant : rien à créer, on renvoie directement la liste lue.
+  if (missingSubjects.length === 0) {
+    return (existingMappings as TeamMapping[]) || [];
+  }
+
   // Create mappings for missing subjects
-  if (missingSubjects.length > 0) {
+  {
     await supabase.from("team_mappings").insert(
       missingSubjects.map((subject) => ({
         user_id: user.id,
@@ -338,31 +370,13 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
  * - Followed clubs with api_team_id
  */
 export async function getCalendarTeams(): Promise<TeamMapping[]> {
-  const supabase = await createClient();
-
   const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
     return [];
   }
 
-  // Get all team mappings
-  const { data: allMappings } = await supabase
-    .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
-    .eq("user_id", user.id);
-
-  if (!allMappings) return [];
-
-  // Filter: clubs that are followed, AND must have api_team_id
-  const filtered = (allMappings as TeamMapping[]).filter(
-    (m) =>
-      m.is_club &&
-      m.api_team_id !== null &&
-      m.is_followed
-  );
-
-  return filtered;
+  return loadCalendarTeams(user.id);
 }
 
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
@@ -419,16 +433,20 @@ export async function getCalendarFixtures(): Promise<
     }))
   );
 
-  for (const { team, fixtures } of fetchResults) {
-    // Update cache in DB
-    await supabase
-      .from("team_mappings")
-      .update({
-        cached_fixtures: JSON.parse(JSON.stringify(fixtures)),
-        fixtures_updated_at: now,
-      })
-      .eq("id", team.id);
+  // Mise à jour du cache en base, en parallèle
+  await Promise.all(
+    fetchResults.map(({ team, fixtures }) =>
+      supabase
+        .from("team_mappings")
+        .update({
+          cached_fixtures: JSON.parse(JSON.stringify(fixtures)),
+          fixtures_updated_at: now,
+        })
+        .eq("id", team.id),
+    ),
+  );
 
+  for (const { team, fixtures } of fetchResults) {
     // Deduplicate for display
     if (fixtures.length > 0) {
       const uniqueFixtures = fixtures.filter((f) => {

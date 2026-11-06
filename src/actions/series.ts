@@ -36,7 +36,7 @@ export async function getActionItems(): Promise<ActionItem[]> {
         .order("created_at", { ascending: false })
         .limit(50),
       getSubjectLinks(),
-      getTeamMappings(),
+      getTeamMappings({ withFixtures: true }),
     ]);
 
   if (seriesError) {

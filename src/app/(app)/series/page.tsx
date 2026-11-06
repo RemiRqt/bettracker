@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { EquipesPage } from "@/components/equipes/equipes-page";
 import { ParisEquipesSwitch } from "@/components/paris/paris-equipes-switch";
 import type { SeriesWithBets } from "@/lib/types";
@@ -9,20 +9,23 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Mes Séries | BetTracker" };
 
 export default async function EquipesRoute() {
-  const supabase = await createClient();
+  const [supabase, { user }] = await Promise.all([createClient(), getAuthUser()]);
+  if (!user) return null;
 
   const [{ data: equipes }, { data: series }, links, mappings] =
     await Promise.all([
       supabase
         .from("equipes")
         .select("*")
+        .eq("user_id", user.id)
         .order("name", { ascending: true }),
       supabase
         .from("series")
         .select("*, bets(*)")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
       getSubjectLinks(),
-      getTeamMappings(),
+      getTeamMappings({ withFixtures: true }),
     ]);
 
   const allSeries = (series ?? []) as SeriesWithBets[];

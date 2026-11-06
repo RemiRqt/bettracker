@@ -13,12 +13,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     throw new Error("Vous devez etre connecte.");
   }
 
-  // Round 1: everything that does not depend on the series ids, in parallel.
+  // Un seul aller-retour : tout en parallèle (les paris sont filtrés par jointure sur la série).
   const [
     { data: seriesList, error: seriesError },
     { data: transactions, error: transactionsError },
     { data: freebetsData },
     { data: freebetBetsData },
+    { data: betsData, error: betsError },
   ] = await Promise.all([
     supabase
       .from("series")
@@ -38,6 +39,11 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .select("id, freebet_id, odds, stake, result, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: true }),
+    supabase
+      .from("bets")
+      .select("id, series_id, odds, stake, result, bet_number, potential_net, created_at, market_odds_best, market_odds_avg, series!inner(user_id)")
+      .eq("series.user_id", user.id)
+      .order("created_at", { ascending: true }),
   ]);
 
   if (seriesError) {
@@ -52,30 +58,18 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     );
   }
 
-  const series = seriesList ?? [];
-  const seriesIds = series.map((s) => s.id);
+  if (betsError) {
+    throw new Error(
+      `Erreur lors de la recuperation des paris: ${betsError.message}`
+    );
+  }
 
-  // Round 2: bets depend on the series ids fetched above.
-  let allBets: Pick<
+  const series = seriesList ?? [];
+  const allBets: Pick<
     Bet,
     | "id" | "series_id" | "odds" | "stake" | "result" | "bet_number" | "potential_net" | "created_at"
     | "market_odds_best" | "market_odds_avg"
-  >[] = [];
-  if (seriesIds.length > 0) {
-    const { data: betsData, error: betsError } = await supabase
-      .from("bets")
-      .select("id, series_id, odds, stake, result, bet_number, potential_net, created_at, market_odds_best, market_odds_avg")
-      .in("series_id", seriesIds)
-      .order("created_at", { ascending: true });
-
-    if (betsError) {
-      throw new Error(
-        `Erreur lors de la recuperation des paris: ${betsError.message}`
-      );
-    }
-
-    allBets = betsData ?? [];
-  }
+  >[] = betsData ?? [];
 
   const allTransactions = transactions ?? [];
   const allFreebets = freebetsData ?? [];

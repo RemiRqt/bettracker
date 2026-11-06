@@ -1,6 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import {
-  ensureTeamMappings,
   getCalendarFixtures,
   getCalendarTeams,
   getSubjectLinks,
@@ -25,20 +24,23 @@ export interface ActiveSeriesInfo {
 }
 
 export default async function CalendarRoute() {
-  const supabase = await createClient();
+  const [supabase, { user }] = await Promise.all([createClient(), getAuthUser()]);
+  if (!user) return null;
 
-  // Ensure mappings are up to date, then fetch cached fixtures
-  await ensureTeamMappings();
-  const calendarTeams = await getCalendarTeams();
-
-  const [teamFixtures, { data: activeSeries }, links] =
+  // Tout en parallèle : équipes (cache requête, partagé avec getCalendarFixtures),
+  // matchs, séries en cours, liens, réglages (bookmakers pour les cotes).
+  const [calendarTeams, teamFixtures, { data: activeSeries }, links, settings] =
     await Promise.all([
+      getCalendarTeams(),
       getCalendarFixtures(),
       supabase
         .from("series")
         .select("id, subject, bet_type, target_gain, status")
-        .eq("status", "en_cours"),
+        .eq("user_id", user.id)
+        .eq("status", "en_cours")
+        .limit(100),
       getSubjectLinks(),
+      getNotificationSettings(),
     ]);
 
   // Build map: team_mapping_id → subjects linked to it (via subject_links)
@@ -105,7 +107,7 @@ export default async function CalendarRoute() {
       new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime()
   );
 
-  const oddsUpdatedAt = await attachOdds(supabase, allFixtures);
+  const oddsUpdatedAt = await attachOdds(supabase, allFixtures, settings.bookmakers);
 
   return (
     <CalendarPage
@@ -125,14 +127,15 @@ export default async function CalendarRoute() {
 async function attachOdds(
   supabase: Awaited<ReturnType<typeof createClient>>,
   items: { fixture: CachedFixture; odds?: FixtureOdds }[],
+  bookmakers: Awaited<ReturnType<typeof getNotificationSettings>>["bookmakers"],
 ): Promise<string | null> {
   const keys = [...new Set(items.map((i) => sportKeyFor(i.fixture)).filter((k): k is string => !!k))];
   if (keys.length === 0) return null;
 
-  const [{ bookmakers }, { data: rows }] = await Promise.all([
-    getNotificationSettings(),
-    supabase.from("odds_cache").select("sport_key, events, fetched_at").in("sport_key", keys),
-  ]);
+  const { data: rows } = await supabase
+    .from("odds_cache")
+    .select("sport_key, events, fetched_at")
+    .in("sport_key", keys);
   const byKey = new Map((rows ?? []).map((r) => [r.sport_key as string, r.events as OddsEvent[]]));
 
   for (const item of items) {
