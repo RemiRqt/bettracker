@@ -102,6 +102,11 @@ export function CapitalChart({ data }: CapitalChartProps) {
     return [Math.min(...ts), Math.max(...ts)];
   }, [points]);
 
+  const first = points[0];
+  const resume = first && last
+    ? `Évolution de la valeur : de ${formatEuros(first.valeur)} à ${formatEuros(last.valeur)}, bénéfice ${winning ? "+" : ""}${formatEuros(last.profit)}`
+    : "Évolution de la valeur : aucune donnée";
+
   return (
     <div className="flex flex-col h-full gap-2">
       {/* Header: bénéfice + encaissé */}
@@ -128,7 +133,7 @@ export function CapitalChart({ data }: CapitalChartProps) {
           Aucune donnée
         </div>
       ) : (
-        <div className="flex-1 min-h-0">
+        <div role="img" aria-label={resume} className="flex-1 min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={points}

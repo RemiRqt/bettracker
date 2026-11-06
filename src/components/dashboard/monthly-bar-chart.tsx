@@ -89,8 +89,14 @@ export function MonthlyBarChart({ data }: MonthlyBarChartProps) {
     );
   }
 
+  const actifs = data.filter((d) => d.count > 0);
+  const meilleur = actifs.reduce((a, b) => (b.profit > a.profit ? b : a));
+  const pire = actifs.reduce((a, b) => (b.profit < a.profit ? b : a));
+  const signe = (n: number) => `${n >= 0 ? "+" : ""}${formatEuros(n)}`;
+  const resume = `Bénéfice mensuel sur ${actifs.length} mois : meilleur mois ${fullLabel(meilleur.month)} (${signe(meilleur.profit)}), pire mois ${fullLabel(pire.month)} (${signe(pire.profit)})`;
+
   return (
-    <div className="h-full w-full">
+    <div role="img" aria-label={resume} className="h-full w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 6, left: -18, bottom: 0 }}>
           <XAxis

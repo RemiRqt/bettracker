@@ -94,9 +94,10 @@ export function TransactionList({ transactions }: TransactionListProps) {
           ) : (
             <button
               onClick={() => setConfirmId(t.id)}
-              className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+              aria-label="Supprimer cette transaction"
+              className="relative text-muted-foreground hover:text-destructive transition-colors shrink-0 before:absolute before:-inset-3 before:content-['']"
             >
-              <X className="h-4 w-4" />
+              <X aria-hidden className="h-4 w-4" />
             </button>
           )}
         </div>

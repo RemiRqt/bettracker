@@ -51,9 +51,10 @@ export function FreebetList({ freebets }: FreebetListProps) {
     return (
       <button
         onClick={() => setConfirmId(id)}
-        className="text-muted-foreground hover:text-destructive cursor-pointer"
+        aria-label="Supprimer ce freebet"
+        className="relative text-muted-foreground hover:text-destructive cursor-pointer before:absolute before:-inset-3 before:content-['']"
       >
-        <Trash2 className="h-3.5 w-3.5" />
+        <Trash2 aria-hidden className="h-3.5 w-3.5" />
       </button>
     );
   }
@@ -116,12 +117,13 @@ export function FreebetList({ freebets }: FreebetListProps) {
         <div className="pt-1">
           <button
             onClick={() => setShowUsed((prev) => !prev)}
+            aria-expanded={showUsed}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-muted-foreground cursor-pointer"
           >
             {showUsed ? (
-              <ChevronDown className="h-3.5 w-3.5" />
+              <ChevronDown aria-hidden className="h-3.5 w-3.5" />
             ) : (
-              <ChevronRight className="h-3.5 w-3.5" />
+              <ChevronRight aria-hidden className="h-3.5 w-3.5" />
             )}
             Utilisés ({used.length})
           </button>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { RollingNumber } from "@/components/ui/rolling-number";
 import { EquipeSeriesItem } from "@/components/series/equipe-series-item";
@@ -82,6 +83,7 @@ export function EquipeCard({
   onValidate,
   onDeleteEmpty,
 }: EquipeCardProps) {
+  const panelId = useId();
   const betTypeLabel = BET_TYPES[eq.bet_type as keyof typeof BET_TYPES] ?? eq.bet_type;
 
   const barTotal = eq.totalWonAmount + eq.totalLostStake + eq.potentialGains;
@@ -107,7 +109,7 @@ export function EquipeCard({
       {showBanner && (
         <div className="flex items-center justify-between px-3 py-2 bg-info/10 border-b border-info/20">
           <div className="flex items-center gap-1.5 text-xs text-info">
-            <CalendarClock className="h-3.5 w-3.5" />
+            <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
             <span className="font-medium">
               {nextFixture
                 ? `Prochain match : ${formatFixtureDateTime(nextFixture.date)}`
@@ -119,7 +121,7 @@ export function EquipeCard({
               onClick={(e) => { e.stopPropagation(); onOpenBet(); }}
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors"
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="h-3 w-3" aria-hidden="true" />
               Ajouter pari
             </button>
           )}
@@ -132,14 +134,18 @@ export function EquipeCard({
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <button
+              type="button"
               onClick={onEdit}
-              aria-label="Modifier l'équipe"
+              aria-label={`Modifier l'équipe ${eq.name}`}
               className="shrink-0 transition-transform active:scale-95"
             >
               <TeamLogo logoUrl={logoMap[eq.name]} sport={eq.sport} size="sm" />
             </button>
             <button
+              type="button"
               onClick={onToggleExpand}
+              aria-expanded={isExpanded}
+              aria-controls={panelId}
               className="flex items-center gap-2 min-w-0 text-left"
             >
               <span className="text-base font-bold text-foreground truncate">{eq.name}</span>
@@ -149,14 +155,17 @@ export function EquipeCard({
             </button>
           </div>
           <button
+            type="button"
             onClick={onToggleExpand}
+            aria-expanded={isExpanded}
+            aria-controls={panelId}
             className="flex items-center gap-2 shrink-0"
           >
             <span className={cn("font-bold text-sm", eq.netProfit >= 0 ? "text-primary" : "text-destructive")}>
               {eq.netProfit >= 0 ? "+" : ""}
               <RollingNumber value={eq.netProfit} format="euros" />
             </span>
-            {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+            {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
           </button>
         </div>
 
@@ -165,7 +174,9 @@ export function EquipeCard({
           <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-warning/10 border border-warning/20">
             <span className="text-xs text-warning">Pas de série créée</span>
             <button
+              type="button"
               onClick={onDeleteEmpty}
+              aria-label={`Supprimer l'équipe ${eq.name}`}
               className="text-xs text-destructive hover:text-destructive/80 cursor-pointer"
             >
               Supprimer
@@ -177,7 +188,7 @@ export function EquipeCard({
               {eq.seriesCount} serie{eq.seriesCount > 1 ? "s" : ""} · {eq.betsCount} pari{eq.betsCount > 1 ? "s" : ""}
               {eq.activeSeries && (
                 <span className="text-info ml-2">
-                  <TrendingUp className="h-3 w-3 inline" /> en cours (#{eq.activeSeries.betCount})
+                  <TrendingUp className="h-3 w-3 inline" aria-hidden="true" /> en cours (#{eq.activeSeries.betCount})
                 </span>
               )}
             </span>
@@ -215,16 +226,16 @@ export function EquipeCard({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onValidate(pendingBet.id, "gagne"); }}
-                className="flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/25 transition-colors"
+                className="relative flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-[11px] font-semibold text-primary hover:bg-primary/25 transition-colors"
               >
-                <CheckCircle className="h-3.5 w-3.5" /> Gagné
+                <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" /> Gagné
               </button>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onValidate(pendingBet.id, "perdu"); }}
-                className="flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 text-[11px] font-semibold text-destructive hover:bg-destructive/25 transition-colors"
+                className="relative flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-[11px] font-semibold text-destructive hover:bg-destructive/25 transition-colors"
               >
-                <XCircle className="h-3.5 w-3.5" /> Perdu
+                <XCircle className="h-3.5 w-3.5" aria-hidden="true" /> Perdu
               </button>
             </div>
           </div>
@@ -233,13 +244,13 @@ export function EquipeCard({
 
       {/* Expanded: nouvelle série (top) + séries (récente + voir plus) */}
       {isExpanded && (
-        <div className="border-t border-border/50 px-3 pb-3 pt-2 space-y-1.5">
+        <div id={panelId} className="border-t border-border/50 px-3 pb-3 pt-2 space-y-1.5">
           {!eq.activeSeries && (
             <button
               onClick={onOpenBet}
               className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               Nouvelle serie
             </button>
           )}
@@ -259,7 +270,7 @@ export function EquipeCard({
                         onClick={onOpenBet}
                         className="w-full mt-1.5 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
                       >
-                        <Plus className="h-3.5 w-3.5" />
+                        <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                         Parier
                       </button>
                     )}

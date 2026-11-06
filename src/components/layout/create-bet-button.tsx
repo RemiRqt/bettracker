@@ -12,7 +12,7 @@ export function CreateBetButton({ className }: { className?: string }) {
       aria-label="Nouveau pari"
       className={className}
     >
-      <Plus className="h-4 w-4" />
+      <Plus aria-hidden className="h-4 w-4" />
     </button>
   );
 }

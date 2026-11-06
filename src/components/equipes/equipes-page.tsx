@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useTransition, useCallback } from "react";
+import { useState, useMemo, useTransition, useCallback, useId } from "react";
 import { useRouter } from "next/navigation";
 import { deleteEquipe, updateEquipeSport } from "@/actions/equipes";
 import { validateResult } from "@/actions/bets";
@@ -29,10 +29,10 @@ import {
 type SortKey = "date" | "gains" | "paris";
 type FilterKey = "en_cours" | "gagne" | "perdu" | null;
 
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "date", label: "Récent" },
-  { key: "gains", label: "Gains" },
-  { key: "paris", label: "Paris" },
+const SORT_OPTIONS: { key: SortKey; label: string; srLabel: string }[] = [
+  { key: "date", label: "Récent", srLabel: "date" },
+  { key: "gains", label: "Gains", srLabel: "gains" },
+  { key: "paris", label: "Paris", srLabel: "nombre de paris" },
 ];
 
 const FILTER_OPTIONS: {
@@ -69,6 +69,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
   const [seriesShowAll, setSeriesShowAll] = useState<Set<string>>(new Set());
 
   const { open: openBetModal } = useBetModal();
+  const sportLabelId = useId();
 
   // === Sort/Filter logic ===
 
@@ -161,11 +162,14 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
 
   return (
     <div className="space-y-4 md:space-y-6">
+      <h1 className="sr-only">Mes équipes</h1>
       {/* Search (toggle) */}
       {searchOpen && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
           <input
+            type="search"
+            aria-label="Rechercher une équipe"
             placeholder="Rechercher..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -177,15 +181,21 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
 
       {/* Filter tabs + Mes équipes (droite) */}
       <div className="flex items-center gap-1.5">
-        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none flex-1">
+        <div
+          role="group"
+          aria-label="Filtrer les équipes"
+          className="flex gap-1.5 overflow-x-auto -my-2.5 pt-2.5 pb-3.5 scrollbar-none flex-1"
+        >
           {FILTER_OPTIONS.map((opt) => {
             const isActive = filterBy === opt.key;
             return (
               <button
                 key={opt.key}
+                type="button"
+                aria-pressed={isActive}
                 onClick={() => setFilterBy(isActive ? null : opt.key)}
                 className={cn(
-                  "flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors border",
+                  "relative flex-shrink-0 px-2.5 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 rounded-lg text-xs font-medium transition-colors border",
                   isActive
                     ? `${opt.activeColor} ${opt.color}`
                     : "bg-transparent text-muted-foreground border-border/50 hover:border-border"
@@ -198,51 +208,57 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
           })}
         </div>
         <button
+          type="button"
           onClick={() => setMyTeamsOpen(true)}
           className="flex-shrink-0 flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:border-primary/50 transition-colors"
         >
-          <Users className="h-3.5 w-3.5" /> Mes équipes
+          <Users className="h-3.5 w-3.5" aria-hidden="true" /> Mes équipes
         </button>
       </div>
 
       {/* Sort + search (loupe à droite) */}
-      <div className="flex items-stretch gap-1.5">
+      <div role="group" aria-label="Trier les équipes" className="flex items-stretch gap-1.5">
         {SORT_OPTIONS.map((opt) => {
           const isActive = sortBy === opt.key;
           return (
             <button
               key={opt.key}
+              type="button"
+              aria-pressed={isActive}
+              aria-label={`Trier par ${opt.srLabel}${isActive ? (sortAsc ? ", croissant" : ", décroissant") : ""}`}
               onClick={() => handleSort(opt.key)}
               className={cn(
-                "flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-colors border",
+                "relative flex-1 before:absolute before:-inset-y-2 before:inset-x-0 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-colors border",
                 isActive
                   ? "bg-primary/20 text-primary border-primary/30"
                   : "bg-card text-muted-foreground border-border hover:border-border/80"
               )}
             >
               {opt.label}
-              {isActive && (sortAsc ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
+              {isActive && (sortAsc ? <ChevronUp className="h-3 w-3" aria-hidden="true" /> : <ChevronDown className="h-3 w-3" aria-hidden="true" />)}
             </button>
           );
         })}
         <button
+          type="button"
           onClick={() => setSearchOpen((o) => !o)}
-          aria-label="Rechercher"
+          aria-label="Rechercher une équipe"
+          aria-expanded={searchOpen}
           className={cn(
-            "flex-shrink-0 w-10 flex items-center justify-center rounded-lg border transition-colors",
+            "relative flex-shrink-0 w-11 before:absolute before:-inset-y-2 before:inset-x-0 flex items-center justify-center rounded-lg border transition-colors",
             searchOpen
               ? "bg-primary/10 border-primary/40 text-primary"
               : "bg-card border-border text-secondary-foreground hover:text-foreground"
           )}
         >
-          <Search className="h-4 w-4" />
+          <Search className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
 
       {/* List */}
       {sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <Inbox className="h-10 w-10 mb-3 text-muted-foreground" />
+          <Inbox className="h-10 w-10 mb-3 text-muted-foreground" aria-hidden="true" />
           <p className="text-sm">Aucune equipe trouvee.</p>
         </div>
       ) : (
@@ -277,11 +293,13 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
           </DialogHeader>
           {editEquipe && (
             <div>
-              <label className="text-xs text-muted-foreground mb-1.5 block">Sport</label>
-              <div className="grid grid-cols-2 gap-2">
+              <p id={sportLabelId} className="text-xs text-muted-foreground mb-1.5 block">Sport</p>
+              <div role="group" aria-labelledby={sportLabelId} className="grid grid-cols-2 gap-2">
                 {(Object.entries(SPORTS) as [string, string][]).map(([sKey, sLabel]) => (
                   <button
                     key={sKey}
+                    type="button"
+                    aria-pressed={editEquipe.sport === sKey}
                     onClick={async () => {
                       await updateEquipeSport(editEquipe.equipeId, sKey);
                       setEditEquipe(null);
@@ -294,7 +312,7 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
                         : "bg-background text-muted-foreground border-border hover:border-border/80"
                     )}
                   >
-                    <span>{SPORT_EMOJIS[sKey]}</span>
+                    <span aria-hidden="true">{SPORT_EMOJIS[sKey]}</span>
                     {sLabel}
                   </button>
                 ))}

@@ -131,22 +131,23 @@ function BetCard({
             disabled={loading}
             className="flex-1 flex items-center justify-center gap-1 h-8 rounded-lg bg-primary/20 text-primary text-xs font-semibold hover:bg-primary/30 cursor-pointer"
           >
-            <CheckCircle className="h-3.5 w-3.5" /> Gagné
+            <CheckCircle aria-hidden className="h-3.5 w-3.5" /> Gagné
           </button>
           <button
             onClick={() => onValidate(bet.id, "perdu")}
             disabled={loading}
             className="flex-1 flex items-center justify-center gap-1 h-8 rounded-lg bg-destructive/20 text-destructive text-xs font-semibold hover:bg-destructive/30 cursor-pointer"
           >
-            <XCircle className="h-3.5 w-3.5" /> Perdu
+            <XCircle aria-hidden className="h-3.5 w-3.5" /> Perdu
           </button>
           {onDelete && (
             <button
               onClick={() => onDelete(bet.id)}
               disabled={loading}
-              className="h-8 w-8 flex items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-destructive cursor-pointer"
+              aria-label="Supprimer ce pari"
+              className="relative h-8 w-8 flex items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-destructive cursor-pointer before:absolute before:-inset-1.5 before:content-['']"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 aria-hidden className="h-3.5 w-3.5" />
             </button>
           )}
         </div>

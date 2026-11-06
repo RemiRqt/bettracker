@@ -173,6 +173,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
           <TeamLogo logoUrl={club.logo_url} sport={club.sport} size="md" />
           <button
             onClick={() => toggleClubExpand(club.id)}
+            aria-expanded={isExpanded}
             className="flex-1 min-w-0 text-left"
           >
             <p className="text-sm font-medium text-foreground truncate">{club.subject}</p>
@@ -180,8 +181,15 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
               {linked.length} lie{linked.length !== 1 ? "s" : ""}
             </p>
           </button>
-          <button onClick={() => handleToggleFollow(club.id)}>
+          <div className="-my-2 -mr-3 flex shrink-0 items-center">
+          <button
+            onClick={() => handleToggleFollow(club.id)}
+            aria-pressed={club.is_followed}
+            aria-label={`Mettre ${club.subject} en favori`}
+            className="flex size-11 items-center justify-center"
+          >
             <Star
+              aria-hidden
               className={cn(
                 "h-5 w-5 transition-colors",
                 club.is_followed
@@ -190,16 +198,26 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
               )}
             />
           </button>
-          <button onClick={() => toggleClubExpand(club.id)}>
+          <button
+            onClick={() => toggleClubExpand(club.id)}
+            aria-expanded={isExpanded}
+            aria-label={`Joueurs et équipes liés à ${club.subject}`}
+            className="flex size-11 items-center justify-center"
+          >
             {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown aria-hidden className="h-4 w-4 text-muted-foreground" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <ChevronRight aria-hidden className="h-4 w-4 text-muted-foreground" />
             )}
           </button>
-          <button onClick={() => handleDeleteClub(club)}>
-            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
+          <button
+            onClick={() => handleDeleteClub(club)}
+            aria-label={`Supprimer ${club.subject}`}
+            className="flex size-11 items-center justify-center"
+          >
+            <Trash2 aria-hidden className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
           </button>
+          </div>
         </div>
         {isExpanded && (
           <div className="border-t border-border/50 px-3 pb-3 pt-2 space-y-1.5">
@@ -211,9 +229,10 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                 <span className="text-xs text-secondary-foreground">{s.subject}</span>
                 <button
                   onClick={() => handleUnlinkSubject(s.subject, club.id)}
-                  className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                  aria-label={`Délier ${s.subject}`}
+                  className="relative text-xs text-muted-foreground hover:text-destructive transition-colors before:absolute before:-inset-3 before:content-['']"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X aria-hidden className="h-3.5 w-3.5" />
                 </button>
               </div>
             ))}
@@ -221,7 +240,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
               onClick={() => { setLinkClubId(club.id); setLinkSubjectSearch(""); }}
               className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors"
             >
-              <Link2 className="h-3 w-3" />
+              <Link2 aria-hidden className="h-3 w-3" />
               Lier un joueur/equipe
             </button>
           </div>
@@ -242,7 +261,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
           aria-label="Ajouter une équipe"
           className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
         >
-          <Plus className="h-5 w-5" />
+          <Plus aria-hidden className="h-5 w-5" />
         </button>
       </div>
 
@@ -261,12 +280,13 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
         <div className="space-y-2">
           <button
             onClick={() => setShowMore((s) => !s)}
+            aria-expanded={showMore}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             {showMore ? (
-              <ChevronDown className="h-3.5 w-3.5" />
+              <ChevronDown aria-hidden className="h-3.5 w-3.5" />
             ) : (
-              <ChevronRight className="h-3.5 w-3.5" />
+              <ChevronRight aria-hidden className="h-3.5 w-3.5" />
             )}
             Voir plus ({others.length + subjects.length})
           </button>
@@ -287,7 +307,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
                         onClick={() => setLinkUnlinkedSubject(s.subject)}
                         className="px-2.5 py-1 rounded-full bg-background text-xs text-muted-foreground border border-border/50 hover:border-primary hover:text-primary transition-colors"
                       >
-                        <Link2 className="h-3 w-3 inline mr-1" />
+                        <Link2 aria-hidden className="h-3 w-3 inline mr-1" />
                         {s.subject}
                       </button>
                     ))}
@@ -354,12 +374,13 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
 
           {availableSubjectsForLinkDialog.length > 5 && (
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 value={linkSubjectSearch}
                 onChange={(e) => setLinkSubjectSearch(e.target.value)}
                 placeholder="Rechercher..."
+                aria-label="Rechercher un joueur ou une équipe"
                 className="w-full bg-background border border-border rounded-xl pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 autoFocus
               />

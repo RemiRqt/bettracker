@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
@@ -48,19 +49,23 @@ export function TransactionForm() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="h-11 w-full rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 cursor-pointer">
-          <Plus className="mr-1 h-4 w-4" />
+          <Plus aria-hidden className="mr-1 h-4 w-4" />
           Ajouter une transaction
         </Button>
       </DialogTrigger>
       <DialogContent className="bg-card border border-border text-foreground max-w-md mx-auto rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-foreground">Nouvelle transaction</DialogTitle>
+          <DialogDescription className="sr-only">
+            Ajoute un dépôt ou un retrait sur ta bankroll.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <div className="flex gap-2">
+          <div role="group" aria-label="Type de transaction" className="flex gap-2">
             <button
               type="button"
+              aria-pressed={type === "depot"}
               onClick={() => setType("depot")}
               className={cn(
                 "flex-1 h-10 rounded-xl text-sm font-medium transition-colors",
@@ -73,6 +78,7 @@ export function TransactionForm() {
             </button>
             <button
               type="button"
+              aria-pressed={type === "retrait"}
               onClick={() => setType("retrait")}
               className={cn(
                 "flex-1 h-10 rounded-xl text-sm font-medium transition-colors",
@@ -92,8 +98,10 @@ export function TransactionForm() {
             step="0.01"
             min="0.01"
             placeholder="Montant (€)"
+            aria-label="Montant (€)"
+            aria-invalid={error ? true : undefined}
             required
-            className="h-10 w-full rounded-lg bg-background border border-border px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+            className="h-10 w-full rounded-lg bg-background border border-border px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring"
           />
 
           <input
@@ -101,10 +109,11 @@ export function TransactionForm() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Note (optionnel)"
-            className="h-10 w-full rounded-lg bg-background border border-border px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+            aria-label="Note (optionnel)"
+            className="h-10 w-full rounded-lg bg-background border border-border px-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring"
           />
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
           <Button
             type="submit"

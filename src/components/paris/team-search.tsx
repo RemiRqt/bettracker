@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { cn } from "@/lib/utils";
 import { TeamLogo } from "@/components/ui/team-logo";
 import { BET_TYPES } from "@/lib/constants";
@@ -39,12 +40,15 @@ export function TeamSearch({
   onPickMapping,
   onAddTeam,
 }: TeamSearchProps) {
+  const inputId = useId();
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-secondary-foreground">Nom</label>
+      <label htmlFor={inputId} className="text-sm font-medium text-secondary-foreground">Nom</label>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
         <input
+          id={inputId}
+          autoComplete="off"
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
           onFocus={onFocus}
@@ -52,7 +56,10 @@ export function TeamSearch({
           className="w-full h-12 rounded-xl bg-card border border-border pl-9 pr-14 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
         />
         {apiSelected && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary">
+          <span
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary"
+            title="Équipe liée à l'API"
+          >
             API
           </span>
         )}
@@ -100,7 +107,7 @@ export function TeamSearch({
                 onClick={onAddTeam}
                 className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-primary hover:bg-primary/5"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4" aria-hidden="true" />
                 <span className="text-sm">
                   Créer l&apos;équipe «&nbsp;{name.trim()}&nbsp;»
                 </span>

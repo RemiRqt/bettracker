@@ -171,7 +171,10 @@ export function NotificationSettings({ initialEnabled, initialResults }: Props) 
           }`}
         >
           {isPending ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
+            <>
+              <Loader2 aria-hidden className="h-3 w-3 motion-safe:animate-spin" />
+              <span className="sr-only">Chargement…</span>
+            </>
           ) : enabled ? (
             "Desactiver"
           ) : (

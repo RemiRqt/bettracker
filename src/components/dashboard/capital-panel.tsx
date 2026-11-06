@@ -26,12 +26,13 @@ export function CapitalPanel({ data, monthly }: CapitalPanelProps) {
     <div className="flex h-full flex-col gap-2">
       {/* View switch */}
       <div className="flex flex-shrink-0 justify-end">
-        <div className="inline-flex gap-0.5 rounded-lg bg-background p-0.5">
+        <div role="group" aria-label="Type de graphique" className="inline-flex gap-0.5 rounded-lg bg-background p-0.5">
           {VIEWS.map((v) => (
             <button
               key={v.key}
               onClick={() => setView(v.key)}
               aria-label={v.label}
+              aria-pressed={view === v.key}
               title={v.label}
               className={cn(
                 "flex items-center justify-center rounded-md px-2 py-1 transition-all active:scale-95",
@@ -40,7 +41,7 @@ export function CapitalPanel({ data, monthly }: CapitalPanelProps) {
                   : "text-muted-foreground hover:text-secondary-foreground"
               )}
             >
-              <v.Icon className="h-4 w-4" />
+              <v.Icon aria-hidden className="h-4 w-4" />
             </button>
           ))}
         </div>

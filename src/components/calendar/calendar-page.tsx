@@ -92,15 +92,16 @@ export function CalendarPage({
             onClick={handleRefresh}
             disabled={isPending}
             aria-label="Rechercher les matchs"
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+            aria-busy={isPending}
+            className="relative before:absolute before:-inset-1 before:content-[''] flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
-            <RefreshCw className={cn("h-5 w-5", isPending && "animate-spin")} />
+            <RefreshCw aria-hidden className={cn("h-5 w-5", isPending && "motion-safe:animate-spin")} />
           </button>
         </div>
 
         {formattedLastUpdated && (
           <div className="mt-1 flex items-center gap-1.5">
-            <Clock className="h-3 w-3 text-muted-foreground" />
+            <Clock aria-hidden className="h-3 w-3 text-muted-foreground" />
             <p className="text-xs text-muted-foreground">
               Dernière mise à jour : {formattedLastUpdated}
             </p>

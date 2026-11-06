@@ -43,6 +43,7 @@ export function BottomNav() {
         className="relative z-10 flex flex-1 h-full flex-col items-center justify-center gap-0.5 transition-transform active:scale-95"
       >
         <Icon
+          aria-hidden
           className={cn(
             "size-[1.1rem] transition-colors",
             active ? "text-primary" : "text-muted-foreground"
@@ -78,7 +79,7 @@ export function BottomNav() {
               aria-label="Nouveau pari"
               className="flex h-12 w-12 -translate-y-3 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
             >
-              <Plus className="h-6 w-6" />
+              <Plus aria-hidden className="h-6 w-6" />
             </button>
           </div>
 

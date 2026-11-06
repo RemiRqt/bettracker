@@ -77,6 +77,7 @@ export function FreebetBetForm({ totalBalance }: FreebetBetFormProps) {
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="Sujet (ex: PSG vs Marseille)"
+            aria-label="Sujet du pari"
             required
             className="h-10 rounded-lg bg-background border-border text-foreground placeholder:text-muted-foreground"
           />
@@ -89,6 +90,7 @@ export function FreebetBetForm({ totalBalance }: FreebetBetFormProps) {
               step="0.01"
               min="1.01"
               placeholder="Cote"
+              aria-label="Cote"
               required
               className="h-10 rounded-lg bg-background border-border text-foreground placeholder:text-muted-foreground"
             />
@@ -100,6 +102,8 @@ export function FreebetBetForm({ totalBalance }: FreebetBetFormProps) {
               min="0.01"
               max={totalBalance}
               placeholder={`Mise (max ${formatEuros(totalBalance)})`}
+              aria-label={`Mise (max ${formatEuros(totalBalance)})`}
+              aria-invalid={error ? true : undefined}
               required
               className="h-10 rounded-lg bg-background border-border text-foreground placeholder:text-muted-foreground"
             />
@@ -107,14 +111,14 @@ export function FreebetBetForm({ totalBalance }: FreebetBetFormProps) {
 
           {potentialProfit > 0 && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
-              <CircleDollarSign className="h-4 w-4 text-primary" />
+              <CircleDollarSign aria-hidden className="h-4 w-4 text-primary" />
               <span className="text-sm text-primary font-medium">
                 Gain potentiel : {formatEuros(potentialProfit)}
               </span>
             </div>
           )}
 
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
 
           <Button
             type="submit"

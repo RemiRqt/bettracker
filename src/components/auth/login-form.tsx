@@ -62,6 +62,7 @@ export function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            aria-invalid={error ? true : undefined}
             className="h-11 rounded-xl bg-muted/50 border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
           />
         </div>
@@ -78,18 +79,19 @@ export function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={6}
+            aria-invalid={error ? true : undefined}
             className="h-11 rounded-xl bg-muted/50 border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
           />
         </div>
 
         {error && (
-          <div className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
+          <div role="alert" className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="rounded-xl bg-primary/10 border border-primary/20 px-4 py-3 text-sm text-primary">
+          <div role="status" className="rounded-xl bg-primary/10 border border-primary/20 px-4 py-3 text-sm text-primary">
             {success}
           </div>
         )}
@@ -101,7 +103,7 @@ export function LoginForm() {
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 aria-hidden className="h-4 w-4 motion-safe:animate-spin" />
               Chargement...
             </span>
           ) : isSignUp ? (

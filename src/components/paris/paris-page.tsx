@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo, useId } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle, XCircle, Trash2, ChevronUp, ChevronDown, Pencil, Inbox } from "lucide-react";
 import { SuggestedResultBadge } from "@/components/bets/suggested-result-badge";
@@ -62,11 +62,11 @@ const FILTERS: { key: FilterValue; label: string; color: string; activeColor: st
   { key: "perdu", label: "Perdu", color: "text-destructive border-destructive/30", activeColor: "bg-destructive/20" },
 ];
 
-const SORTS: { key: SortKey; label: string }[] = [
-  { key: "date", label: "Date" },
-  { key: "gains", label: "Gains" },
-  { key: "mise", label: "Mise" },
-  { key: "cote", label: "Cote" },
+const SORTS: { key: SortKey; label: string; srLabel: string }[] = [
+  { key: "date", label: "Date", srLabel: "date" },
+  { key: "gains", label: "Gains", srLabel: "gains" },
+  { key: "mise", label: "Mise", srLabel: "mise" },
+  { key: "cote", label: "Cote", srLabel: "cote" },
 ];
 
 export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
@@ -85,6 +85,8 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
   const [winBet, setWinBet] = useState<Bet | null>(null);
   const [editOdds, setEditOdds] = useState("");
   const [editStake, setEditStake] = useState("");
+  const editOddsId = useId();
+  const editStakeId = useId();
 
   function handleSort(key: SortKey) {
     if (sortBy === key) {
@@ -199,17 +201,20 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
 
   return (
     <div className="space-y-3">
+      <h1 className="sr-only">Mes paris</h1>
       {/* Header */}
       <ParisEquipesSwitch active="paris" />
 
       {/* Filters 1/3 */}
-      <div className="grid grid-cols-3 gap-1.5">
+      <div role="group" aria-label="Filtrer les paris" className="grid grid-cols-3 gap-1.5">
         {FILTERS.map((f) => (
           <button
             key={f.key}
+            type="button"
+            aria-pressed={filter === f.key}
             onClick={() => setFilter(filter === f.key ? null : f.key)}
             className={cn(
-              "py-2 rounded-xl text-xs font-semibold transition-colors border",
+              "relative py-2 before:absolute before:-inset-y-1.5 before:inset-x-0 rounded-xl text-xs font-semibold transition-colors border",
               filter === f.key
                 ? `${f.activeColor} ${f.color}`
                 : "bg-transparent text-muted-foreground border-border/50 hover:border-border"
@@ -222,15 +227,22 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
       </div>
 
       {/* Sorts 1/4 reversible */}
-      <div className="grid grid-cols-4 gap-1">
+      <div role="group" aria-label="Trier les paris" className="grid grid-cols-4 gap-1">
         {SORTS.map((s) => {
           const isActive = sortBy === s.key;
           return (
             <button
               key={s.key}
+              type="button"
+              aria-pressed={isActive}
+              aria-label={
+                isActive
+                  ? `Trier par ${s.srLabel}, ${sortAsc ? "croissant" : "décroissant"}`
+                  : `Trier par ${s.srLabel}`
+              }
               onClick={() => handleSort(s.key)}
               className={cn(
-                "flex items-center justify-center gap-0.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors border",
+                "relative before:absolute before:-top-1.5 before:-bottom-2.5 before:inset-x-0 flex items-center justify-center gap-0.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors border",
                 isActive
                   ? "bg-primary/20 text-primary border-primary/30"
                   : "bg-card text-muted-foreground border-border hover:border-border/80"
@@ -239,8 +251,8 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
               {s.label}
               {isActive && (
                 sortAsc
-                  ? <ChevronUp className="h-3 w-3" />
-                  : <ChevronDown className="h-3 w-3" />
+                  ? <ChevronUp className="h-3 w-3" aria-hidden="true" />
+                  : <ChevronDown className="h-3 w-3" aria-hidden="true" />
               )}
             </button>
           );
@@ -250,10 +262,11 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
       {/* Bets list */}
       {sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <Inbox className="h-10 w-10 mb-3 text-muted-foreground" />
+          <Inbox className="h-10 w-10 mb-3 text-muted-foreground" aria-hidden="true" />
           <p className="text-sm">Aucun pari{filter ? " pour ce filtre" : ""}.</p>
           {!filter && (
             <button
+              type="button"
               onClick={() => openBetModal()}
               className="mt-3 text-sm text-primary hover:text-primary/80 transition-colors"
             >
@@ -295,7 +308,7 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
                         </span>
                       )}
                       {bet.series.sport && bet.series.sport !== "football" && (
-                        <span className="flex-shrink-0 text-xs" title={bet.series.sport}>
+                        <span className="flex-shrink-0 text-xs" role="img" aria-label={bet.series.sport} title={bet.series.sport}>
                           {SPORT_EMOJIS[bet.series.sport] ?? SPORT_EMOJIS.default}
                         </span>
                       )}
@@ -332,18 +345,22 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
                         </span>
                       )}
                       <button
+                        type="button"
                         onClick={() => openEdit(bet)}
                         disabled={isPending}
-                        className="text-muted-foreground hover:text-muted-foreground/80 transition-colors disabled:opacity-50"
+                        aria-label={`Modifier le pari #${bet.bet_number} sur ${bet.series.subject}`}
+                        className="inline-flex size-11 -my-3.5 -mx-2 items-center justify-center text-muted-foreground hover:text-muted-foreground/80 transition-colors disabled:opacity-50"
                       >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDelete(bet.id)}
                         disabled={isPending}
-                        className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                        aria-label={`Supprimer le pari #${bet.bet_number} sur ${bet.series.subject}`}
+                        className="inline-flex size-11 -my-3.5 -mx-2 items-center justify-center text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
                     </div>
                   </div>
@@ -362,18 +379,20 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
                 {bet.result === null && (
                   <div className="mt-2 grid grid-cols-2 gap-2">
                     <button
+                      type="button"
                       onClick={() => handleWin(bet)}
                       disabled={isPending}
-                      className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-primary/15 text-primary text-sm font-semibold hover:bg-primary/25 transition-colors disabled:opacity-50"
+                      className="relative before:absolute before:-inset-y-1 before:inset-x-0 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-primary/15 text-primary text-sm font-semibold hover:bg-primary/25 transition-colors disabled:opacity-50"
                     >
-                      <CheckCircle className="h-4 w-4" /> Gagné
+                      <CheckCircle className="h-4 w-4" aria-hidden="true" /> Gagné
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleValidate(bet.id, "perdu")}
                       disabled={isPending}
-                      className="flex items-center justify-center gap-1.5 h-9 rounded-lg bg-destructive/15 text-destructive text-sm font-semibold hover:bg-destructive/25 transition-colors disabled:opacity-50"
+                      className="relative before:absolute before:-inset-y-1 before:inset-x-0 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-destructive/15 text-destructive text-sm font-semibold hover:bg-destructive/25 transition-colors disabled:opacity-50"
                     >
-                      <XCircle className="h-4 w-4" /> Perdu
+                      <XCircle className="h-4 w-4" aria-hidden="true" /> Perdu
                     </button>
                   </div>
                 )}
@@ -387,7 +406,7 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
       <Dialog open={winBet !== null} onOpenChange={(open) => { if (!open) setWinBet(null); }}>
         <DialogContent className="bg-card border border-primary/30 max-w-xs mx-auto rounded-2xl">
           <DialogHeader className="items-center text-center">
-            <div className="text-5xl animate-bounce">🎉</div>
+            <div className="text-5xl animate-bounce" aria-hidden="true">🎉</div>
             <DialogTitle className="text-lg text-primary">
               Pari gagné !
             </DialogTitle>
@@ -418,8 +437,10 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Cote</label>
+              <label htmlFor={editOddsId} className="text-xs text-muted-foreground mb-1 block">Cote</label>
               <input
+                id={editOddsId}
+                inputMode="decimal"
                 type="number"
                 step="0.01"
                 value={editOdds}
@@ -428,8 +449,10 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Mise</label>
+              <label htmlFor={editStakeId} className="text-xs text-muted-foreground mb-1 block">Mise</label>
               <input
+                id={editStakeId}
+                inputMode="decimal"
                 type="number"
                 step="0.01"
                 value={editStake}
@@ -438,6 +461,7 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
               />
             </div>
             <button
+              type="button"
               onClick={handleEditSave}
               disabled={isPending}
               className="w-full py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors disabled:opacity-50"

@@ -1,7 +1,6 @@
 import {
   Card,
   CardHeader,
-  CardTitle,
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
@@ -15,11 +14,11 @@ export default function LoginPage() {
       <Card className="w-full max-w-md rounded-2xl border border-primary/20 bg-card">
         <CardHeader className="text-center space-y-3 pt-8 pb-2">
           <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/30 bg-primary/15">
-            <span className="text-3xl">🎯</span>
+            <span aria-hidden className="text-3xl">🎯</span>
           </div>
-          <CardTitle className="text-3xl font-extrabold tracking-tight text-foreground">
+          <h1 className="text-3xl font-extrabold leading-none tracking-tight text-foreground">
             BetTracker
-          </CardTitle>
+          </h1>
           <CardDescription className="text-muted-foreground text-base">
             Connectez-vous pour accéder à vos séries de paris
           </CardDescription>

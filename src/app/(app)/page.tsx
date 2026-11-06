@@ -13,6 +13,7 @@ export const metadata = { title: "Dashboard | BetTracker" };
 export default function DashboardPage() {
   return (
     <div className="space-y-3">
+      <h1 className="sr-only">Tableau de bord</h1>
       <Suspense fallback={<DashboardSkeleton />}>
         <DashboardContent />
       </Suspense>

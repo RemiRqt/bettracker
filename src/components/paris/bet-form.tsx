@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useId, useRef, useState, useTransition } from "react";
 import { createBetEntry } from "@/actions/bets";
 import { BET_TYPES, SPORTS } from "@/lib/constants";
 import type { SportType } from "@/lib/types";
@@ -122,6 +122,16 @@ export function BetForm({
   const [addTeamOpen, setAddTeamOpen] = useState(false);
   const [fixture, setFixture] = useState<PickedFixture | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const uid = useId();
+  const ids = {
+    error: `${uid}-erreur`,
+    betType: `${uid}-type`,
+    sport: `${uid}-sport`,
+    objective: `${uid}-objectif`,
+    odds: `${uid}-cote`,
+    stake: `${uid}-mise`,
+    gain: `${uid}-gain`,
+  };
   const [isPending, startTransition] = useTransition();
 
   const o = parseFloat(odds) || 0;
@@ -307,11 +317,13 @@ export function BetForm({
   }
 
   const sliderIndex = nearestStopIndex(targetGain);
+  const oddsInvalid = error === "La cote doit être supérieure à 1.";
+  const stakeInvalid = error === "Renseigne une mise.";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 pt-2">
       {error && (
-        <div className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3">
+        <div id={ids.error} role="alert" className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3">
           <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
@@ -356,9 +368,10 @@ export function BetForm({
         <>
           {/* 2. Mode : Série (continuer / nouvelle) ou Pari unique */}
           {!lockedSeries && (
-            <div className="grid grid-cols-2 gap-2">
+            <div role="group" aria-label="Mode de pari" className="grid grid-cols-2 gap-2">
               <button
                 type="button"
+                aria-pressed={modeChoice === "serie"}
                 onClick={() => {
                   setModeChoice("serie");
                   resetAmounts();
@@ -374,6 +387,7 @@ export function BetForm({
               </button>
               <button
                 type="button"
+                aria-pressed={modeChoice === "unique"}
                 onClick={() => {
                   setModeChoice("unique");
                   resetAmounts();
@@ -394,14 +408,15 @@ export function BetForm({
           {needTeamParams && (
             <div className="space-y-3">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-secondary-foreground">
+                <p id={ids.betType} className="text-sm font-medium text-secondary-foreground">
                   Type de pari
-                </label>
-                <div className="grid grid-cols-4 gap-2">
+                </p>
+                <div role="group" aria-labelledby={ids.betType} className="grid grid-cols-4 gap-2">
                   {BET_TYPE_KEYS.map((key) => (
                     <button
                       key={key}
                       type="button"
+                      aria-pressed={betType === key}
                       onClick={() => setBetType(key)}
                       className={cn(
                         "h-11 rounded-xl border text-sm font-medium transition-colors",
@@ -419,6 +434,7 @@ export function BetForm({
                     value={betTypeCustom}
                     onChange={(e) => setBetTypeCustom(e.target.value)}
                     placeholder="Type personnalisé"
+                    aria-label="Type de pari personnalisé"
                     className={INPUT}
                     autoFocus
                   />
@@ -427,19 +443,20 @@ export function BetForm({
 
               {apiTeam ? (
                 <div className="flex items-center gap-2 text-sm text-primary">
-                  <Check className="h-4 w-4" /> Lié à {apiTeam.subject}
+                  <Check className="h-4 w-4" aria-hidden="true" /> Lié à {apiTeam.subject}
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-secondary-foreground">
+                  <p id={ids.sport} className="text-sm font-medium text-secondary-foreground">
                     Sport
-                  </label>
-                  <div className="grid grid-cols-4 gap-2">
+                  </p>
+                  <div role="group" aria-labelledby={ids.sport} className="grid grid-cols-4 gap-2">
                     {(Object.entries(SPORTS) as [string, string][]).map(
                       ([key, label]) => (
                         <button
                           key={key}
                           type="button"
+                          aria-pressed={sport === key}
                           onClick={() => setSport(key)}
                           className={cn(
                             "h-10 rounded-lg text-xs font-medium border transition-colors",
@@ -459,7 +476,7 @@ export function BetForm({
                       onClick={() => setAddTeamOpen(true)}
                       className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80"
                     >
-                      <Link2 className="h-4 w-4" /> Lier à une équipe API (logo & calendrier)
+                      <Link2 className="h-4 w-4" aria-hidden="true" /> Lier à une équipe API (logo & calendrier)
                     </button>
                   )}
                 </div>
@@ -489,10 +506,11 @@ export function BetForm({
           {mode === "serie" && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-secondary-foreground">
+                <label htmlFor={ids.objective} className="text-sm font-medium text-secondary-foreground">
                   Objectif de gain
                 </label>
                 <input
+                  id={ids.objective}
                   type="number"
                   step="any"
                   min="0"
@@ -503,6 +521,8 @@ export function BetForm({
               </div>
               <input
                 type="range"
+                aria-label="Objectif de gain (curseur)"
+                aria-valuetext={formatEuros(targetGain)}
                 min={0}
                 max={OBJECTIVE_STOPS.length - 1}
                 step={1}
@@ -526,10 +546,13 @@ export function BetForm({
           {mode === "unique" ? (
             <div className="space-y-3">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-secondary-foreground">
+                <label htmlFor={ids.odds} className="text-sm font-medium text-secondary-foreground">
                   Cote
                 </label>
                 <input
+                  id={ids.odds}
+                  aria-invalid={oddsInvalid || undefined}
+                  aria-describedby={oddsInvalid ? ids.error : undefined}
                   type="number"
                   step="0.01"
                   min="1.01"
@@ -541,8 +564,11 @@ export function BetForm({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">Mise</label>
+                  <label htmlFor={ids.stake} className="text-xs text-muted-foreground">Mise</label>
                   <input
+                    id={ids.stake}
+                    aria-invalid={stakeInvalid || undefined}
+                    aria-describedby={stakeInvalid ? ids.error : undefined}
                     type="number"
                     step="0.01"
                     value={stake}
@@ -552,8 +578,9 @@ export function BetForm({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">Gain net</label>
+                  <label htmlFor={ids.gain} className="text-xs text-muted-foreground">Gain net</label>
                   <input
+                    id={ids.gain}
                     type="number"
                     step="0.01"
                     value={gain}
@@ -568,8 +595,11 @@ export function BetForm({
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">Cote</label>
+                  <label htmlFor={ids.odds} className="text-xs text-muted-foreground">Cote</label>
                   <input
+                    id={ids.odds}
+                    aria-invalid={oddsInvalid || undefined}
+                    aria-describedby={oddsInvalid ? ids.error : undefined}
                     type="number"
                     step="0.01"
                     min="1.01"
@@ -580,8 +610,11 @@ export function BetForm({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">Mise</label>
+                  <label htmlFor={ids.stake} className="text-xs text-muted-foreground">Mise</label>
                   <input
+                    id={ids.stake}
+                    aria-invalid={stakeInvalid || undefined}
+                    aria-describedby={stakeInvalid ? ids.error : undefined}
                     type="number"
                     step="0.01"
                     value={stake}
@@ -605,7 +638,7 @@ export function BetForm({
           >
             {isPending ? (
               <span className="flex items-center justify-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" /> Enregistrement...
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Enregistrement...
               </span>
             ) : mode === "resume" ? (
               "Ajouter le pari"

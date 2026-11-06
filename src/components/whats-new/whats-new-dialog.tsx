@@ -73,7 +73,8 @@ export function WhatsNewDialog({ releases, open, onClose }: WhatsNewDialogProps)
             <button
               key={i}
               type="button"
-              aria-label={`Nouveauté ${i + 1}`}
+              aria-label={`Écran ${i + 1} sur ${slides.length}`}
+              aria-current={i === index ? "step" : undefined}
               onClick={() => go(i)}
               className={cn("h-1.5 rounded-full transition-all", i === index ? "w-5 bg-primary" : "w-1.5 bg-muted")}
             />

@@ -4,7 +4,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div
+    <main
       className="flex min-h-screen items-center justify-center bg-muted/50 px-4"
       style={{
         paddingTop: "env(safe-area-inset-top, 0px)",
@@ -12,6 +12,6 @@ export default function AuthLayout({
       }}
     >
       {children}
-    </div>
+    </main>
   );
 }

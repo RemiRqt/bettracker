@@ -34,15 +34,15 @@ export function AppHeader({ email }: AppHeaderProps) {
 
         {/* Droite : create (desktop) + admin */}
         <div className="ml-auto flex items-center gap-2">
-          <CreateBetButton className="hidden md:flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-95" />
+          <CreateBetButton className="hidden md:flex relative before:absolute before:-inset-1.5 before:content-[''] h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform active:scale-95" />
           {isAdmin && (
             <Link
               href="/styleguide"
               title="Styleguide"
               aria-label="Styleguide"
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card transition-colors hover:border-primary/50"
+              className="relative before:absolute before:-inset-1.5 before:content-[''] flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card transition-colors hover:border-primary/50"
             >
-              <Palette className="h-4 w-4 text-muted-foreground" />
+              <Palette aria-hidden className="h-4 w-4 text-muted-foreground" />
             </Link>
           )}
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { ChevronDown, ChevronRight, Trash2, Ban, RotateCcw, CheckCircle, XCircle } from "lucide-react";
 import { SuggestedResultBadge } from "@/components/bets/suggested-result-badge";
 import { SeriesStatusBadge } from "@/components/series/series-status-badge";
@@ -21,6 +21,7 @@ interface EquipeSeriesItemProps {
 
 export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
   const [expanded, setExpanded] = useState(false);
+  const panelId = useId();
   const [deleted, setDeleted] = useState(false);
   const [isPending, startTransition] = useTransition();
   const confirm = useConfirm();
@@ -89,14 +90,17 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
 
   return (
     <div className="rounded-lg bg-background/60 overflow-hidden">
-      {/* Series header - clickable */}
-      <button
-        onClick={() => setExpanded((prev) => !prev)}
-        className="w-full text-left p-3 space-y-1.5 hover:bg-foreground/[0.02] transition-colors"
-      >
+      {/* En-tête : le bouton dépliant couvre toute la zone (after:inset-0), les actions sont à côté */}
+      <div className="relative p-3 space-y-1.5 hover:bg-foreground/[0.02] transition-colors">
         {/* Row 1: Série #N + status badge + gains + chevron */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setExpanded((prev) => !prev)}
+            aria-expanded={expanded}
+            aria-controls={panelId}
+            className="flex items-center gap-2 text-left after:absolute after:inset-0"
+          >
             <span className="text-sm font-semibold text-secondary-foreground">
               Série #{series.seriesNumber}
             </span>
@@ -109,30 +113,32 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
             >
               {series.netProfit >= 0 ? "+" : ""}{formatEuros(series.netProfit)}
             </span>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
+          </button>
+          <div className="flex items-center shrink-0">
             {canAbandon && (
               <button
-                onClick={(e) => { e.stopPropagation(); handleAbandon(); }}
-                className="text-muted-foreground hover:text-warning transition-colors p-0.5"
-                title="Abandonner la série"
+                type="button"
+                onClick={handleAbandon}
+                aria-label={`Abandonner la série #${series.seriesNumber}`}
+                className="relative z-10 inline-flex size-11 -my-3 items-center justify-center text-muted-foreground hover:text-warning transition-colors"
               >
-                <Ban className="h-3.5 w-3.5" />
+                <Ban className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             )}
             {isDeletable && (
               <button
-                onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-                className="text-muted-foreground hover:text-destructive transition-colors p-0.5"
-                title="Supprimer la série"
+                type="button"
+                onClick={handleDelete}
+                aria-label={`Supprimer la série #${series.seriesNumber}`}
+                className="relative z-10 inline-flex size-11 -my-3 items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             )}
             {expanded ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             )}
           </div>
         </div>
@@ -142,9 +148,9 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
           <span>
             {series.bets.length} pari{series.bets.length > 1 ? "s" : ""}
           </span>
-          <span>&middot;</span>
+          <span aria-hidden="true">&middot;</span>
           <span>Mise : {formatEuros(series.totalStake)}</span>
-          <span>&middot;</span>
+          <span aria-hidden="true">&middot;</span>
           <span
             className={cn(
               "font-medium",
@@ -154,11 +160,11 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
             ROI : {formatPercent(series.roi)}
           </span>
         </p>
-      </button>
+      </div>
 
       {/* Expanded: individual bets */}
       {expanded && (
-        <div className="border-t border-border/30 px-3 pb-3 pt-2 space-y-2">
+        <div id={panelId} className="border-t border-border/30 px-3 pb-3 pt-2 space-y-2">
           {[...series.bets]
             .sort((a, b) => b.bet_number - a.bet_number)
             .map((bet) => {
@@ -220,17 +226,17 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
                       type="button"
                       onClick={() => handleValidate(bet.id, "gagne")}
                       disabled={isPending}
-                      className="flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/25 transition-colors disabled:opacity-50"
+                      className="relative flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-[11px] font-semibold text-primary hover:bg-primary/25 transition-colors disabled:opacity-50"
                     >
-                      <CheckCircle className="h-3.5 w-3.5" /> Gagné
+                      <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" /> Gagné
                     </button>
                     <button
                       type="button"
                       onClick={() => handleValidate(bet.id, "perdu")}
                       disabled={isPending}
-                      className="flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 text-[11px] font-semibold text-destructive hover:bg-destructive/25 transition-colors disabled:opacity-50"
+                      className="relative flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-[11px] font-semibold text-destructive hover:bg-destructive/25 transition-colors disabled:opacity-50"
                     >
-                      <XCircle className="h-3.5 w-3.5" /> Perdu
+                      <XCircle className="h-3.5 w-3.5" aria-hidden="true" /> Perdu
                     </button>
                   </div>
                 ) : (
@@ -253,7 +259,7 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
               onClick={handleReopen}
               className="w-full flex items-center justify-center gap-2 h-9 rounded-lg bg-info/15 text-info text-sm font-medium hover:bg-info/25 transition-colors"
             >
-              <RotateCcw className="h-4 w-4" /> Rouvrir la série
+              <RotateCcw className="h-4 w-4" aria-hidden="true" /> Rouvrir la série
             </button>
           )}
         </div>

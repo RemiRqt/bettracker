@@ -65,10 +65,12 @@ export function FreebetForm() {
               step="0.01"
               min="0.01"
               placeholder="Montant (€)"
+              aria-label="Montant du freebet (€)"
+              aria-invalid={error ? true : undefined}
               required
               className="h-10 rounded-lg bg-background border-border text-foreground placeholder:text-muted-foreground"
             />
-            {error && <p className="text-xs text-destructive">{error}</p>}
+            {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
             <Button
               type="submit"
               disabled={loading}

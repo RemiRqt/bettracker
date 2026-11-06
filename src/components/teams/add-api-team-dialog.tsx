@@ -122,6 +122,7 @@ export function AddApiTeamDialog({
               key={comp.code}
               type="button"
               onClick={() => loadCompetitionTeams(comp.code)}
+              aria-pressed={selectedCompetition === comp.code}
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                 selectedCompetition === comp.code
@@ -137,12 +138,13 @@ export function AddApiTeamDialog({
         {/* Filter within loaded teams */}
         {clubResults.length > 0 && (
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               value={clubFilter}
               onChange={(e) => setClubFilter(e.target.value)}
               placeholder="Filtrer..."
+              aria-label="Filtrer les équipes"
               className="w-full bg-background border border-border rounded-xl pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
@@ -151,7 +153,8 @@ export function AddApiTeamDialog({
         <div className="max-h-72 overflow-y-auto space-y-1">
           {isSearching && (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <Loader2 aria-hidden className="h-5 w-5 motion-safe:animate-spin text-muted-foreground" />
+              <span className="sr-only">Chargement des équipes…</span>
             </div>
           )}
           {!isSearching && selectedCompetition && clubResults.length === 0 && (
