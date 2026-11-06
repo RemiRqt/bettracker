@@ -1,3 +1,5 @@
+import { CONFETTI_COLORS } from "@/lib/theme";
+
 /**
  * Confetti burst — no dependency. Two party-popper cannons fire from the bottom
  * corners toward the center; particles follow a real gravity + drag + spin
@@ -10,10 +12,7 @@ export function fireConfetti(count = 150) {
   if (typeof window === "undefined") return;
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-  const colors = [
-    "#10b981", "#34d399", "#3b82f6", "#60a5fa",
-    "#f59e0b", "#fbbf24", "#a78bfa", "#e2e8f0",
-  ];
+  const colors = CONFETTI_COLORS;
 
   const container = document.createElement("div");
   container.style.cssText =

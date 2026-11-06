@@ -12,3 +12,13 @@ export const THEMES: { id: Theme; label: string; hint: string }[] = [
 export function isTheme(v: string | undefined): v is Theme {
   return v === "actuel" || v === "turf" || v === "creme";
 }
+
+/**
+ * Couleurs hors tokens CSS (seule exception à la règle ESLint des couleurs en dur) :
+ * meta theme-color et particules de confettis (dessinées en JS).
+ */
+export const THEME_COLOR_META = "#0f172a";
+export const CONFETTI_COLORS = [
+  "#10b981", "#34d399", "#3b82f6", "#60a5fa",
+  "#f59e0b", "#fbbf24", "#a78bfa", "#e2e8f0",
+];

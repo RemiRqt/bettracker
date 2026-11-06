@@ -18,8 +18,10 @@
   --color-muted-foreground: #cbd5e1;
   --color-accent: #1e293b;
   --color-accent-foreground: #ffffff;
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #ffffff;
+  /* Rouge clair + texte foncé (comme primary) : contraste AA sur fond et sur card. */
+  --color-destructive: #f87171;
+  --color-destructive-foreground: #450a0a;
+  --color-overlay: rgb(2 6 23 / 0.8);
   --color-warning: #f59e0b;
   --color-warning-foreground: #1c1200;
   --color-info: #3b82f6;
@@ -86,23 +88,32 @@
   --color-card-foreground: #1c1917;
   --color-popover: #fffdf8;
   --color-popover-foreground: #1c1917;
-  --color-primary: #16a34a;
+  --color-primary: #15803d;
   --color-primary-foreground: #ffffff;
   --color-secondary: #f3eee2;
   --color-secondary-foreground: #4a4036;
   --color-muted: #f3eee2;
-  --color-muted-foreground: #7c7263;
+  --color-muted-foreground: #6b6254;
   --color-accent: #f3eee2;
   --color-accent-foreground: #1c1917;
   --color-border: #e7e0d0;
   --color-input: #e7e0d0;
-  --color-ring: #16a34a;
+  --color-ring: #15803d;
   --color-destructive: #dc2626;
-  --color-warning: #d97706;
+  --color-destructive-foreground: #ffffff;
+  --color-warning: #b45309;
   --color-info: #2563eb;
   --color-sidebar-background: #f7f4ec;
   --color-sidebar-accent: #fffdf8;
   --color-sidebar-border: #e7e0d0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @layer base {
@@ -123,10 +134,17 @@
     font-size: 1rem;
     line-height: 1.6;
   }
+  /* Focus clavier visible partout (boutons bruts compris). */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
   /* Tactile press on action buttons (app-level, not the shadcn primitive).
      Tabs are excluded to keep tab switching steady. */
-  button:not(:disabled):not([role="tab"]):active {
-    transform: scale(0.97);
+  @media (prefers-reduced-motion: no-preference) {
+    button:not(:disabled):not([role="tab"]):active {
+      transform: scale(0.97);
+    }
   }
   /* Sticker shadow on filled action buttons only (not bare icon buttons).
      Rest = small offset, hover = full. Transform stays on the press rule above.

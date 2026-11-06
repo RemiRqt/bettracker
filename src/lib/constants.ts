@@ -20,12 +20,6 @@ export const BET_RESULTS = {
   perdu: "Perdu",
 } as const;
 
-export const STATUS_COLORS = {
-  en_cours: "bg-blue-100 text-blue-800",
-  gagnee: "bg-green-100 text-green-800",
-  abandonnee: "bg-red-100 text-red-800",
-} as const;
-
 export const SPORT_EMOJIS: Record<string, string> = {
   football: "\u26BD",
   tennis: "\uD83C\uDFBE",
