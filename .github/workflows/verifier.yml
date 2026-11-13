@@ -1,0 +1,63 @@
+name: verifier
+
+# Push sur main = déploiement prod : cette CI ALERTE (elle ne protège pas). La barrière est locale :
+# npm run verifier + lefthook pre-push + hook Claude anti --no-verify.
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**/*.md", "docs/**"]
+  pull_request:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read # gitleaks-action liste les commits d'une PR
+
+concurrency:
+  group: verifier-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  LEFTHOOK: 0
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0 (épinglé : l'action reçoit GITHUB_TOKEN)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/.cache
+            .next/cache
+          key: qualite-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: qualite-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+      - name: Verifier (garde-fous, typecheck, lint, format, tests, knip, build)
+        run: npm run verifier
+
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Vulnérabilités des dépendances de prod
+        run: npm audit --omit=dev --audit-level=high

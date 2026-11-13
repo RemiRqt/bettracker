@@ -10,6 +10,7 @@
 
 # testing
 /coverage
+/test-results
 
 # next.js
 /.next/
@@ -43,3 +44,7 @@ next-env.d.ts
 
 # Claude Code — permissions locales (peuvent contenir des secrets)
 .claude/settings.local.json
+supabase/.temp
+
+# Rapport de gitleaks-action (CI)
+results.sarif

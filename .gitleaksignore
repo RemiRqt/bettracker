@@ -1,0 +1,11 @@
+# Clés legacy de l'incident du 2026-03-27/28 (.claude/settings.local.json) : désactivées le 2026-10-10
+# (passage aux clés sb_secret_/sb_publishable_, vérifié HTTP 401 le 2026-11-13).
+88405f1eea5f3faf406719bfb158902249f70d67:.claude/settings.local.json:jwt:56
+58153ff74ccbbd590feaf619620ffd4b7428d3e5:.claude/settings.local.json:jwt:32
+bf2fca7b193c661fd270b32ffff767f9daee2cf8:.claude/settings.local.json:jwt:35
+bf2fca7b193c661fd270b32ffff767f9daee2cf8:.claude/settings.local.json:jwt:36
+bf2fca7b193c661fd270b32ffff767f9daee2cf8:.claude/settings.local.json:jwt:38
+bf2fca7b193c661fd270b32ffff767f9daee2cf8:.claude/settings.local.json:jwt:40
+80f509ecf10ec25478478e408e03c17d1790388a:.claude/settings.local.json:jwt:42
+80f509ecf10ec25478478e408e03c17d1790388a:.claude/settings.local.json:jwt:43
+80f509ecf10ec25478478e408e03c17d1790388a:.claude/settings.local.json:jwt:44

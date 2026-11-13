@@ -1,0 +1,14 @@
+.next
+node_modules
+public
+package-lock.json
+test-results
+supabase/migrations
+supabase/.temp
+src/components/ui
+src/lib/types/database.ts
+docs/superpowers
+docs/audits
+results.sarif
+# Les chaînes de classes y sont des données de test (le tri Tailwind les fausserait)
+src/lib/utils.test.ts
