@@ -13,6 +13,7 @@ Implement `$ARGUMENTS` at maximum speed. Ship fast, iterate later.
 ### 1. EXPLORE (minimal)
 
 Gather minimum viable context:
+
 - Use `Glob` to find 2-3 key files by pattern
 - Use `Grep` to search for specific patterns
 - Quick `WebSearch` only if library-specific API knowledge needed
@@ -21,6 +22,7 @@ Gather minimum viable context:
 ### 2. CODE (main phase)
 
 Execute changes immediately:
+
 - Follow existing codebase patterns exactly
 - Clear variable/method names over comments
 - Stay STRICTLY in scope - change only what's needed
@@ -31,6 +33,7 @@ Execute changes immediately:
 ### 3. TEST (validate)
 
 Check quality:
+
 - Run: `npm run lint && npm run typecheck` (or equivalent)
 - If fails: fix only what you broke, re-run
 - NO full test suite unless explicitly requested

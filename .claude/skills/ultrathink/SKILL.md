@@ -30,6 +30,7 @@ Take a deep breath. We're not here to write code. We're here to make a dent in t
 ## The Integration
 
 Technology alone is not enough. Your code should:
+
 - Work seamlessly with the human's workflow
 - Feel intuitive, not mechanical
 - Solve the _real_ problem, not just the stated one
