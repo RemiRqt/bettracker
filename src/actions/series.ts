@@ -210,7 +210,7 @@ async function checkDeletableBets(supabase: Awaited<ReturnType<typeof createClie
   return null;
 }
 
-export async function deleteSeries(seriesId: string) {
+export async function deleteSeries(seriesId: string): Promise<{ error?: string; success?: boolean }> {
   const supabase = await createClient();
 
   const { user, error: authError } = await getAuthUser();

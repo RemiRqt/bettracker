@@ -9,7 +9,7 @@
     "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ --max-warnings=0 .",
     "test": "TZ=Europe/Paris vitest run",
     "prepare": "lefthook install || true",
-    "typecheck": "next typegen && tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit --incremental false",
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier --write --cache .",
     "format:check": "prettier --check --cache --log-level warn .",
