@@ -33,13 +33,7 @@ interface GroupedFixtures {
   }[];
 }
 
-export function CalendarPage({
-  fixtures,
-  lastUpdated,
-  oddsUpdatedAt = null,
-  teamCount = 0,
-  teamNames = [],
-}: CalendarPageProps) {
+export function CalendarPage({ fixtures, lastUpdated, oddsUpdatedAt = null, teamCount = 0, teamNames = [] }: CalendarPageProps) {
   const [isPending, startTransition] = useTransition();
 
   function handleRefresh() {
@@ -85,15 +79,13 @@ export function CalendarPage({
       {/* Header */}
       <div>
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-foreground font-[family-name:var(--font-poppins)]">
-            Calendrier
-          </h1>
+          <h1 className="font-[family-name:var(--font-poppins)] text-xl font-bold text-foreground">Calendrier</h1>
           <button
             onClick={handleRefresh}
             disabled={isPending}
             aria-label="Rechercher les matchs"
             aria-busy={isPending}
-            className="relative before:absolute before:-inset-1 before:content-[''] flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+            className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors before:absolute before:-inset-1 before:content-[''] hover:bg-primary/90 disabled:opacity-50"
           >
             <RefreshCw aria-hidden className={cn("h-5 w-5", isPending && "motion-safe:animate-spin")} />
           </button>
@@ -102,9 +94,7 @@ export function CalendarPage({
         {formattedLastUpdated && (
           <div className="mt-1 flex items-center gap-1.5">
             <Clock aria-hidden className="h-3 w-3 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">
-              Dernière mise à jour : {formattedLastUpdated}
-            </p>
+            <p className="text-xs text-muted-foreground">Dernière mise à jour : {formattedLastUpdated}</p>
           </div>
         )}
         {oddsUpdatedAt && (
@@ -123,25 +113,18 @@ export function CalendarPage({
 
       {/* Empty state */}
       {fixtures.length === 0 && (
-        <div className="rounded-xl bg-card p-6 text-center space-y-3">
-          <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto" />
+        <div className="space-y-3 rounded-xl bg-card p-6 text-center">
+          <CalendarDays className="mx-auto h-10 w-10 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">Aucun match a venir.</p>
           {teamCount === 0 ? (
-            <p className="text-xs text-muted-foreground">
-              Suivez des equipes depuis votre profil pour voir leurs prochains
-              matchs.
-            </p>
+            <p className="text-xs text-muted-foreground">Suivez des equipes depuis votre profil pour voir leurs prochains matchs.</p>
           ) : (
             <p className="text-xs text-muted-foreground">
               {teamCount} equipe{teamCount > 1 ? "s" : ""} eligible
-              {teamCount > 1 ? "s" : ""} ({teamNames.join(", ")}), mais aucun
-              match retourne par l&apos;API.
+              {teamCount > 1 ? "s" : ""} ({teamNames.join(", ")}), mais aucun match retourne par l&apos;API.
             </p>
           )}
-          <Link
-            href="/profile"
-            className="inline-block mt-2 text-sm text-primary hover:text-primary transition-colors"
-          >
+          <Link href="/profile" className="mt-2 inline-block text-sm text-primary transition-colors hover:text-primary">
             Gerer mes equipes
           </Link>
         </div>
@@ -154,8 +137,8 @@ export function CalendarPage({
           <div key={date} className="space-y-2">
             <h2
               className={cn(
-                "text-center text-xs uppercase tracking-wide font-[family-name:var(--font-poppins)]",
-                isToday ? "font-semibold text-primary" : "text-muted-foreground"
+                "text-center font-[family-name:var(--font-poppins)] text-xs tracking-wide uppercase",
+                isToday ? "font-semibold text-primary" : "text-muted-foreground",
               )}
             >
               {isToday ? `Aujourd'hui · ${date}` : date}
@@ -191,31 +174,16 @@ function FixtureCard({
   });
 
   return (
-    <div
-      className={cn(
-        "rounded-xl bg-card p-3 space-y-2.5",
-        hasSeries && "border border-primary/30"
-      )}
-    >
+    <div className={cn("space-y-2.5 rounded-xl bg-card p-3", hasSeries && "border border-primary/30")}>
       {/* League + Time */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {fixture.leagueLogo && (
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-foreground/10 p-0.5">
-              <img
-                src={fixture.leagueLogo}
-                alt=""
-                width={20}
-                height={20}
-                loading="lazy"
-                decoding="async"
-                className="h-full w-full object-contain"
-              />
+              <img src={fixture.leagueLogo} alt="" width={20} height={20} loading="lazy" decoding="async" className="h-full w-full object-contain" />
             </div>
           )}
-          <span className="text-xs text-muted-foreground truncate max-w-[180px]">
-            {fixture.league}
-          </span>
+          <span className="max-w-[180px] truncate text-xs text-muted-foreground">{fixture.league}</span>
         </div>
         <span className="text-xs font-medium text-secondary-foreground">{time}</span>
       </div>
@@ -225,9 +193,7 @@ function FixtureCard({
         {/* Home */}
         <div className="flex flex-1 flex-col items-center gap-1 text-center">
           <TeamLogo logoUrl={fixture.homeLogo} size="lg" />
-          <span className="text-xs text-foreground line-clamp-2">
-            {fixture.homeTeam}
-          </span>
+          <span className="line-clamp-2 text-xs text-foreground">{fixture.homeTeam}</span>
         </div>
 
         {/* VS */}
@@ -236,33 +202,27 @@ function FixtureCard({
         {/* Away */}
         <div className="flex flex-1 flex-col items-center gap-1 text-center">
           <TeamLogo logoUrl={fixture.awayLogo} size="lg" />
-          <span className="text-xs text-foreground line-clamp-2">
-            {fixture.awayTeam}
-          </span>
+          <span className="line-clamp-2 text-xs text-foreground">{fixture.awayTeam}</span>
         </div>
       </div>
 
-      {item.odds && (
-        <FixtureOddsLine odds={item.odds} homeLabel={fixture.homeTeam} awayLabel={fixture.awayTeam} />
-      )}
+      {item.odds && <FixtureOddsLine odds={item.odds} homeLabel={fixture.homeTeam} awayLabel={fixture.awayTeam} />}
 
       {/* Active series linked to this fixture */}
       {activeSeries.length > 0 && (
-        <div className="border-t border-border/50 pt-2 space-y-1.5">
+        <div className="space-y-1.5 border-t border-border/50 pt-2">
           {activeSeries.map((s) => (
             <Link
               key={s.id}
               href={`/series/${s.id}`}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-background hover:bg-card transition-colors"
+              className="flex items-center gap-2 rounded-lg bg-background px-2.5 py-1.5 transition-colors hover:bg-card"
             >
-              <TrendingUp className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-              <span className="text-xs text-foreground truncate">{s.subject}</span>
-              <span className="text-2xs px-1.5 py-0.5 rounded-full bg-muted text-secondary-foreground">
+              <TrendingUp className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
+              <span className="truncate text-xs text-foreground">{s.subject}</span>
+              <span className="rounded-full bg-muted px-1.5 py-0.5 text-2xs text-secondary-foreground">
                 {BET_TYPES[s.bet_type as keyof typeof BET_TYPES] ?? s.bet_type}
               </span>
-              <span className="text-2xs text-muted-foreground ml-auto">
-                {s.target_gain}€/pari
-              </span>
+              <span className="ml-auto text-2xs text-muted-foreground">{s.target_gain}€/pari</span>
             </Link>
           ))}
         </div>

@@ -62,9 +62,7 @@ export function SuggestedResultBadge({ bet, onConfirm, disabled, className }: Su
         }}
         className={cn(
           "rounded-lg px-2.5 py-1 text-2xs font-semibold transition-colors disabled:opacity-50",
-          win
-            ? "bg-primary text-primary-foreground hover:bg-primary/90"
-            : "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          win ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         )}
       >
         Confirmer

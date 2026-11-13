@@ -11,13 +11,13 @@ import { ThemeSelector } from "@/components/profile/theme-selector";
 import { ResultCheckButton } from "@/components/profile/result-check-button";
 import { BookmakerSettings } from "@/components/profile/bookmaker-settings";
 import { WhatsNewButton } from "@/components/whats-new/whats-new-button";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { getOddsCredits } from "@/lib/odds-api";
 import { ADMIN_EMAILS } from "@/lib/constants";
 import { RollingNumber } from "@/components/ui/rolling-number";
 import { getServerTheme } from "@/lib/theme.server";
 import Link from "next/link";
 import { User, Ticket, ChevronRight } from "lucide-react";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export const dynamic = "force-dynamic";
 
@@ -30,23 +30,15 @@ export default async function ProfilePage() {
 
   const [theme, oddsCredits, transactions, teamMappings, notifSettings] = await Promise.all([
     getServerTheme(),
-    isAdmin
-      ? getOddsCredits(
-          createServiceClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!),
-        )
-      : Promise.resolve(null),
+    isAdmin ? getOddsCredits(createServiceClient()) : Promise.resolve(null),
     getTransactions(),
     ensureTeamMappings(),
     getNotificationSettings(),
   ]);
 
-  const totalDeposits = transactions
-    .filter((t) => t.type === "depot")
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalDeposits = transactions.filter((t) => t.type === "depot").reduce((sum, t) => sum + t.amount, 0);
 
-  const totalWithdrawals = transactions
-    .filter((t) => t.type === "retrait")
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalWithdrawals = transactions.filter((t) => t.type === "retrait").reduce((sum, t) => sum + t.amount, 0);
 
   const balance = totalDeposits - totalWithdrawals;
 
@@ -55,43 +47,31 @@ export default async function ProfilePage() {
       {/* Profile header + compact balance */}
       <div className="rounded-xl bg-card p-4 md:p-6">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-full bg-primary/10 border border-primary/25 flex items-center justify-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-primary/25 bg-primary/10">
             <User className="h-6 w-6 text-primary/80" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-lg font-semibold text-foreground font-[family-name:var(--font-poppins)]">
-              Mon profil
-            </h1>
+            <h1 className="font-[family-name:var(--font-poppins)] text-lg font-semibold text-foreground">Mon profil</h1>
             <p className="truncate text-sm text-muted-foreground">{user?.email}</p>
           </div>
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border/50 pt-3">
           <div className="text-center">
-            <p className="text-2xs uppercase tracking-wide text-muted-foreground">
-              Dépôts
-            </p>
+            <p className="text-2xs tracking-wide text-muted-foreground uppercase">Dépôts</p>
             <p className="text-sm font-bold text-primary">
               +<RollingNumber value={totalDeposits} format="euros" />
             </p>
           </div>
           <div className="text-center">
-            <p className="text-2xs uppercase tracking-wide text-muted-foreground">
-              Retraits
-            </p>
+            <p className="text-2xs tracking-wide text-muted-foreground uppercase">Retraits</p>
             <p className="text-sm font-bold text-destructive">
               -<RollingNumber value={totalWithdrawals} format="euros" />
             </p>
           </div>
           <div className="text-center">
-            <p className="text-2xs uppercase tracking-wide text-muted-foreground">
-              Solde en cours
-            </p>
-            <p
-              className={`text-sm font-bold ${
-                balance >= 0 ? "text-primary" : "text-destructive"
-              }`}
-            >
+            <p className="text-2xs tracking-wide text-muted-foreground uppercase">Solde en cours</p>
+            <p className={`text-sm font-bold ${balance >= 0 ? "text-primary" : "text-destructive"}`}>
               {balance >= 0 ? "+" : ""}
               <RollingNumber value={balance} format="euros" />
             </p>
@@ -100,10 +80,7 @@ export default async function ProfilePage() {
       </div>
 
       {/* Freebets */}
-      <Link
-        href="/freebets"
-        className="flex items-center gap-3 rounded-xl bg-card p-4 md:p-6 transition-colors hover:bg-card/80"
-      >
+      <Link href="/freebets" className="flex items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-card/80 md:p-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/15 text-warning">
           <Ticket className="h-5 w-5" />
         </div>
@@ -120,10 +97,7 @@ export default async function ProfilePage() {
       <TransactionForm />
 
       {/* Notifications */}
-      <NotificationSettings
-        initialEnabled={notifSettings.notifications_enabled}
-        initialResults={notifSettings.result_notifications_enabled}
-      />
+      <NotificationSettings initialEnabled={notifSettings.notifications_enabled} initialResults={notifSettings.result_notifications_enabled} />
 
       <BookmakerSettings initial={notifSettings.bookmakers} />
 
@@ -136,17 +110,13 @@ export default async function ProfilePage() {
 
       {/* Transaction history */}
       <div className="rounded-xl bg-card p-4 md:p-6">
-        <h2 className="text-sm uppercase tracking-wide text-muted-foreground mb-4">
-          Historique des transactions
-        </h2>
+        <h2 className="mb-4 text-sm tracking-wide text-muted-foreground uppercase">Historique des transactions</h2>
         <TransactionList transactions={transactions} />
       </div>
 
       {/* Apparence */}
       <div className="rounded-xl bg-card p-4 md:p-6">
-        <h2 className="text-sm uppercase tracking-wide text-muted-foreground mb-4">
-          Apparence
-        </h2>
+        <h2 className="mb-4 text-sm tracking-wide text-muted-foreground uppercase">Apparence</h2>
         <ThemeSelector current={theme} />
       </div>
 

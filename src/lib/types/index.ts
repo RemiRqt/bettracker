@@ -5,10 +5,6 @@ import type { MarketValue } from "@/lib/market-value";
 export type Series = Database["public"]["Tables"]["series"]["Row"];
 export type Bet = Database["public"]["Tables"]["bets"]["Row"];
 
-// Insert types (write to DB)
-export type SeriesInsert = Database["public"]["Tables"]["series"]["Insert"];
-export type BetInsert = Database["public"]["Tables"]["bets"]["Insert"];
-
 // Composite types
 export type SeriesWithBets = Series & { bets: Bet[] };
 
@@ -42,7 +38,6 @@ export interface BetSuggestion {
 // Domain enums
 export type BetType = "victoire" | "defaite" | "buteur" | "autre";
 export type SeriesStatus = "en_cours" | "gagnee" | "abandonnee";
-export type BetResult = "gagne" | "perdu" | null;
 export type SportType = "football" | "tennis" | "rugby" | "basket";
 
 // Freebet types

@@ -22,10 +22,7 @@ export default function DashboardPage() {
 }
 
 async function DashboardContent() {
-  const [stats, actionItems] = await Promise.all([
-    getDashboardStats(),
-    getActionItems(),
-  ]);
+  const [stats, actionItems] = await Promise.all([getDashboardStats(), getActionItems()]);
 
   return (
     <>

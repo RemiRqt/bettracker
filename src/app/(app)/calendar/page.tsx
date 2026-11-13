@@ -26,19 +26,13 @@ export default async function CalendarRoute() {
 
   // Tout en parallèle : équipes (cache requête, partagé avec getCalendarFixtures),
   // matchs, séries en cours, liens, réglages (bookmakers pour les cotes).
-  const [calendarTeams, teamFixtures, { data: activeSeries }, links, settings] =
-    await Promise.all([
-      getCalendarTeams(),
-      getCalendarFixtures(),
-      supabase
-        .from("series")
-        .select("id, subject, bet_type, target_gain, status")
-        .eq("user_id", user.id)
-        .eq("status", "en_cours")
-        .limit(100),
-      getSubjectLinks(),
-      getNotificationSettings(),
-    ]);
+  const [calendarTeams, teamFixtures, { data: activeSeries }, links, settings] = await Promise.all([
+    getCalendarTeams(),
+    getCalendarFixtures(),
+    supabase.from("series").select("id, subject, bet_type, target_gain, status").eq("user_id", user.id).eq("status", "en_cours").limit(100),
+    getSubjectLinks(),
+    getNotificationSettings(),
+  ]);
 
   // Build map: team_mapping_id → subjects linked to it (via subject_links)
   const entityToSubjects = new Map<string, Set<string>>();
@@ -72,10 +66,7 @@ export default async function CalendarRoute() {
   let lastUpdated: string | null = null;
 
   for (const { team, fixtures } of teamFixtures) {
-    if (
-      team.fixtures_updated_at &&
-      (!lastUpdated || team.fixtures_updated_at > lastUpdated)
-    ) {
+    if (team.fixtures_updated_at && (!lastUpdated || team.fixtures_updated_at > lastUpdated)) {
       lastUpdated = team.fixtures_updated_at;
     }
 
@@ -99,10 +90,7 @@ export default async function CalendarRoute() {
   }
 
   // Sort all fixtures by date
-  allFixtures.sort(
-    (a, b) =>
-      new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime()
-  );
+  allFixtures.sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime());
 
   const oddsUpdatedAt = await attachOdds(supabase, allFixtures, settings.bookmakers);
 
@@ -129,10 +117,7 @@ async function attachOdds(
   const keys = [...new Set(items.map((i) => sportKeyFor(i.fixture)).filter((k): k is string => !!k))];
   if (keys.length === 0) return null;
 
-  const { data: rows } = await supabase
-    .from("odds_cache")
-    .select("sport_key, events, fetched_at")
-    .in("sport_key", keys);
+  const { data: rows } = await supabase.from("odds_cache").select("sport_key, events, fetched_at").in("sport_key", keys);
   const byKey = new Map((rows ?? []).map((r) => [r.sport_key as string, r.events as OddsEvent[]]));
 
   for (const item of items) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { sendPushToUser } from "@/lib/push";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -13,7 +13,13 @@ export async function POST(request: NextRequest) {
   if (request.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const { title, body, url = "/", tag = "broadcast", userIds } = (await request.json()) as {
+  const {
+    title,
+    body,
+    url = "/",
+    tag = "broadcast",
+    userIds,
+  } = (await request.json()) as {
     title?: string;
     body?: string;
     url?: string;
@@ -22,19 +28,15 @@ export async function POST(request: NextRequest) {
   };
   if (!title || !body) return NextResponse.json({ error: "title et body requis" }, { status: 400 });
 
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const supabase = createServiceClient();
   let targets = userIds;
   if (!targets) {
     const { data } = await supabase.from("push_subscriptions").select("user_id");
     targets = [...new Set((data ?? []).map((s) => s.user_id as string))];
   }
 
-  let sent = 0;
-  const errors: string[] = [];
-  for (const userId of targets) {
-    const res = await sendPushToUser(supabase, userId, { title, body, url, tag });
-    sent += res.sent;
-    errors.push(...res.errors);
-  }
+  const results = await Promise.all(targets.map((userId) => sendPushToUser(supabase, userId, { title, body, url, tag })));
+  const sent = results.reduce((s, r) => s + r.sent, 0);
+  const errors = results.flatMap((r) => r.errors);
   return NextResponse.json({ users: targets.length, sent, errors });
 }

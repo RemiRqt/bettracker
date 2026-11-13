@@ -34,17 +34,9 @@ export function FreebetBetsList({ bets }: FreebetBetsListProps) {
     <div className="space-y-4">
       {pendingBets.length > 0 && (
         <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-secondary-foreground">
-            Paris en attente
-          </h2>
+          <h2 className="text-sm font-semibold text-secondary-foreground">Paris en attente</h2>
           {pendingBets.map((bet) => (
-            <BetCard
-              key={bet.id}
-              bet={bet}
-              loading={loadingId === bet.id}
-              onValidate={handleValidate}
-              onDelete={handleDelete}
-            />
+            <BetCard key={bet.id} bet={bet} loading={loadingId === bet.id} onValidate={handleValidate} onDelete={handleDelete} />
           ))}
         </div>
       )}
@@ -78,13 +70,11 @@ function BetCard({
 
   return (
     <div className="rounded-xl bg-card p-3">
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <Ticket className="h-3.5 w-3.5 text-warning flex-shrink-0" />
-            <span className="text-sm font-medium text-secondary-foreground truncate">
-              {bet.subject}
-            </span>
+      <div className="mb-2 flex items-start justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="mb-0.5 flex items-center gap-1.5">
+            <Ticket className="h-3.5 w-3.5 flex-shrink-0 text-warning" />
+            <span className="truncate text-sm font-medium text-secondary-foreground">{bet.subject}</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>Cote {bet.odds.toFixed(2)}</span>
@@ -92,15 +82,11 @@ function BetCard({
             <span>Mise {formatEuros(bet.stake)}</span>
           </div>
         </div>
-        <div className="text-right ml-2">
+        <div className="ml-2 text-right">
           {isPending ? (
-            <span className="text-xs text-muted-foreground">
-              +{formatEuros(profit)} potentiel
-            </span>
+            <span className="text-xs text-muted-foreground">+{formatEuros(profit)} potentiel</span>
           ) : isWon ? (
-            <span className="text-sm font-bold text-primary">
-              +{formatEuros(profit)}
-            </span>
+            <span className="text-sm font-bold text-primary">+{formatEuros(profit)}</span>
           ) : (
             <span className="text-sm font-bold text-muted-foreground">0,00 €</span>
           )}
@@ -110,33 +96,31 @@ function BetCard({
       {!isPending && (
         <div className="flex items-center gap-1.5">
           {isWon ? (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
               <CheckCircle className="h-3 w-3" /> Gagné
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
               <XCircle className="h-3 w-3" /> Perdu
             </span>
           )}
-          <span className="text-2xs text-muted-foreground">
-            {new Date(bet.created_at).toLocaleDateString("fr-FR")}
-          </span>
+          <span className="text-2xs text-muted-foreground">{new Date(bet.created_at).toLocaleDateString("fr-FR")}</span>
         </div>
       )}
 
       {isPending && onValidate && (
-        <div className="flex items-center gap-2 mt-2">
+        <div className="mt-2 flex items-center gap-2">
           <button
             onClick={() => onValidate(bet.id, "gagne")}
             disabled={loading}
-            className="flex-1 flex items-center justify-center gap-1 h-8 rounded-lg bg-primary/20 text-primary text-xs font-semibold hover:bg-primary/30 cursor-pointer"
+            className="flex h-8 flex-1 cursor-pointer items-center justify-center gap-1 rounded-lg bg-primary/20 text-xs font-semibold text-primary hover:bg-primary/30"
           >
             <CheckCircle aria-hidden className="h-3.5 w-3.5" /> Gagné
           </button>
           <button
             onClick={() => onValidate(bet.id, "perdu")}
             disabled={loading}
-            className="flex-1 flex items-center justify-center gap-1 h-8 rounded-lg bg-destructive/20 text-destructive text-xs font-semibold hover:bg-destructive/30 cursor-pointer"
+            className="flex h-8 flex-1 cursor-pointer items-center justify-center gap-1 rounded-lg bg-destructive/20 text-xs font-semibold text-destructive hover:bg-destructive/30"
           >
             <XCircle aria-hidden className="h-3.5 w-3.5" /> Perdu
           </button>
@@ -145,7 +129,7 @@ function BetCard({
               onClick={() => onDelete(bet.id)}
               disabled={loading}
               aria-label="Supprimer ce pari"
-              className="relative h-8 w-8 flex items-center justify-center rounded-lg bg-muted/50 text-muted-foreground hover:text-destructive cursor-pointer before:absolute before:-inset-1.5 before:content-['']"
+              className="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-muted/50 text-muted-foreground before:absolute before:-inset-1.5 before:content-[''] hover:text-destructive"
             >
               <Trash2 aria-hidden className="h-3.5 w-3.5" />
             </button>

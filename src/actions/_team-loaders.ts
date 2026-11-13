@@ -25,8 +25,7 @@ export interface TeamMapping {
   updated_at: string;
 }
 
-const MAPPING_COLS =
-  "id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, fixtures_updated_at";
+const MAPPING_COLS = "id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, fixtures_updated_at";
 const MAPPING_COLS_WITH_FIXTURES = `${MAPPING_COLS}, cached_fixtures`;
 
 /** Mappings du user, mis en cache pour la requête (plusieurs appelants par page). */
@@ -38,9 +37,7 @@ export const loadTeamMappings = cache(async (userId: string, withFixtures: boole
     .eq("user_id", userId)
     .order("subject", { ascending: true });
   if (error) throw new Error(`Erreur lors de la recuperation des equipes: ${error.message}`);
-  return ((data ?? []) as unknown as TeamMapping[]).map((m) =>
-    withFixtures ? m : { ...m, cached_fixtures: null },
-  );
+  return ((data ?? []) as unknown as TeamMapping[]).map((m) => (withFixtures ? m : { ...m, cached_fixtures: null }));
 });
 
 /** Clubs suivis avec id API (calendrier), filtrés en base, mis en cache pour la requête. */
@@ -53,7 +50,7 @@ export const loadCalendarTeams = cache(async (userId: string) => {
     .eq("is_club", true)
     .eq("is_followed", true)
     .not("api_team_id", "is", null);
-  return ((data ?? []) as unknown as TeamMapping[]);
+  return (data ?? []) as unknown as TeamMapping[];
 });
 
 export function revalidateTeamPaths() {
@@ -68,4 +65,3 @@ export interface SubjectLink {
   team_mapping_id: string;
   created_at: string;
 }
-

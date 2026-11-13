@@ -15,12 +15,7 @@ export function MotionSection() {
   const next = () => setStep((s) => (s + 1) % EUROS.length);
 
   return (
-    <Section
-      anchor="motion"
-      n={8}
-      title="Mouvement & mécaniques"
-      description="Animations fun de l'app. Tout respecte prefers-reduced-motion."
-    >
+    <Section anchor="motion" n={8} title="Mouvement & mécaniques" description="Animations fun de l'app. Tout respecte prefers-reduced-motion.">
       <Item id={140} label="RollingNumber — €" hint="count-up easeOutCubic 700ms">
         <span className="text-2xl font-bold text-primary">
           <RollingNumber value={EUROS[step]} format="euros" />

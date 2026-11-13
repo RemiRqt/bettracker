@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { Inbox } from "lucide-react";
 import { validateResult, deleteBet, updateBet } from "@/actions/bet-results";
 import { fireConfetti } from "@/lib/confetti";
-import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useBetModal } from "@/components/paris/bet-modal-provider";
 import { ParisEquipesSwitch } from "@/components/paris/paris-equipes-switch";
 import { ParisFiltres, ParisTri, useParisTri } from "./paris-filters";
@@ -13,6 +12,7 @@ import { BetCard } from "./bet-card";
 import { EditBetPopup } from "./edit-bet-popup";
 import { WinDialog } from "./win-dialog";
 import { Bouton } from "@/components/kit/Bouton";
+import { Confirmation } from "@/components/kit/Confirmation";
 
 /** Paris affichés par paquet : la liste complète reste triée/filtrée, le rendu est progressif. */
 const PAQUET = 30;
@@ -26,7 +26,6 @@ interface ParisPageProps {
 export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
   const searchParams = useSearchParams();
   const initialFilter = (searchParams.get("filter") as FilterKey) || null;
-  const confirm = useConfirm();
   const { open: openBetModal } = useBetModal();
   const tri = useParisTri(bets, initialFilter);
   // Revient au premier paquet quand le filtre ou le tri change.
@@ -37,6 +36,11 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
   const [isPending, startTransition] = useTransition();
   const [editBet, setEditBet] = useState<Bet | null>(null);
   const [winBet, setWinBet] = useState<Bet | null>(null);
+  // Pari à supprimer : gardé pendant l'animation de fermeture de la Confirmation.
+  const [suppression, setSuppression] = useState<{ ouvert: boolean; betId: string | null }>({
+    ouvert: false,
+    betId: null,
+  });
 
   function handleValidate(betId: string, result: "gagne" | "perdu") {
     startTransition(async () => {
@@ -57,14 +61,9 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
     });
   }
 
-  async function handleDelete(betId: string) {
-    const ok = await confirm({
-      title: "Supprimer ce pari ?",
-      description: "Cette action est irréversible.",
-      confirmLabel: "Supprimer",
-      variant: "destructive",
-    });
-    if (!ok) return;
+  function handleDelete() {
+    const betId = suppression.betId;
+    if (!betId) return;
     startTransition(async () => {
       await deleteBet(betId);
     });
@@ -87,14 +86,10 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
 
       {tri.sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <Inbox className="h-10 w-10 mb-3 text-muted-foreground" aria-hidden="true" />
+          <Inbox className="mb-3 h-10 w-10 text-muted-foreground" aria-hidden="true" />
           <p className="text-sm">Aucun pari{tri.filter ? " pour ce filtre" : ""}.</p>
           {!tri.filter && (
-            <button
-              type="button"
-              onClick={() => openBetModal()}
-              className="mt-3 text-sm text-primary hover:text-primary/80 transition-colors"
-            >
+            <button type="button" onClick={() => openBetModal()} className="mt-3 text-sm text-primary transition-colors hover:text-primary/80">
               Créer un pari
             </button>
           )}
@@ -108,23 +103,27 @@ export function ParisPage({ bets, logoMap = {} }: ParisPageProps) {
               logoUrl={logoMap[bet.series.subject]}
               disabled={isPending}
               onEdit={() => setEditBet(bet)}
-              onDelete={() => handleDelete(bet.id)}
+              onDelete={() => setSuppression({ ouvert: true, betId: bet.id })}
               onWin={() => handleWin(bet)}
               onLose={() => handleValidate(bet.id, "perdu")}
             />
           ))}
           {tri.sorted.length > n && (
-            <Bouton
-              variant="outline"
-              className="h-11 w-full"
-              onClick={() => setAffiches({ key: triKey, n: n + PAQUET })}
-            >
+            <Bouton variant="outline" className="h-11 w-full" onClick={() => setAffiches({ key: triKey, n: n + PAQUET })}>
               Voir plus ({tri.sorted.length - n})
             </Bouton>
           )}
         </div>
       )}
 
+      <Confirmation
+        ouvert={suppression.ouvert}
+        fermer={() => setSuppression((s) => ({ ...s, ouvert: false }))}
+        titre="Supprimer ce pari ?"
+        message="Cette action est irréversible."
+        libelleAction="Supprimer"
+        surConfirmer={handleDelete}
+      />
       <WinDialog bet={winBet} fermer={() => setWinBet(null)} />
       <EditBetPopup bet={editBet} fermer={() => setEditBet(null)} enCours={isPending} onSave={handleEditSave} />
     </div>

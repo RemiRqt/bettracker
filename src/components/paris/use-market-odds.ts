@@ -5,32 +5,23 @@ import { getMarketOdds, type MarketOddsResult } from "@/actions/odds";
 import type { PickedFixture } from "./fixture-picker";
 
 export type MarketOddsState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "unavailable" }
-  | { status: "ready"; data: Exclude<MarketOddsResult, null | { unavailable: true }> };
+  { status: "idle" } | { status: "loading" } | { status: "unavailable" } | { status: "ready"; data: Exclude<MarketOddsResult, null | { unavailable: true }> };
 
 /**
  * Charge les cotes du marché quand le match ou le type de pari change.
  * `onReady(best)` sert au préremplissage du champ Cote.
  */
-export function useMarketOdds(
-  fixture: PickedFixture | null,
-  teamId: number | null,
-  betType: string,
-  onReady: (best: number) => void,
-): MarketOddsState {
-  const [state, setState] = useState<MarketOddsState>({ status: "idle" });
+export function useMarketOdds(fixture: PickedFixture | null, teamId: number | null, betType: string, onReady: (best: number) => void): MarketOddsState {
+  // Réponse rangée avec la clé de sa requête : tant que la clé courante n'a pas de réponse, on charge.
+  const [reponse, setReponse] = useState<{ cle: string; state: MarketOddsState } | null>(null);
   const covered = !!fixture?.competitionCode && !!teamId && (betType === "victoire" || betType === "defaite");
+  const cle = covered ? `${fixture?.id}|${teamId}|${betType}` : null;
 
   useEffect(() => {
-    if (!covered || !fixture || !teamId) {
-      setState({ status: "idle" });
-      return;
-    }
+    if (!cle || !fixture || !teamId) return;
     let cancelled = false;
-    setState({ status: "loading" });
-    getMarketOdds({
+    const setState = (state: MarketOddsState) => setReponse({ cle, state });
+    void getMarketOdds({
       competitionCode: fixture.competitionCode,
       kickoff: fixture.kickoff,
       teamId,
@@ -54,7 +45,8 @@ export function useMarketOdds(
     };
     // onReady volontairement hors deps : préremplissage une fois par chargement.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [covered, fixture?.id, teamId, betType]);
+  }, [cle]);
 
-  return state;
+  if (!cle) return { status: "idle" };
+  return reponse?.cle === cle ? reponse.state : { status: "loading" };
 }

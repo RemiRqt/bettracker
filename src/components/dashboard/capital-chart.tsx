@@ -1,16 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  ReferenceDot,
-} from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceDot } from "recharts";
 import { cn, formatEuros } from "@/lib/utils";
 
 interface CapitalChartProps {
@@ -25,9 +16,7 @@ interface CapitalChartProps {
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
-  return `${String(d.getDate()).padStart(2, "0")}/${String(
-    d.getMonth() + 1
-  ).padStart(2, "0")}`;
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
 type Point = CapitalChartProps["data"][number] & {
@@ -35,33 +24,20 @@ type Point = CapitalChartProps["data"][number] & {
   profit: number;
 };
 
-function CustomTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: { payload: Point }[];
-}) {
+function CustomTooltip({ active, payload }: { active?: boolean; payload?: { payload: Point }[] }) {
   if (!active || !payload || !payload.length) return null;
   const p = payload[0].payload;
   const profitPositive = p.profit >= 0;
 
   return (
-    <div className="rounded-lg bg-background border border-border px-3 py-2 shadow-lg space-y-0.5">
+    <div className="space-y-0.5 rounded-lg border border-border bg-background px-3 py-2 shadow-lg">
       <p className="text-xs text-muted-foreground">{formatDate(p.date)}</p>
-      <p className="text-sm font-bold text-foreground">
-        Valeur : {formatEuros(p.valeur)}
-      </p>
+      <p className="text-sm font-bold text-foreground">Valeur : {formatEuros(p.valeur)}</p>
       <p className="text-2xs text-muted-foreground">
         Capital : {formatEuros(p.capital)}
         {p.encaisse > 0 && ` · encaissé ${formatEuros(p.encaisse)}`}
       </p>
-      <p
-        className={cn(
-          "text-xs font-semibold",
-          profitPositive ? "text-primary" : "text-destructive"
-        )}
-      >
+      <p className={cn("text-xs font-semibold", profitPositive ? "text-primary" : "text-destructive")}>
         Bénéfice : {profitPositive ? "+" : ""}
         {formatEuros(p.profit)}
       </p>
@@ -77,7 +53,7 @@ export function CapitalChart({ data }: CapitalChartProps) {
         timestamp: new Date(d.date).getTime(),
         profit: Math.round((d.valeur - d.deposits) * 100) / 100,
       })),
-    [data]
+    [data],
   );
 
   const last = points[points.length - 1];
@@ -103,43 +79,29 @@ export function CapitalChart({ data }: CapitalChartProps) {
   }, [points]);
 
   const first = points[0];
-  const resume = first && last
-    ? `Évolution de la valeur : de ${formatEuros(first.valeur)} à ${formatEuros(last.valeur)}, bénéfice ${winning ? "+" : ""}${formatEuros(last.profit)}`
-    : "Évolution de la valeur : aucune donnée";
+  const resume =
+    first && last
+      ? `Évolution de la valeur : de ${formatEuros(first.valeur)} à ${formatEuros(last.valeur)}, bénéfice ${winning ? "+" : ""}${formatEuros(last.profit)}`
+      : "Évolution de la valeur : aucune donnée";
 
   return (
-    <div className="flex flex-col h-full gap-2">
+    <div className="flex h-full flex-col gap-2">
       {/* Header: bénéfice + encaissé */}
-      <div className="flex items-center justify-between text-xs flex-shrink-0">
-        <span
-          className={cn(
-            "font-bold",
-            winning ? "text-primary" : "text-destructive"
-          )}
-        >
+      <div className="flex flex-shrink-0 items-center justify-between text-xs">
+        <span className={cn("font-bold", winning ? "text-primary" : "text-destructive")}>
           Bénéfice {winning ? "+" : ""}
           {formatEuros(last?.profit ?? 0)}
         </span>
-        {(last?.encaisse ?? 0) > 0 && (
-          <span className="text-warning font-medium">
-            Encaissé {formatEuros(last!.encaisse)}
-          </span>
-        )}
+        {last && last.encaisse > 0 && <span className="font-medium text-warning">Encaissé {formatEuros(last.encaisse)}</span>}
       </div>
 
       {/* Chart */}
       {points.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-          Aucune donnée
-        </div>
+        <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">Aucune donnée</div>
       ) : (
-        <div role="img" aria-label={resume} className="flex-1 min-h-0">
+        <div role="img" aria-label={resume} className="min-h-0 flex-1">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={points}
-              stackOffset="none"
-              margin={{ top: 8, right: 6, left: -18, bottom: 0 }}
-            >
+            <AreaChart data={points} stackOffset="none" margin={{ top: 8, right: 6, left: -18, bottom: 0 }}>
               <defs>
                 <linearGradient id="zoneUp" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.4} />
@@ -193,26 +155,9 @@ export function CapitalChart({ data }: CapitalChartProps) {
                 isAnimationActive={false}
               />
               {depots.map((m, i) => (
-                <ReferenceDot
-                  key={i}
-                  x={m.ts}
-                  y={m.y}
-                  r={3}
-                  fill="var(--color-info)"
-                  stroke="var(--color-background)"
-                  strokeWidth={1.5}
-                />
+                <ReferenceDot key={i} x={m.ts} y={m.y} r={3} fill="var(--color-info)" stroke="var(--color-background)" strokeWidth={1.5} />
               ))}
-              {last && (
-                <ReferenceDot
-                  x={last.timestamp}
-                  y={last.valeur}
-                  r={4}
-                  fill={zoneColor}
-                  stroke="var(--color-background)"
-                  strokeWidth={2}
-                />
-              )}
+              {last && <ReferenceDot x={last.timestamp} y={last.valeur} r={4} fill={zoneColor} stroke="var(--color-background)" strokeWidth={2} />}
             </AreaChart>
           </ResponsiveContainer>
         </div>

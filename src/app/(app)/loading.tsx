@@ -5,8 +5,7 @@ export default function Loading() {
     <div
       className="flex flex-col gap-2 overflow-hidden"
       style={{
-        height:
-          "calc(100dvh - 3.5rem - 3.75rem - env(safe-area-inset-bottom, 0px))",
+        height: "calc(100dvh - 3.5rem - 3.75rem - env(safe-area-inset-bottom, 0px))",
       }}
     >
       <Skeleton className="h-[72px] rounded-xl" />
@@ -24,7 +23,7 @@ export default function Loading() {
         <Skeleton className="h-[52px] rounded-xl" />
         <Skeleton className="h-[52px] rounded-xl" />
       </div>
-      <Skeleton className="flex-1 min-h-0 rounded-xl" />
+      <Skeleton className="min-h-0 flex-1 rounded-xl" />
     </div>
   );
 }

@@ -41,7 +41,7 @@ const LEAGUE_NAME_CODES: Record<string, string> = {
 /** sport_key The Odds API d'un match football-data (code compétition ou nom de ligue). */
 export function sportKeyFor(f: { competitionCode?: string | null; league?: string }): string | null {
   const code = f.competitionCode ?? (f.league ? LEAGUE_NAME_CODES[f.league] : undefined);
-  return code ? SPORT_KEYS[code] ?? null : null;
+  return code ? (SPORT_KEYS[code] ?? null) : null;
 }
 
 /** Bookmakers FR disponibles (région `fr`), dans l'ordre d'affichage. */
@@ -80,11 +80,7 @@ async function fetchLeagueOdds(sportKey: string): Promise<{ events: OddsEvent[];
 
 /** Cotes h2h d'un championnat, depuis le cache (< 5 min) ou l'API. `null` si indisponible. */
 export async function getLeagueOdds(service: SupabaseClient, sportKey: string): Promise<OddsEvent[] | null> {
-  const { data: cached } = await service
-    .from("odds_cache")
-    .select("events, fetched_at")
-    .eq("sport_key", sportKey)
-    .maybeSingle();
+  const { data: cached } = await service.from("odds_cache").select("events, fetched_at").eq("sport_key", sportKey).maybeSingle();
   if (cached && Date.now() - new Date(cached.fetched_at).getTime() < CACHE_TTL_MS) {
     return cached.events as OddsEvent[];
   }

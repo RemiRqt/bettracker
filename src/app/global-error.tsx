@@ -1,11 +1,6 @@
 "use client";
 
-export default function GlobalError({
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <html lang="fr">
       <body
@@ -21,9 +16,7 @@ export default function GlobalError({
         }}
       >
         <div style={{ textAlign: "center" }}>
-          <h2 style={{ fontSize: "1.25rem", marginBottom: "1rem" }}>
-            Une erreur est survenue
-          </h2>
+          <h2 style={{ fontSize: "1.25rem", marginBottom: "1rem" }}>Une erreur est survenue</h2>
           <button
             onClick={reset}
             style={{

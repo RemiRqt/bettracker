@@ -15,18 +15,13 @@ export interface JobBet {
   series: { user_id: string; subject: string; bet_type: string; sport: string };
 }
 
-const BET_SELECT =
-  "id, bet_number, fixture_id, fixture_kickoff, created_at, series!inner(user_id, subject, bet_type, sport)";
+const BET_SELECT = "id, bet_number, fixture_id, fixture_kickoff, created_at, series!inner(user_id, subject, bet_type, sport)";
 
 function scoped<T extends { eq: (c: string, v: string) => T }>(q: T, userId?: string): T {
   return userId ? q.eq("series.user_id", userId) : q;
 }
 
-export async function selectDue(
-  supabase: SupabaseClient,
-  now: number,
-  opts: { ignoreDelay?: boolean; userId?: string },
-): Promise<JobBet[]> {
+export async function selectDue(supabase: SupabaseClient, now: number, opts: { ignoreDelay?: boolean; userId?: string }): Promise<JobBet[]> {
   const threshold = new Date(now - (opts.ignoreDelay ? 0 : DELAY_MS)).toISOString();
   const q = supabase
     .from("bets")

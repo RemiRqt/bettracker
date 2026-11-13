@@ -21,17 +21,12 @@ export function FreebetBetForm({ totalBalance }: FreebetBetFormProps) {
     <>
       <Button
         onClick={() => setOpen(true)}
-        className="h-11 w-full rounded-xl bg-warning hover:bg-warning/90 text-warning-foreground font-semibold cursor-pointer"
+        className="h-11 w-full cursor-pointer rounded-xl bg-warning font-semibold text-warning-foreground hover:bg-warning/90"
       >
         <Plus className="mr-1 h-4 w-4" />
         Placer un pari freebet
       </Button>
-      <Popup
-        ouvert={open}
-        fermer={() => setOpen(false)}
-        titre="Placer un pari freebet"
-        description={`Solde : ${formatEuros(totalBalance)}`}
-      >
+      <Popup ouvert={open} fermer={() => setOpen(false)} titre="Placer un pari freebet" description={`Solde : ${formatEuros(totalBalance)}`}>
         <Formulaire totalBalance={totalBalance} fermer={() => setOpen(false)} />
       </Popup>
     </>
@@ -48,8 +43,7 @@ function Formulaire({ totalBalance, fermer }: FreebetBetFormProps & { fermer: ()
 
   const numOdds = parseFloat(odds);
   const numStake = parseFloat(stake);
-  const potentialProfit =
-    numOdds > 1 && numStake > 0 ? Math.round((numStake * numOdds - numStake) * 100) / 100 : 0;
+  const potentialProfit = numOdds > 1 && numStake > 0 ? Math.round((numStake * numOdds - numStake) * 100) / 100 : 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -78,18 +72,11 @@ function Formulaire({ totalBalance, fermer }: FreebetBetFormProps & { fermer: ()
         placeholder="Sujet (ex: PSG vs Marseille)"
         aria-label="Sujet du pari"
         required
-        className="h-11 rounded-lg bg-background border-border text-base text-foreground placeholder:text-muted-foreground"
+        className="h-11 rounded-lg border-border bg-background text-base text-foreground placeholder:text-muted-foreground"
       />
 
       <div className="grid grid-cols-2 gap-2">
-        <ChampNombre
-          valeur={odds}
-          surValeur={setOdds}
-          placeholder="Cote"
-          aria-label="Cote"
-          required
-          className="bg-background"
-        />
+        <ChampNombre valeur={odds} surValeur={setOdds} placeholder="Cote" aria-label="Cote" required className="bg-background" />
         <ChampNombre
           valeur={stake}
           surValeur={setStake}
@@ -103,21 +90,19 @@ function Formulaire({ totalBalance, fermer }: FreebetBetFormProps & { fermer: ()
       </div>
 
       {potentialProfit > 0 && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
+        <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/10 px-3 py-2">
           <CircleDollarSign aria-hidden className="h-4 w-4 text-primary" />
-          <span className="text-sm text-primary font-medium">
-            Gain potentiel : {formatEuros(potentialProfit)}
-          </span>
+          <span className="text-sm font-medium text-primary">Gain potentiel : {formatEuros(potentialProfit)}</span>
         </div>
       )}
 
-      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
 
-      <Bouton
-        type="submit"
-        enCours={loading}
-        className="h-11 rounded-lg bg-warning hover:bg-warning/90 text-warning-foreground font-semibold"
-      >
+      <Bouton type="submit" enCours={loading} className="h-11 rounded-lg bg-warning font-semibold text-warning-foreground hover:bg-warning/90">
         Placer le pari
       </Bouton>
     </form>

@@ -9,28 +9,43 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Mes Séries | BetTracker" };
 
+/**
+ * Sujet → prochain match (date future la plus proche parmi ses entités liées).
+ * L'heure courante est lue ici, une fois par requête (page force-dynamic), hors du rendu.
+ */
+function prochainMatchParSujet(entitiesBySubject: Map<string, TeamMapping[]>) {
+  const nowMs = Date.now();
+  const nextFixtureMap: Record<string, { date: string }> = {};
+  for (const [subject, entities] of entitiesBySubject) {
+    let earliest: string | null = null;
+    for (const ent of entities) {
+      const fixtures = (ent.cached_fixtures ?? []) as CachedFixture[];
+      for (const f of fixtures) {
+        if (new Date(f.date).getTime() > nowMs && (!earliest || f.date < earliest)) earliest = f.date;
+      }
+    }
+    if (earliest) nextFixtureMap[subject] = { date: earliest };
+  }
+  return nextFixtureMap;
+}
+
 export default async function EquipesRoute() {
   const [supabase, { user }] = await Promise.all([createClient(), getAuthUser()]);
   if (!user) return null;
 
-  const [{ data: equipes }, { data: series }, links, mappings] =
-    await Promise.all([
-      supabase
-        .from("equipes")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("name", { ascending: true }),
-      supabase
-        .from("series")
-        .select(
-          // Colonnes affichées seulement (pas les cotes du marché en jsonb).
-          "*, bets(id, series_id, bet_number, odds, stake, potential_net, result, created_at, resolution_status, suggested_result, fixture_score)"
-        )
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false }),
-      getSubjectLinks(),
-      getTeamMappings({ withFixtures: true }),
-    ]);
+  const [{ data: equipes }, { data: series }, links, mappings] = await Promise.all([
+    supabase.from("equipes").select("*").eq("user_id", user.id).order("name", { ascending: true }),
+    supabase
+      .from("series")
+      .select(
+        // Colonnes affichées seulement (pas les cotes du marché en jsonb).
+        "*, bets(id, series_id, bet_number, odds, stake, potential_net, result, created_at, resolution_status, suggested_result, fixture_score)",
+      )
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+    getSubjectLinks(),
+    getTeamMappings({ withFixtures: true }),
+  ]);
 
   const allSeries = (series ?? []) as SeriesWithBets[];
 
@@ -52,27 +67,11 @@ export default async function EquipesRoute() {
     if (logo) logoMap[subject] = logo;
   }
 
-  // Build map: subject → next fixture (earliest future date among all linked entities)
-  const nowMs = Date.now();
-  const nextFixtureMap: Record<string, { date: string }> = {};
-  for (const [subject, entities] of entitiesBySubject) {
-    let earliest: string | null = null;
-    for (const ent of entities) {
-      const fixtures = (ent.cached_fixtures ?? []) as CachedFixture[];
-      for (const f of fixtures) {
-        if (new Date(f.date).getTime() > nowMs) {
-          if (!earliest || f.date < earliest) earliest = f.date;
-        }
-      }
-    }
-    if (earliest) nextFixtureMap[subject] = { date: earliest };
-  }
+  const nextFixtureMap = prochainMatchParSujet(entitiesBySubject);
 
   // Build merged equipe data
   const mergedEquipes = (equipes ?? []).map((eq) => {
-    const matchingSeries = allSeries.filter(
-      (s) => s.subject === eq.name && s.bet_type === eq.bet_type
-    );
+    const matchingSeries = allSeries.filter((s) => s.subject === eq.name && s.bet_type === eq.bet_type);
 
     const activeSeries = matchingSeries.find((s) => s.status === "en_cours");
 
@@ -86,9 +85,7 @@ export default async function EquipesRoute() {
     let totalLostStake = 0;
     let potentialGains = 0;
 
-    const sortedOldestFirst = [...matchingSeries].sort((a, b) =>
-      a.created_at.localeCompare(b.created_at)
-    );
+    const sortedOldestFirst = [...matchingSeries].sort((a, b) => a.created_at.localeCompare(b.created_at));
 
     const seriesData = sortedOldestFirst.map((s, idx) => {
       const bets = s.bets.sort((a, b) => a.bet_number - b.bet_number);
@@ -154,9 +151,7 @@ export default async function EquipesRoute() {
       }
     }
 
-    const sortedByDate = [...seriesData].sort((a, b) =>
-      b.created_at.localeCompare(a.created_at)
-    );
+    const sortedByDate = [...seriesData].sort((a, b) => b.created_at.localeCompare(a.created_at));
     const lastSeriesStatus = sortedByDate[0]?.status ?? "";
 
     return {

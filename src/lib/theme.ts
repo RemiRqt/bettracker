@@ -18,7 +18,4 @@ export function isTheme(v: string | undefined): v is Theme {
  * meta theme-color et particules de confettis (dessinées en JS).
  */
 export const THEME_COLOR_META = "#0f172a";
-export const CONFETTI_COLORS = [
-  "#10b981", "#34d399", "#3b82f6", "#60a5fa",
-  "#f59e0b", "#fbbf24", "#a78bfa", "#e2e8f0",
-];
+export const CONFETTI_COLORS = ["#10b981", "#34d399", "#3b82f6", "#60a5fa", "#f59e0b", "#fbbf24", "#a78bfa", "#e2e8f0"];

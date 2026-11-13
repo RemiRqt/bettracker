@@ -3,44 +3,18 @@ import { formatEuros } from "@/lib/utils";
 import { RollingNumber } from "@/components/ui/rolling-number";
 import { CapitalChartLazy } from "@/components/dashboard/capital-chart-lazy";
 import type { DashboardStats } from "@/lib/types";
-import {
-  Wallet,
-  TrendingUp,
-  TrendingDown,
-  Banknote,
-  Clock,
-  Sparkles,
-  Activity,
-  CheckCircle,
-  XCircle,
-  BarChart3,
-  Coins,
-  Target,
-  Ticket,
-} from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Banknote, Clock, Sparkles, Activity, CheckCircle, XCircle, BarChart3, Coins, Target, Ticket } from "lucide-react";
 
 interface StatsProps {
   stats: DashboardStats;
 }
 
-function StatCard({
-  label,
-  value,
-  color = "text-foreground",
-  icon,
-}: {
-  label: string;
-  value: React.ReactNode;
-  color?: string;
-  icon?: React.ReactNode;
-}) {
+function StatCard({ label, value, color = "text-foreground", icon }: { label: string; value: React.ReactNode; color?: string; icon?: React.ReactNode }) {
   return (
-    <div className="rounded-xl bg-card px-3 py-2 h-full">
-      <div className="flex items-center gap-1.5 mb-0.5">
+    <div className="h-full rounded-xl bg-card px-3 py-2">
+      <div className="mb-0.5 flex items-center gap-1.5">
         {icon}
-        <span className="text-2xs uppercase tracking-wide text-muted-foreground leading-tight">
-          {label}
-        </span>
+        <span className="text-2xs leading-tight tracking-wide text-muted-foreground uppercase">{label}</span>
       </div>
       <div className={`text-sm font-bold ${color}`}>{value}</div>
     </div>
@@ -51,32 +25,20 @@ export function StatsHero({ stats }: StatsProps) {
   const capitalDispoPositive = stats.capitalDisponible >= 0;
 
   return (
-    <div className="rounded-xl bg-card px-4 py-3 border border-primary/15">
+    <div className="rounded-xl border border-primary/15 bg-card px-4 py-3">
       <div className="flex items-start justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <div
-              className={`flex h-7 w-7 items-center justify-center rounded-full ${
-                capitalDispoPositive ? "bg-primary/20" : "bg-destructive/20"
-              }`}
-            >
-              <Wallet
-                className={`h-3.5 w-3.5 ${
-                  capitalDispoPositive ? "text-primary" : "text-destructive"
-                }`}
-              />
+          <div className="mb-1 flex items-center gap-2">
+            <div className={`flex h-7 w-7 items-center justify-center rounded-full ${capitalDispoPositive ? "bg-primary/20" : "bg-destructive/20"}`}>
+              <Wallet className={`h-3.5 w-3.5 ${capitalDispoPositive ? "text-primary" : "text-destructive"}`} />
             </div>
-            <span className="text-2xs uppercase tracking-wide text-muted-foreground">
-              Capital disponible
-            </span>
+            <span className="text-2xs tracking-wide text-muted-foreground uppercase">Capital disponible</span>
           </div>
           <div className="flex items-center gap-2">
             <RollingNumber
               value={stats.capitalDisponible}
               format="euros"
-              className={`text-xl font-bold ${
-                capitalDispoPositive ? "text-primary" : "text-destructive"
-              }`}
+              className={`text-xl font-bold ${capitalDispoPositive ? "text-primary" : "text-destructive"}`}
             />
             {stats.freebetBalance > 0 && (
               <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-1.5 py-0.5 text-xs font-medium text-warning">
@@ -88,27 +50,18 @@ export function StatsHero({ stats }: StatsProps) {
         </div>
         {stats.miseEnCours > 0 && (
           <div className="text-right">
-            <div className="flex items-center gap-1 mb-1 justify-end">
+            <div className="mb-1 flex items-center justify-end gap-1">
               <Target className="h-3.5 w-3.5 text-info" />
-              <span className="text-2xs uppercase tracking-wide text-muted-foreground">
-                Objectif
-              </span>
+              <span className="text-2xs tracking-wide text-muted-foreground uppercase">Objectif</span>
             </div>
-            <RollingNumber
-              value={stats.objectifDeGain}
-              format="euros"
-              className="text-lg font-bold text-info"
-            />
+            <RollingNumber value={stats.objectifDeGain} format="euros" className="text-lg font-bold text-info" />
             <p className="text-2xs text-muted-foreground">si tout gagné</p>
           </div>
         )}
       </div>
       {/* Capital evolution / monthly P&L chart, embedded in the hero card */}
       <div className="mt-3 h-52">
-        <CapitalChartLazy
-          data={stats.capitalEvolution}
-          monthly={stats.monthlyPnl}
-        />
+        <CapitalChartLazy data={stats.capitalEvolution} monthly={stats.monthlyPnl} />
       </div>
       {stats.marketValue && (
         <p className="mt-2 text-xs text-muted-foreground">
@@ -146,13 +99,7 @@ export function StatsTiles({ stats }: StatsProps) {
           label="Rendement"
           value={<RollingNumber value={stats.roi} format="percent" digits={3} />}
           color={roiPositive ? "text-primary" : "text-destructive"}
-          icon={
-            roiPositive ? (
-              <TrendingUp className="h-3.5 w-3.5 text-primary" />
-            ) : (
-              <TrendingDown className="h-3.5 w-3.5 text-destructive" />
-            )
-          }
+          icon={roiPositive ? <TrendingUp className="h-3.5 w-3.5 text-primary" /> : <TrendingDown className="h-3.5 w-3.5 text-destructive" />}
         />
       </div>
 
@@ -174,10 +121,7 @@ export function StatsTiles({ stats }: StatsProps) {
 
       {/* Row 3: En cours / Gagné / Perdu */}
       <div className="grid grid-cols-3 gap-1.5">
-        <Link
-          href="/series/new?filter=en_cours"
-          className="block transition-transform active:scale-95"
-        >
+        <Link href="/series/new?filter=en_cours" className="block transition-transform active:scale-95">
           <StatCard
             label="En cours"
             value={<RollingNumber value={stats.parisEnCours} format="int" />}
@@ -185,10 +129,7 @@ export function StatsTiles({ stats }: StatsProps) {
             color="text-info"
           />
         </Link>
-        <Link
-          href="/series/new?filter=gagne"
-          className="block transition-transform active:scale-95"
-        >
+        <Link href="/series/new?filter=gagne" className="block transition-transform active:scale-95">
           <StatCard
             label="Gagné"
             value={<RollingNumber value={stats.parisGagnes} format="int" />}
@@ -196,10 +137,7 @@ export function StatsTiles({ stats }: StatsProps) {
             color="text-primary"
           />
         </Link>
-        <Link
-          href="/series/new?filter=perdu"
-          className="block transition-transform active:scale-95"
-        >
+        <Link href="/series/new?filter=perdu" className="block transition-transform active:scale-95">
           <StatCard
             label="Perdu"
             value={<RollingNumber value={stats.parisPerdu} format="int" />}
@@ -213,9 +151,7 @@ export function StatsTiles({ stats }: StatsProps) {
       <div className="grid grid-cols-2 gap-1.5">
         <StatCard
           label="Cote moyenne"
-          value={
-            <RollingNumber value={stats.coteMoyenne} format="decimal" digits={2} />
-          }
+          value={<RollingNumber value={stats.coteMoyenne} format="decimal" digits={2} />}
           icon={<BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />}
         />
         <StatCard

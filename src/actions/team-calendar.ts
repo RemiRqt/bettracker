@@ -22,56 +22,68 @@ export async function getCalendarTeams(): Promise<TeamMapping[]> {
 
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 
-export async function getCalendarFixtures(): Promise<
-  { team: TeamMapping; fixtures: CachedFixture[] }[]
-> {
+export async function getCalendarFixtures(): Promise<TeamFixtures[]> {
   const teams = await getCalendarTeams();
 
   if (teams.length === 0) {
     return [];
   }
 
-  // Check if cache is still valid (use the most recent update across all teams)
+  if (isCacheValid(teams)) {
+    return fromCache(teams);
+  }
+
+  return fetchAndCacheFixtures(teams);
+}
+
+type TeamFixtures = { team: TeamMapping; fixtures: CachedFixture[] };
+
+/** Cache valide si la mise à jour la plus récente (toutes équipes) a moins de 12 h. */
+function isCacheValid(teams: TeamMapping[]): boolean {
   const mostRecentUpdate = teams.reduce((latest, t) => {
     if (!t.fixtures_updated_at) return latest;
     const ts = new Date(t.fixtures_updated_at).getTime();
     return ts > latest ? ts : latest;
   }, 0);
+  return mostRecentUpdate > 0 && Date.now() - mostRecentUpdate < CACHE_TTL_MS;
+}
 
-  const cacheValid = mostRecentUpdate > 0 && Date.now() - mostRecentUpdate < CACHE_TTL_MS;
+/** Retire les matchs déjà vus (un match entre deux équipes suivies n'apparaît qu'une fois). */
+function dedupe(fixtures: CachedFixture[], seenFixtureIds: Set<number>): CachedFixture[] {
+  return fixtures.filter((f) => {
+    if (seenFixtureIds.has(f.id)) return false;
+    seenFixtureIds.add(f.id);
+    return true;
+  });
+}
 
-  if (cacheValid) {
-    const results: { team: TeamMapping; fixtures: CachedFixture[] }[] = [];
-    const seenFixtureIds = new Set<number>();
-
-    for (const team of teams) {
-      if (team.cached_fixtures && team.cached_fixtures.length > 0) {
-        const uniqueFixtures = team.cached_fixtures.filter((f) => {
-          if (seenFixtureIds.has(f.id)) return false;
-          seenFixtureIds.add(f.id);
-          return true;
-        });
-        if (uniqueFixtures.length > 0) {
-          results.push({ team, fixtures: uniqueFixtures });
-        }
+function fromCache(teams: TeamMapping[]): TeamFixtures[] {
+  const results: TeamFixtures[] = [];
+  const seenFixtureIds = new Set<number>();
+  for (const team of teams) {
+    if (team.cached_fixtures && team.cached_fixtures.length > 0) {
+      const uniqueFixtures = dedupe(team.cached_fixtures, seenFixtureIds);
+      if (uniqueFixtures.length > 0) {
+        results.push({ team, fixtures: uniqueFixtures });
       }
     }
-
-    return results;
   }
+  return results;
+}
 
-  // Fetch fresh data: one call per team (much more efficient than date scanning)
+/** Fetch fresh data: one call per team (much more efficient than date scanning) */
+async function fetchAndCacheFixtures(teams: TeamMapping[]): Promise<TeamFixtures[]> {
   const supabase = await createClient();
-  const results: { team: TeamMapping; fixtures: CachedFixture[] }[] = [];
-  const seenFixtureIds = new Set<number>();
   const now = new Date().toISOString();
 
-  // Fetch all teams in parallel
+  // Fetch all teams in parallel (loadCalendarTeams ne renvoie que des équipes avec id API)
   const fetchResults = await Promise.all(
-    teams.map(async (team) => ({
-      team,
-      fixtures: await fetchTeamFixtures(team.api_team_id!, team.next_matches_count),
-    }))
+    teams
+      .filter((team): team is TeamMapping & { api_team_id: number } => team.api_team_id !== null)
+      .map(async (team) => ({
+        team,
+        fixtures: await fetchTeamFixtures(team.api_team_id, team.next_matches_count),
+      })),
   );
 
   // Mise à jour du cache en base, en parallèle
@@ -87,14 +99,12 @@ export async function getCalendarFixtures(): Promise<
     ),
   );
 
+  const results: TeamFixtures[] = [];
+  const seenFixtureIds = new Set<number>();
   for (const { team, fixtures } of fetchResults) {
     // Deduplicate for display
     if (fixtures.length > 0) {
-      const uniqueFixtures = fixtures.filter((f) => {
-        if (seenFixtureIds.has(f.id)) return false;
-        seenFixtureIds.add(f.id);
-        return true;
-      });
+      const uniqueFixtures = dedupe(fixtures, seenFixtureIds);
       if (uniqueFixtures.length > 0) {
         results.push({
           team: { ...team, cached_fixtures: fixtures, fixtures_updated_at: now },
@@ -103,7 +113,6 @@ export async function getCalendarFixtures(): Promise<
       }
     }
   }
-
   return results;
 }
 
@@ -120,11 +129,7 @@ export async function refreshCalendarFixtures() {
   }
 
   // Clear cache to force re-fetch
-  await supabase
-    .from("team_mappings")
-    .update({ cached_fixtures: null, fixtures_updated_at: null })
-    .eq("user_id", user.id)
-    .not("api_team_id", "is", null);
+  await supabase.from("team_mappings").update({ cached_fixtures: null, fixtures_updated_at: null }).eq("user_id", user.id).not("api_team_id", "is", null);
 
   revalidatePath("/calendar");
 

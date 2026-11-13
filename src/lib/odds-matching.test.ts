@@ -1,14 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fixture from "./__fixtures__/odds-ligue1.json";
-import {
-  bestPerOutcome,
-  findEvent,
-  normalizeTeamName,
-  outcomePrices,
-  sameTeam,
-  summarize,
-  type OddsEvent,
-} from "./odds-matching";
+import { bestPerOutcome, findEvent, normalizeTeamName, outcomePrices, sameTeam, summarize, type OddsEvent } from "./odds-matching";
 
 // Appel réel The Odds API, Ligue 1, 2026-10-08 (tronqué à 4 matchs).
 const events = fixture as OddsEvent[];
@@ -63,7 +55,10 @@ describe("outcomePrices", () => {
 
   it("victoire domicile = cote de l'équipe à domicile", () => {
     expect(outcomePrices(psgEvent, "home", "victoire")).toEqual({
-      winamax_fr: 1.05, unibet_fr: 1.04, betclic_fr: 1.05, netbet_fr: 1.04,
+      winamax_fr: 1.05,
+      unibet_fr: 1.04,
+      betclic_fr: 1.05,
+      netbet_fr: 1.04,
     });
   });
   it("victoire extérieur", () => {
@@ -82,7 +77,10 @@ describe("summarize", () => {
   const prices = { winamax_fr: 2.65, unibet_fr: 2.55, betclic_fr: 2.68, netbet_fr: 2.67 };
   it("limité aux bookmakers cochés", () => {
     expect(summarize(prices, ["winamax_fr", "unibet_fr"])).toEqual({
-      best: 2.65, avg: 2.6, bestBookmaker: "winamax_fr", detail: { winamax_fr: 2.65, unibet_fr: 2.55 },
+      best: 2.65,
+      avg: 2.6,
+      bestBookmaker: "winamax_fr",
+      detail: { winamax_fr: 2.65, unibet_fr: 2.55 },
     });
   });
   it("bookmaker coché absent (PMU) ignoré", () => {

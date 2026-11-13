@@ -25,9 +25,7 @@ export function LoginForm() {
     setSuccess(null);
     setLoading(true);
 
-    const { error } = isSignUp
-      ? await supabase.auth.signUp({ email, password })
-      : await supabase.auth.signInWithPassword({ email, password });
+    const { error } = isSignUp ? await supabase.auth.signUp({ email, password }) : await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setError(error.message);
@@ -38,14 +36,12 @@ export function LoginForm() {
     if (isSignUp) {
       setError(null);
       setLoading(false);
-      setSuccess(
-        "Vérifiez votre boîte mail pour confirmer votre compte."
-      );
+      setSuccess("Vérifiez votre boîte mail pour confirmer votre compte.");
       return;
     }
 
-    router.push("/");
-    router.refresh();
+    // Écran (app) jamais visité dans cette session (déconnexion = cache routeur vidé) : rendu serveur frais.
+    router.replace("/");
   }
 
   return (
@@ -63,7 +59,7 @@ export function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             required
             aria-invalid={error ? true : undefined}
-            className="h-11 rounded-xl bg-muted/50 border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
+            className="h-11 rounded-xl border-border/50 bg-muted/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
           />
         </div>
 
@@ -80,25 +76,25 @@ export function LoginForm() {
             required
             minLength={6}
             aria-invalid={error ? true : undefined}
-            className="h-11 rounded-xl bg-muted/50 border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
+            className="h-11 rounded-xl border-border/50 bg-muted/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
           />
         </div>
 
         {error && (
-          <div role="alert" className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
+          <div role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
 
         {success && (
-          <div role="status" className="rounded-xl bg-primary/10 border border-primary/20 px-4 py-3 text-sm text-primary">
+          <div role="status" className="rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary">
             {success}
           </div>
         )}
 
         <Button
           type="submit"
-          className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 cursor-pointer"
+          className="h-11 w-full cursor-pointer rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
           disabled={loading}
         >
           {loading ? (
@@ -121,11 +117,9 @@ export function LoginForm() {
           setError(null);
           setSuccess(null);
         }}
-        className="text-sm text-muted-foreground underline-offset-4 hover:underline hover:text-foreground cursor-pointer"
+        className="cursor-pointer text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
       >
-        {isSignUp
-          ? "Déjà un compte ? Se connecter"
-          : "Pas encore de compte ? Créer un compte"}
+        {isSignUp ? "Déjà un compte ? Se connecter" : "Pas encore de compte ? Créer un compte"}
       </button>
     </div>
   );

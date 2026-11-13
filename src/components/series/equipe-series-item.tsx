@@ -1,13 +1,7 @@
 "use client";
 
 import { useId, useState, useTransition } from "react";
-import {
-  ChevronDown,
-  ChevronRight,
-  Trash2,
-  Ban,
-  RotateCcw,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, Ban, RotateCcw } from "lucide-react";
 import { SeriesStatusBadge } from "@/components/series/series-status-badge";
 import { formatEuros, formatPercent, cn } from "@/lib/utils";
 import { deleteSeries, abandonSeries, reopenSeries } from "@/actions/series";
@@ -15,10 +9,7 @@ import { validateResult } from "@/actions/bet-results";
 import { fireConfetti } from "@/lib/confetti";
 import { canDeleteSeries } from "@/lib/series-utils";
 import { SeriesBetRow } from "@/components/series/series-bet-row";
-import {
-  SeriesItemDialogs,
-  type DialogueSerie,
-} from "@/components/series/series-item-dialogs";
+import { SeriesItemDialogs, type DialogueSerie } from "@/components/series/series-item-dialogs";
 import { useToast } from "@/hooks/use-toast";
 import type { EquipeSeries } from "@/components/series/equipes-list";
 import type { SeriesStatus } from "@/lib/types";
@@ -38,10 +29,7 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
   const isDeletable = canDeleteSeries(series.status, series.bets);
   const canAbandon = series.status === "en_cours";
 
-  function runAction(
-    action: () => Promise<{ error?: string } | void | undefined>,
-    onError?: () => void,
-  ) {
+  function runAction(action: () => Promise<{ error?: string } | undefined>, onError?: () => void) {
     startTransition(async () => {
       const result = await action();
       if (result?.error) {
@@ -85,9 +73,9 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
   return (
     <>
       {!deleted && (
-        <div className="rounded-lg bg-background/60 overflow-hidden">
+        <div className="overflow-hidden rounded-lg bg-background/60">
           {/* En-tête : le bouton dépliant couvre toute la zone (after:inset-0), les actions sont à côté */}
-          <div className="relative p-3 space-y-1.5 hover:bg-foreground/[0.02] transition-colors">
+          <div className="relative space-y-1.5 p-3 transition-colors hover:bg-foreground/[0.02]">
             {/* Row 1: Série #N + status badge + gains + chevron */}
             <div className="flex items-center justify-between gap-2">
               <button
@@ -97,27 +85,20 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
                 aria-controls={panelId}
                 className="flex items-center gap-2 text-left after:absolute after:inset-0"
               >
-                <span className="text-sm font-semibold text-secondary-foreground">
-                  Série #{series.seriesNumber}
-                </span>
+                <span className="text-sm font-semibold text-secondary-foreground">Série #{series.seriesNumber}</span>
                 <SeriesStatusBadge status={series.status as SeriesStatus} />
-                <span
-                  className={cn(
-                    "text-sm font-bold",
-                    series.netProfit >= 0 ? "text-primary" : "text-destructive",
-                  )}
-                >
+                <span className={cn("text-sm font-bold", series.netProfit >= 0 ? "text-primary" : "text-destructive")}>
                   {series.netProfit >= 0 ? "+" : ""}
                   {formatEuros(series.netProfit)}
                 </span>
               </button>
-              <div className="flex items-center shrink-0">
+              <div className="flex shrink-0 items-center">
                 {canAbandon && (
                   <button
                     type="button"
                     onClick={() => setDialogue("abandonner")}
                     aria-label={`Abandonner la série #${series.seriesNumber}`}
-                    className="relative z-10 inline-flex size-11 -my-3 items-center justify-center text-muted-foreground hover:text-warning transition-colors"
+                    className="relative z-10 -my-3 inline-flex size-11 items-center justify-center text-muted-foreground transition-colors hover:text-warning"
                   >
                     <Ban className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
@@ -127,69 +108,47 @@ export function EquipeSeriesItem({ series }: EquipeSeriesItemProps) {
                     type="button"
                     onClick={() => setDialogue("supprimer")}
                     aria-label={`Supprimer la série #${series.seriesNumber}`}
-                    className="relative z-10 inline-flex size-11 -my-3 items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+                    className="relative z-10 -my-3 inline-flex size-11 items-center justify-center text-muted-foreground transition-colors hover:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
                 )}
                 {expanded ? (
-                  <ChevronDown
-                    className="h-4 w-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 ) : (
-                  <ChevronRight
-                    className="h-4 w-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 )}
               </div>
             </div>
 
             {/* Row 2: stats */}
-            <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
               <span>
                 {series.bets.length} pari{series.bets.length > 1 ? "s" : ""}
               </span>
               <span aria-hidden="true">&middot;</span>
               <span>Mise : {formatEuros(series.totalStake)}</span>
               <span aria-hidden="true">&middot;</span>
-              <span
-                className={cn(
-                  "font-medium",
-                  series.roi >= 0 ? "text-primary" : "text-destructive",
-                )}
-              >
-                ROI : {formatPercent(series.roi)}
-              </span>
+              <span className={cn("font-medium", series.roi >= 0 ? "text-primary" : "text-destructive")}>ROI : {formatPercent(series.roi)}</span>
             </p>
           </div>
 
           {/* Expanded: individual bets */}
           {expanded && (
-            <div
-              id={panelId}
-              className="border-t border-border/30 px-3 pb-3 pt-2 space-y-2"
-            >
+            <div id={panelId} className="space-y-2 border-t border-border/30 px-3 pt-2 pb-3">
               {[...series.bets]
                 .sort((a, b) => b.bet_number - a.bet_number)
                 .map((bet) => (
-                  <SeriesBetRow
-                    key={bet.id}
-                    bet={bet}
-                    disabled={isPending}
-                    onValidate={handleValidate}
-                  />
+                  <SeriesBetRow key={bet.id} bet={bet} disabled={isPending} onValidate={handleValidate} />
                 ))}
 
               {series.status === "abandonnee" && (
                 <button
                   type="button"
                   onClick={() => setDialogue("rouvrir")}
-                  className="w-full flex items-center justify-center gap-2 h-9 rounded-lg bg-info/15 text-info text-sm font-medium hover:bg-info/25 transition-colors"
+                  className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-info/15 text-sm font-medium text-info transition-colors hover:bg-info/25"
                 >
-                  <RotateCcw className="h-4 w-4" aria-hidden="true" /> Rouvrir
-                  la série
+                  <RotateCcw className="h-4 w-4" aria-hidden="true" /> Rouvrir la série
                 </button>
               )}
             </div>

@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { round2, computeStake } from "@/lib/bet-calc";
 import { formatEuros } from "@/lib/utils";
 import { ChampNombre } from "@/components/kit/ChampNombre";
+import { Curseur } from "@/components/kit/Curseur";
 import { ERREUR_COTE, ERREUR_MISE, type BetFormState } from "./use-bet-form-state";
 
 // Paliers de l'objectif de gain : 0–2 pas 0,05 · 2–5 pas 0,1 · 5–10 pas 0,25.
@@ -50,20 +51,16 @@ export function ObjectiveSlider({ targetGain, onChange }: ObjectiveProps) {
           />
         </div>
       </div>
-      <input
-        type="range"
-        aria-label="Objectif de gain (curseur)"
-        aria-valuetext={formatEuros(targetGain)}
-        min={0}
+      <Curseur
+        libelle="Objectif de gain (curseur)"
+        texteValeur={formatEuros(targetGain)}
         max={OBJECTIVE_STOPS.length - 1}
-        step={1}
-        value={nearestStopIndex(targetGain)}
-        onChange={(e) => {
-          const v = OBJECTIVE_STOPS[parseInt(e.target.value, 10)];
+        valeur={nearestStopIndex(targetGain)}
+        surValeur={(i) => {
+          const v = OBJECTIVE_STOPS[i];
           setTexte(String(v));
           onChange(v);
         }}
-        className="w-full h-2 rounded-full appearance-none cursor-pointer bg-muted accent-primary"
       />
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>0 €</span>
@@ -109,13 +106,7 @@ export function BetAmounts({ state }: { state: BetFormState }) {
         {cote}
         <div className="grid grid-cols-2 gap-2">
           {mise("€")}
-          <ChampNombre
-            libelle="Gain net"
-            valeur={amounts.gain}
-            surValeur={calc.onGainChange}
-            placeholder="€"
-            className={CHAMP}
-          />
+          <ChampNombre libelle="Gain net" valeur={amounts.gain} surValeur={calc.onGainChange} placeholder="€" className={CHAMP} />
         </div>
       </div>
     );
@@ -128,7 +119,7 @@ export function BetAmounts({ state }: { state: BetFormState }) {
         {mise(calc.validOdds ? formatEuros(computeStake(n, T, S, calc.o)) : "€")}
       </div>
       <p className="text-sm text-muted-foreground">
-        Gain net : <span className="text-primary font-medium">{formatEuros(state.serieGain)}</span>
+        Gain net : <span className="font-medium text-primary">{formatEuros(state.serieGain)}</span>
       </p>
     </div>
   );

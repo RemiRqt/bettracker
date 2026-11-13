@@ -71,11 +71,7 @@ export async function deleteTransaction(id: string) {
     return { error: "Vous devez être connecté." };
   }
 
-  const { error } = await supabase
-    .from("transactions")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
+  const { error } = await supabase.from("transactions").delete().eq("id", id).eq("user_id", user.id);
 
   if (error) {
     return { error: "Erreur lors de la suppression." };

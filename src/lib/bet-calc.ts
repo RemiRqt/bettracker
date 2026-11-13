@@ -5,21 +5,12 @@
 export const round2 = (n: number): number => Math.round(n * 100) / 100;
 
 /** Mise martingale pour le pari #n (cible T, somme mises précédentes S). */
-export function computeStake(
-  n: number,
-  targetGain: number,
-  sumPrevStakes: number,
-  odds: number
-): number {
+export function computeStake(n: number, targetGain: number, sumPrevStakes: number, odds: number): number {
   return round2((n * targetGain + sumPrevStakes) / (odds - 1));
 }
 
 /** Gain net si ce pari gagne : mise·cote − mise − S. */
-export function computePotentialNet(
-  stake: number,
-  odds: number,
-  sumPrevStakes: number
-): number {
+export function computePotentialNet(stake: number, odds: number, sumPrevStakes: number): number {
   return round2(stake * odds - stake - sumPrevStakes);
 }
 

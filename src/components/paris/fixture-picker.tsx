@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -62,10 +62,11 @@ const CHIP = "w-full rounded-xl border px-3 py-2 text-left text-sm transition-co
  */
 export function FixturePicker({ teamId, value, onChange }: FixturePickerProps) {
   const [fixtures, setFixtures] = useState<ApiFixture[] | null>(null);
+  const libelleId = useId();
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/football/fixtures?teamId=${teamId}&limit=5`)
+    void fetch(`/api/football/fixtures?teamId=${teamId}&limit=5`)
       .then((r) => (r.ok ? r.json() : []))
       .catch(() => [])
       .then((list: ApiFixture[]) => {
@@ -83,24 +84,22 @@ export function FixturePicker({ teamId, value, onChange }: FixturePickerProps) {
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-secondary-foreground">Match</label>
+      <p id={libelleId} className="text-sm font-medium text-secondary-foreground">
+        Match
+      </p>
       {fixtures === null ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Chargement des matchs…
         </div>
       ) : (
-        <div className="space-y-1.5">
+        <div role="group" aria-labelledby={libelleId} className="space-y-1.5">
           {fixtures.map((f) => (
             <button
               key={f.id}
               type="button"
+              aria-pressed={value?.id === f.id}
               onClick={() => onChange(toPicked(f))}
-              className={cn(
-                CHIP,
-                value?.id === f.id
-                  ? "bg-primary/15 border-primary/40 text-primary"
-                  : "bg-card border-border text-muted-foreground",
-              )}
+              className={cn(CHIP, value?.id === f.id ? "border-primary/40 bg-primary/15 text-primary" : "border-border bg-card text-muted-foreground")}
             >
               <span className="capitalize">{DATE_FMT.format(new Date(f.date))}</span>
               {" · "}
@@ -109,13 +108,9 @@ export function FixturePicker({ teamId, value, onChange }: FixturePickerProps) {
           ))}
           <button
             type="button"
+            aria-pressed={value === null}
             onClick={() => onChange(null)}
-            className={cn(
-              CHIP,
-              value === null
-                ? "bg-primary/15 border-primary/40 text-primary"
-                : "bg-card border-border text-muted-foreground",
-            )}
+            className={cn(CHIP, value === null ? "border-primary/40 bg-primary/15 text-primary" : "border-border bg-card text-muted-foreground")}
           >
             Aucun match (résultat à saisir moi-même)
           </button>

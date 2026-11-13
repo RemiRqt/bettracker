@@ -1,11 +1,7 @@
 "use server";
 
 import { createClient, getAuthUser } from "@/lib/supabase/server";
-import {
-  loadTeamMappings,
-  revalidateTeamPaths,
-  type TeamMapping,
-} from "@/actions/_team-loaders";
+import { loadTeamMappings, revalidateTeamPaths, type TeamMapping } from "@/actions/_team-loaders";
 
 export type { CachedFixture } from "@/lib/football-data";
 export type { TeamMapping, SubjectLink } from "@/actions/_team-loaders";
@@ -14,9 +10,7 @@ export type { TeamMapping, SubjectLink } from "@/actions/_team-loaders";
  * Mappings du user. Sans `withFixtures`, le jsonb `cached_fixtures` (lourd) n'est pas lu :
  * seuls les écrans qui calculent le prochain match en ont besoin.
  */
-export async function getTeamMappings(
-  opts: { withFixtures?: boolean } = {},
-): Promise<TeamMapping[]> {
+export async function getTeamMappings(opts: { withFixtures?: boolean } = {}): Promise<TeamMapping[]> {
   const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
@@ -26,82 +20,36 @@ export async function getTeamMappings(
   return loadTeamMappings(user.id, !!opts.withFixtures);
 }
 
-export async function getFollowedTeams(): Promise<TeamMapping[]> {
-  const supabase = await createClient();
+type SupabaseServer = Awaited<ReturnType<typeof createClient>>;
 
-  const { user, error: authError } = await getAuthUser();
-
-  if (authError || !user) {
-    throw new Error("Vous devez etre connecte.");
-  }
-
-  const { data, error } = await supabase
-    .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
-    .eq("user_id", user.id)
-    .eq("is_followed", true)
-    .order("subject", { ascending: true });
-
-  if (error) {
-    throw new Error(`Erreur lors de la recuperation des equipes suivies: ${error.message}`);
-  }
-
-  return (data as TeamMapping[]) || [];
-}
-
-export async function upsertTeamMapping(
-  subject: string,
-  data: {
-    api_team_id?: number;
-    logo_url?: string;
-    sport?: string;
-    is_followed?: boolean;
-    next_matches_count?: number;
-  }
+function insertClubMapping(
+  supabase: SupabaseServer,
+  userId: string,
+  club: { apiTeamId: number; name: string; crestUrl: string; kind?: "club" | "national"; country?: string },
 ) {
-  const supabase = await createClient();
-
-  const { user, error: authError } = await getAuthUser();
-
-  if (authError || !user) {
-    throw new Error("Vous devez etre connecte.");
-  }
-
-  if (!subject || !subject.trim()) {
-    return { error: "Le sujet est requis." };
-  }
-
-  const { error } = await supabase
+  return supabase
     .from("team_mappings")
-    .upsert(
-      {
-        user_id: user.id,
-        subject: subject.trim(),
-        is_club: false,
-        ...data,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,subject,is_club" }
-    );
-
-  if (error) {
-    return { error: `Erreur lors de la mise a jour: ${error.message}` };
-  }
-
-  revalidateTeamPaths();
-  return { success: true };
+    .insert({
+      user_id: userId,
+      subject: club.name,
+      api_team_id: club.apiTeamId,
+      logo_url: club.crestUrl,
+      sport: "football",
+      is_club: true,
+      is_followed: false,
+      kind: club.kind ?? "club",
+      country: club.country ?? null,
+      provider: "football-data",
+    })
+    .select("id")
+    .single();
 }
 
 /**
  * Add an API club or national team as a separate record (is_club=true).
  * Stores the direct crest URL from football-data.org.
  */
-export async function addClub(
-  apiTeamId: number,
-  name: string,
-  crestUrl: string,
-  options?: { kind?: "club" | "national"; country?: string }
-) {
+export async function addClub(apiTeamId: number, name: string, crestUrl: string, options?: { kind?: "club" | "national"; country?: string }) {
   const supabase = await createClient();
 
   const { user, error: authError } = await getAuthUser();
@@ -116,31 +64,20 @@ export async function addClub(
     .maybeSingle();
   if (existing) return { error: "Cette equipe est deja ajoutee." };
 
-  const { data: inserted, error } = await supabase
-    .from("team_mappings")
-    .insert({
-      user_id: user.id,
-      subject: name,
-      api_team_id: apiTeamId,
-      logo_url: crestUrl,
-      sport: "football",
-      is_club: true,
-      is_followed: false,
-      kind: options?.kind ?? "club",
-      country: options?.country ?? null,
-      provider: "football-data",
-    })
-    .select("id")
-    .single();
+  const { data: inserted, error } = await insertClubMapping(supabase, user.id, {
+    apiTeamId,
+    name,
+    crestUrl,
+    ...options,
+  });
   if (error) return { error: `Erreur: ${error.message}` };
 
   // Auto-lien : une serie portant le meme nom que l'entite herite de son logo/calendrier
   // (compat avec l'ancien match-par-nom, desormais materialise en subject_links).
   if (inserted) {
-    await supabase.from("subject_links").upsert(
-      { user_id: user.id, subject: name, team_mapping_id: inserted.id },
-      { onConflict: "user_id,subject,team_mapping_id", ignoreDuplicates: true }
-    );
+    await supabase
+      .from("subject_links")
+      .upsert({ user_id: user.id, subject: name, team_mapping_id: inserted.id }, { onConflict: "user_id,subject,team_mapping_id", ignoreDuplicates: true });
   }
 
   revalidateTeamPaths();
@@ -180,47 +117,15 @@ export async function toggleFollow(subject: string) {
     }
   } else {
     // Create a new mapping with is_followed = true
-    const { error } = await supabase
-      .from("team_mappings")
-      .insert({
-        user_id: user.id,
-        subject,
-        is_followed: true,
-      });
+    const { error } = await supabase.from("team_mappings").insert({
+      user_id: user.id,
+      subject,
+      is_followed: true,
+    });
 
     if (error) {
       return { error: `Erreur lors de la creation du suivi: ${error.message}` };
     }
-  }
-
-  revalidateTeamPaths();
-  return { success: true };
-}
-
-export async function updateMatchesCount(subject: string, count: number) {
-  const supabase = await createClient();
-
-  const { user, error: authError } = await getAuthUser();
-
-  if (authError || !user) {
-    throw new Error("Vous devez etre connecte.");
-  }
-
-  if (count < 2 || count > 5) {
-    return { error: "Le nombre de matchs doit etre entre 2 et 5." };
-  }
-
-  const { error } = await supabase
-    .from("team_mappings")
-    .update({
-      next_matches_count: count,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", user.id)
-    .eq("subject", subject);
-
-  if (error) {
-    return { error: `Erreur lors de la mise a jour: ${error.message}` };
   }
 
   revalidateTeamPaths();
@@ -236,11 +141,7 @@ export async function deleteTeamMapping(id: string) {
     throw new Error("Vous devez etre connecte.");
   }
 
-  const { error } = await supabase
-    .from("team_mappings")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
+  const { error } = await supabase.from("team_mappings").delete().eq("id", id).eq("user_id", user.id);
 
   if (error) {
     return { error: `Erreur lors de la suppression: ${error.message}` };
@@ -248,6 +149,33 @@ export async function deleteTeamMapping(id: string) {
 
   revalidateTeamPaths();
   return { success: true };
+}
+
+function selectAllMappings(supabase: SupabaseServer, userId: string) {
+  return supabase
+    .from("team_mappings")
+    .select(
+      "id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at",
+    )
+    .eq("user_id", userId)
+    .order("subject", { ascending: true });
+}
+
+/** Subjects des séries du user qui n'ont pas encore de mapping (+ mappings existants). */
+async function findMissingSubjects(supabase: SupabaseServer, userId: string) {
+  // Get all unique subjects from the user's series
+  const { data: seriesData } = await supabase.from("series").select("subject").eq("user_id", userId);
+
+  const uniqueSubjects = [...new Set((seriesData || []).map((s) => s.subject))];
+
+  // Get existing team mappings
+  const { data: existingMappings } = await selectAllMappings(supabase, userId);
+
+  const existingSubjects = new Set((existingMappings || []).map((m: { subject: string }) => m.subject));
+
+  // Find subjects that don't have a mapping yet
+  const missingSubjects = uniqueSubjects.filter((subject) => !existingSubjects.has(subject));
+  return { existingMappings, missingSubjects };
 }
 
 export async function ensureTeamMappings(): Promise<TeamMapping[]> {
@@ -259,29 +187,7 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
     return [];
   }
 
-  // Get all unique subjects from the user's series
-  const { data: seriesData } = await supabase
-    .from("series")
-    .select("subject")
-    .eq("user_id", user.id);
-
-  const uniqueSubjects = [...new Set((seriesData || []).map((s) => s.subject))];
-
-  // Get existing team mappings
-  const { data: existingMappings } = await supabase
-    .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
-    .eq("user_id", user.id)
-    .order("subject", { ascending: true });
-
-  const existingSubjects = new Set(
-    (existingMappings || []).map((m: { subject: string }) => m.subject)
-  );
-
-  // Find subjects that don't have a mapping yet
-  const missingSubjects = uniqueSubjects.filter(
-    (subject) => !existingSubjects.has(subject)
-  );
+  const { existingMappings, missingSubjects } = await findMissingSubjects(supabase, user.id);
 
   // Cas courant : rien à créer, on renvoie directement la liste lue.
   if (missingSubjects.length === 0) {
@@ -297,16 +203,12 @@ export async function ensureTeamMappings(): Promise<TeamMapping[]> {
         sport: "football",
         is_followed: false,
         next_matches_count: 2,
-      }))
+      })),
     );
   }
 
   // Return the full updated list
-  const { data: allMappings } = await supabase
-    .from("team_mappings")
-    .select("id, subject, api_team_id, logo_url, sport, is_club, kind, country, provider, is_followed, next_matches_count, cached_fixtures, fixtures_updated_at")
-    .eq("user_id", user.id)
-    .order("subject", { ascending: true });
+  const { data: allMappings } = await selectAllMappings(supabase, user.id);
 
   return (allMappings as TeamMapping[]) || [];
 }

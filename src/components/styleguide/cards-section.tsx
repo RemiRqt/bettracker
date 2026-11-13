@@ -1,11 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RollingNumber } from "@/components/ui/rolling-number";
@@ -15,21 +8,14 @@ import { Item, Section } from "./item";
 
 export function CardsSection() {
   return (
-    <Section
-      anchor="cards"
-      n={5}
-      title="Cards & médias"
-      description="Card (shadcn) et variantes : ombre dure « sticker », stat, cliquable."
-    >
+    <Section anchor="cards" n={5} title="Cards & médias" description="Card (shadcn) et variantes : ombre dure « sticker », stat, cliquable.">
       <Item id={80} label="Card basique" hint="header + content" className="block">
         <Card className="w-full">
           <CardHeader>
             <CardTitle className="text-base">Série Ligue 1</CardTitle>
             <CardDescription>3 paris en cours</CardDescription>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            Contenu de la carte.
-          </CardContent>
+          <CardContent className="text-sm text-muted-foreground">Contenu de la carte.</CardContent>
         </Card>
       </Item>
 
@@ -38,9 +24,7 @@ export function CardsSection() {
           <CardHeader>
             <CardTitle className="text-base">Confirmer la mise</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            Mise de 10 € sur la série en cours.
-          </CardContent>
+          <CardContent className="text-sm text-muted-foreground">Mise de 10 € sur la série en cours.</CardContent>
           <CardFooter className="justify-end gap-2">
             <Button variant="outline" size="sm">
               Annuler
@@ -50,12 +34,7 @@ export function CardsSection() {
         </Card>
       </Item>
 
-      <Item
-        id={82}
-        label="Card « sticker »"
-        hint="shadow-hard (ombre dure décalée)"
-        className="block"
-      >
+      <Item id={82} label="Card « sticker »" hint="shadow-hard (ombre dure décalée)" className="block">
         <Card className="w-full border-primary/30 shadow-[var(--shadow-hard)]">
           <CardHeader>
             <CardTitle className="text-base">Pari gagné 🎉</CardTitle>
@@ -64,12 +43,7 @@ export function CardsSection() {
         </Card>
       </Item>
 
-      <Item
-        id={83}
-        label="Card sticker — sm"
-        hint="shadow-hard-sm"
-        className="block"
-      >
+      <Item id={83} label="Card sticker — sm" hint="shadow-hard-sm" className="block">
         <Card className="w-full border-primary/20 shadow-[var(--shadow-hard-sm)]">
           <CardContent className="pt-6 text-sm">Ombre dure légère.</CardContent>
         </Card>
@@ -87,12 +61,7 @@ export function CardsSection() {
         </Card>
       </Item>
 
-      <Item
-        id={85}
-        label="Card cliquable"
-        hint="hover + état série"
-        className="block"
-      >
+      <Item id={85} label="Card cliquable" hint="hover + état série" className="block">
         <Card className="w-full cursor-pointer transition-colors hover:bg-card/60">
           <CardContent className="flex items-center justify-between pt-6">
             <div className="flex items-center gap-3">

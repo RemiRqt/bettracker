@@ -1,10 +1,10 @@
 "use server";
 
-import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { getAuthUser } from "@/lib/supabase/server";
 import { ADMIN_EMAILS } from "@/lib/constants";
 import { runResolveBets, type ResolveReport } from "@/lib/resolve-bets-job";
+import { createServiceClient } from "@/lib/supabase/service";
 
 /**
  * Bouton admin « Vérifier les résultats maintenant » : lance la suggestion de
@@ -16,10 +16,7 @@ export async function runResultCheckNow(): Promise<{ report?: ResolveReport; err
     return { error: "Réservé aux admins." };
   }
 
-  const service = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  const service = createServiceClient();
   const report = await runResolveBets(service, { ignoreDelay: true, userId: user.id });
 
   revalidatePath("/");

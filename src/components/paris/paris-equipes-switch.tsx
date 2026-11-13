@@ -10,17 +10,15 @@ const TABS = [
 
 export function ParisEquipesSwitch({ active }: { active: "paris" | "equipes" }) {
   return (
-    <div className="grid grid-cols-2 gap-1 rounded-xl bg-card border border-border p-1">
+    <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-card p-1">
       {TABS.map((t) => (
         <Link
           key={t.key}
           href={t.href}
           aria-current={active === t.key ? "page" : undefined}
           className={cn(
-            "h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors",
-            active === t.key
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:text-secondary-foreground"
+            "flex h-9 items-center justify-center rounded-lg text-sm font-medium transition-colors",
+            active === t.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-secondary-foreground",
           )}
         >
           {t.label}

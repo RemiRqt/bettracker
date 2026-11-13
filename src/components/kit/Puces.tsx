@@ -22,7 +22,7 @@ export function Puces({ options, selection, surChoix, classement, libelle }: Pro
             type="button"
             aria-pressed={actif}
             onClick={() => surChoix(option)}
-            className={`min-h-10 rounded-full border px-3.5 py-2 text-left text-[15px] transition-colors ${
+            className={`min-h-10 rounded-full border px-3.5 py-2 text-left text-base transition-colors ${
               actif ? "border-primary bg-primary text-primary-foreground" : "border-border bg-transparent text-foreground"
             }`}
           >

@@ -32,7 +32,7 @@ export function ResultCheckButton({ oddsCredits }: { oddsCredits: number | null 
   }
 
   return (
-    <div className="rounded-xl bg-card p-4 space-y-3">
+    <div className="space-y-3 rounded-xl bg-card p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-foreground">Résultats auto (admin)</h2>
@@ -57,9 +57,7 @@ export function ResultCheckButton({ oddsCredits }: { oddsCredits: number | null 
           ))}
         </ul>
       )}
-      {report && report.errors.length > 0 && (
-        <p className="text-xs text-destructive">{report.errors.join(" · ")}</p>
-      )}
+      {report && report.errors.length > 0 && <p className="text-xs text-destructive">{report.errors.join(" · ")}</p>}
       {error && <p className="text-xs text-destructive">{error}</p>}
       <p className={`text-xs ${oddsCredits !== null && oddsCredits < 50 ? "text-destructive" : "text-muted-foreground"}`}>
         Crédits Odds API restants : {oddsCredits ?? "—"}

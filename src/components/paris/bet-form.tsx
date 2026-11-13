@@ -12,8 +12,6 @@ import { BetAmounts, ObjectiveSlider } from "./bet-form-amounts";
 import { useBetFormState } from "./use-bet-form-state";
 import type { BetFormProps } from "./bet-form-types";
 
-export type { ExistingSubject, TeamMappingLite, LockedSeries } from "./bet-form-types";
-
 const LIBELLE_ENVOI = { resume: "Ajouter le pari", unique: "Créer le pari unique", serie: "Lancer la série" } as const;
 
 export function BetForm(props: BetFormProps) {
@@ -24,16 +22,16 @@ export function BetForm(props: BetFormProps) {
   return (
     <form onSubmit={state.handleSubmit} className="space-y-5 pt-2">
       {error && (
-        <div id={errorId} role="alert" className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-3">
+        <div id={errorId} role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3">
           <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
 
       {/* 1. Nom (recherche) — seul élément visible tant que rien n'est résolu */}
       {lockedSeries ? (
-        <div className="flex items-center gap-2 rounded-xl bg-card/60 border border-border px-4 h-12">
+        <div className="flex h-12 items-center gap-2 rounded-xl border border-border bg-card/60 px-4">
           <TeamLogo logoUrl={undefined} size="sm" />
-          <span className="text-foreground font-medium">{lockedSeries.subject}</span>
+          <span className="font-medium text-foreground">{lockedSeries.subject}</span>
           <span className="ml-auto text-xs text-muted-foreground">
             Reprise · Pari #{state.n} · objectif {formatEuros(state.T)}
           </span>
@@ -57,25 +55,12 @@ export function BetForm(props: BetFormProps) {
       {state.resolved && (
         <>
           {/* 2. Mode : Série (continuer / nouvelle) ou Pari unique */}
-          {!lockedSeries && (
-            <BetModeSelector
-              modeChoice={state.modeChoice}
-              hasActiveSeries={!!state.activeCtx}
-              onChoose={state.chooseMode}
-            />
-          )}
+          {!lockedSeries && <BetModeSelector modeChoice={state.modeChoice} hasActiveSeries={!!state.activeCtx} onChoose={state.chooseMode} />}
 
           {/* 2 bis. Nouvelle équipe : type + sport (+ lien API si foot) */}
           {!lockedSeries && !team.selectedSubject && <BetTeamParams team={team} />}
 
-          {fixtureTeamId && (
-            <FixturePicker
-              key={fixtureTeamId}
-              teamId={fixtureTeamId}
-              value={state.fixture}
-              onChange={state.setFixture}
-            />
-          )}
+          {fixtureTeamId && <FixturePicker key={fixtureTeamId} teamId={fixtureTeamId} value={state.fixture} onChange={state.setFixture} />}
 
           <MarketOdds
             state={state.market}
@@ -85,13 +70,11 @@ export function BetForm(props: BetFormProps) {
           />
 
           {/* 3. Nouvelle série : objectif */}
-          {mode === "serie" && (
-            <ObjectiveSlider targetGain={state.amounts.targetGain} onChange={state.calc.onObjectiveChange} />
-          )}
+          {mode === "serie" && <ObjectiveSlider targetGain={state.amounts.targetGain} onChange={state.calc.onObjectiveChange} />}
 
           <BetAmounts state={state} />
 
-          <Bouton type="submit" enCours={isPending} className="w-full h-12 rounded-xl text-base font-semibold">
+          <Bouton type="submit" enCours={isPending} className="h-12 w-full rounded-xl text-base font-semibold">
             {isPending ? "Enregistrement..." : LIBELLE_ENVOI[mode]}
           </Bouton>
         </>

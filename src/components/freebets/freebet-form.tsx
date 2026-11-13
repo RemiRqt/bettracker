@@ -17,17 +17,12 @@ export function FreebetForm() {
         onClick={() => setOpen(true)}
         size="icon"
         aria-label="Ajouter un freebet"
-        className="h-9 w-9 rounded-lg bg-warning hover:bg-warning/90 text-warning-foreground cursor-pointer"
+        className="h-9 w-9 cursor-pointer rounded-lg bg-warning text-warning-foreground hover:bg-warning/90"
       >
         <Plus className="h-5 w-5" />
       </Button>
 
-      <Popup
-        ouvert={open}
-        fermer={() => setOpen(false)}
-        titre="Nouveau freebet"
-        description="Ajoutez un crédit freebet reçu"
-      >
+      <Popup ouvert={open} fermer={() => setOpen(false)} titre="Nouveau freebet" description="Ajoutez un crédit freebet reçu">
         <Formulaire fermer={() => setOpen(false)} />
       </Popup>
     </>
@@ -70,12 +65,12 @@ function Formulaire({ fermer }: { fermer: () => void }) {
         required
         className="bg-background"
       />
-      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
-      <Bouton
-        type="submit"
-        enCours={loading}
-        className="h-11 rounded-lg bg-warning hover:bg-warning/90 text-warning-foreground font-semibold"
-      >
+      {error && (
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
+      <Bouton type="submit" enCours={loading} className="h-11 rounded-lg bg-warning font-semibold text-warning-foreground hover:bg-warning/90">
         Ajouter
       </Bouton>
     </form>

@@ -2,13 +2,89 @@
 
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import {
-  getTeamMappings,
-  type CachedFixture,
-  type TeamMapping,
-} from "@/actions/teams";
+import { getTeamMappings, type CachedFixture, type TeamMapping } from "@/actions/teams";
 import { getSubjectLinks } from "@/actions/subject-links";
-import type { ActionItem, BetType, SportType } from "@/lib/types";
+import type { ActionItem, BetSuggestion, BetType, SportType } from "@/lib/types";
+
+/** subject → TeamMapping[] via subject_links */
+function groupEntitiesBySubject(links: { subject: string; team_mapping_id: string }[], mappings: TeamMapping[]): Map<string, TeamMapping[]> {
+  const byId = new Map(mappings.map((m) => [m.id, m]));
+  const entitiesBySubject = new Map<string, TeamMapping[]>();
+  for (const l of links) {
+    const ent = byId.get(l.team_mapping_id);
+    if (!ent) continue;
+    const arr = entitiesBySubject.get(l.subject) ?? [];
+    arr.push(ent);
+    entitiesBySubject.set(l.subject, arr);
+  }
+  return entitiesBySubject;
+}
+
+function nextMatchDateOf(entities: TeamMapping[], nowMs: number): string | null {
+  let nextMatchDate: string | null = null;
+  for (const ent of entities) {
+    const fixtures = (ent.cached_fixtures ?? []) as CachedFixture[];
+    for (const f of fixtures) {
+      if (new Date(f.date).getTime() > nowMs && (!nextMatchDate || f.date < nextMatchDate)) {
+        nextMatchDate = f.date;
+      }
+    }
+  }
+  return nextMatchDate;
+}
+
+interface ActiveSeriesRow {
+  id: string;
+  subject: string;
+  bet_type: string;
+  sport: string;
+  target_gain: number;
+  bets:
+    | {
+        id: string;
+        bet_number: number;
+        odds: number;
+        stake: number;
+        result: string | null;
+        resolution_status: BetSuggestion["resolution_status"];
+        suggested_result: BetSuggestion["suggested_result"];
+        fixture_score: BetSuggestion["fixture_score"];
+      }[]
+    | null;
+}
+
+function toActionItem(s: ActiveSeriesRow, entities: TeamMapping[], nowMs: number): ActionItem {
+  const pending = (s.bets ?? []).find((b) => b.result === null) ?? null;
+  return {
+    seriesId: s.id,
+    subject: s.subject,
+    betType: s.bet_type as BetType,
+    sport: s.sport as SportType,
+    targetGain: s.target_gain,
+    logoUrl: entities[0]?.logo_url ?? null,
+    nextMatchDate: nextMatchDateOf(entities, nowMs),
+    pendingBet: pending
+      ? {
+          id: pending.id,
+          betNumber: pending.bet_number,
+          odds: pending.odds,
+          stake: pending.stake,
+          suggestion: {
+            resolution_status: pending.resolution_status,
+            suggested_result: pending.suggested_result,
+            fixture_score: pending.fixture_score,
+          },
+        }
+      : null,
+  };
+}
+
+function compareActionItems(a: ActionItem, b: ActionItem): number {
+  const at = a.nextMatchDate ? new Date(a.nextMatchDate).getTime() : Infinity;
+  const bt = b.nextMatchDate ? new Date(b.nextMatchDate).getTime() : Infinity;
+  if (at !== bt) return at - bt;
+  return (a.pendingBet ? 0 : 1) - (b.pendingBet ? 0 : 1);
+}
 
 /**
  * Active series that need attention on the dashboard.
@@ -24,90 +100,30 @@ export async function getActionItems(): Promise<ActionItem[]> {
     throw new Error("Vous devez etre connecte.");
   }
 
-  const [{ data: series, error: seriesError }, links, mappings] =
-    await Promise.all([
-      supabase
-        .from("series")
-        .select(
-          "id, subject, bet_type, sport, target_gain, created_at, bets(id, bet_number, odds, stake, result, resolution_status, suggested_result, fixture_score)"
-        )
-        .eq("user_id", user.id)
-        .eq("status", "en_cours")
-        .order("created_at", { ascending: false })
-        .limit(50),
-      getSubjectLinks(),
-      getTeamMappings({ withFixtures: true }),
-    ]);
+  const [{ data: series, error: seriesError }, links, mappings] = await Promise.all([
+    supabase
+      .from("series")
+      .select(
+        "id, subject, bet_type, sport, target_gain, created_at, bets(id, bet_number, odds, stake, result, resolution_status, suggested_result, fixture_score)",
+      )
+      .eq("user_id", user.id)
+      .eq("status", "en_cours")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    getSubjectLinks(),
+    getTeamMappings({ withFixtures: true }),
+  ]);
 
   if (seriesError) {
-    throw new Error(
-      `Erreur lors de la recuperation des series: ${seriesError.message}`
-    );
+    throw new Error(`Erreur lors de la recuperation des series: ${seriesError.message}`);
   }
 
-  // subject → TeamMapping[] via subject_links
-  const byId = new Map(mappings.map((m) => [m.id, m]));
-  const entitiesBySubject = new Map<string, TeamMapping[]>();
-  for (const l of links) {
-    const ent = byId.get(l.team_mapping_id);
-    if (!ent) continue;
-    const arr = entitiesBySubject.get(l.subject) ?? [];
-    arr.push(ent);
-    entitiesBySubject.set(l.subject, arr);
-  }
-
+  const entitiesBySubject = groupEntitiesBySubject(links, mappings);
   const nowMs = Date.now();
-
-  const items: ActionItem[] = (series ?? []).map((s) => {
-    const entities = entitiesBySubject.get(s.subject) ?? [];
-    const logoUrl = entities[0]?.logo_url ?? null;
-
-    let nextMatchDate: string | null = null;
-    for (const ent of entities) {
-      const fixtures = (ent.cached_fixtures ?? []) as CachedFixture[];
-      for (const f of fixtures) {
-        if (
-          new Date(f.date).getTime() > nowMs &&
-          (!nextMatchDate || f.date < nextMatchDate)
-        ) {
-          nextMatchDate = f.date;
-        }
-      }
-    }
-
-    const pending = (s.bets ?? []).find((b) => b.result === null) ?? null;
-
-    return {
-      seriesId: s.id,
-      subject: s.subject,
-      betType: s.bet_type as BetType,
-      sport: s.sport as SportType,
-      targetGain: s.target_gain,
-      logoUrl,
-      nextMatchDate,
-      pendingBet: pending
-        ? {
-            id: pending.id,
-            betNumber: pending.bet_number,
-            odds: pending.odds,
-            stake: pending.stake,
-            suggestion: {
-              resolution_status: pending.resolution_status,
-              suggested_result: pending.suggested_result,
-              fixture_score: pending.fixture_score,
-            },
-          }
-        : null,
-    };
-  });
+  const items: ActionItem[] = (series ?? []).map((s) => toActionItem(s, entitiesBySubject.get(s.subject) ?? [], nowMs));
 
   // Soonest next match first (undated last); pending bets ahead of ties.
-  items.sort((a, b) => {
-    const at = a.nextMatchDate ? new Date(a.nextMatchDate).getTime() : Infinity;
-    const bt = b.nextMatchDate ? new Date(b.nextMatchDate).getTime() : Infinity;
-    if (at !== bt) return at - bt;
-    return (a.pendingBet ? 0 : 1) - (b.pendingBet ? 0 : 1);
-  });
+  items.sort(compareActionItems);
 
   return items;
 }
@@ -121,21 +137,14 @@ export async function abandonSeries(seriesId: string) {
   }
 
   // Update the series status to abandoned (RLS ensures ownership)
-  const { error: seriesError } = await supabase
-    .from("series")
-    .update({ status: "abandonnee" })
-    .eq("id", seriesId);
+  const { error: seriesError } = await supabase.from("series").update({ status: "abandonnee" }).eq("id", seriesId);
 
   if (seriesError) {
     return { error: `Erreur lors de l'abandon de la serie: ${seriesError.message}` };
   }
 
   // Mark any pending bets (result is null) in this series as lost
-  const { error: betsError } = await supabase
-    .from("bets")
-    .update({ result: "perdu" })
-    .eq("series_id", seriesId)
-    .is("result", null);
+  const { error: betsError } = await supabase.from("bets").update({ result: "perdu" }).eq("series_id", seriesId).is("result", null);
 
   if (betsError) {
     return { error: `Erreur lors de la mise a jour des paris: ${betsError.message}` };
@@ -156,12 +165,7 @@ export async function reopenSeries(seriesId: string) {
     throw new Error("Vous devez etre connecte.");
   }
 
-  const { data: series, error: seriesError } = await supabase
-    .from("series")
-    .select("id, status")
-    .eq("id", seriesId)
-    .eq("user_id", user.id)
-    .single();
+  const { data: series, error: seriesError } = await supabase.from("series").select("id, status").eq("id", seriesId).eq("user_id", user.id).single();
 
   if (seriesError || !series) {
     return { error: "Serie introuvable." };
@@ -171,10 +175,7 @@ export async function reopenSeries(seriesId: string) {
     return { error: "Seule une serie abandonnee peut etre rouverte." };
   }
 
-  const { error } = await supabase
-    .from("series")
-    .update({ status: "en_cours" })
-    .eq("id", seriesId);
+  const { error } = await supabase.from("series").update({ status: "en_cours" }).eq("id", seriesId);
 
   if (error) {
     return { error: `Erreur lors de la reouverture de la serie: ${error.message}` };
@@ -187,6 +188,28 @@ export async function reopenSeries(seriesId: string) {
   return { success: true };
 }
 
+/**
+ * A series is deletable when it is empty (no bets) or holds only the
+ * first bet, still pending. Renvoie l'erreur à afficher, ou null.
+ */
+async function checkDeletableBets(supabase: Awaited<ReturnType<typeof createClient>>, seriesId: string): Promise<{ error: string } | null> {
+  const { data: bets, error: betsError } = await supabase.from("bets").select("id, bet_number, result").eq("series_id", seriesId);
+
+  if (betsError) {
+    return { error: `Erreur: ${betsError.message}` };
+  }
+
+  const isEmpty = !bets || bets.length === 0;
+  const isSinglePending = !!bets && bets.length === 1 && bets[0].bet_number === 1 && bets[0].result === null;
+
+  if (!isEmpty && !isSinglePending) {
+    return {
+      error: "Seules les series vides ou avec uniquement le pari #1 en cours peuvent etre supprimees.",
+    };
+  }
+  return null;
+}
+
 export async function deleteSeries(seriesId: string) {
   const supabase = await createClient();
 
@@ -197,12 +220,7 @@ export async function deleteSeries(seriesId: string) {
   }
 
   // Verify the series belongs to the user and is "en_cours"
-  const { data: series, error: seriesError } = await supabase
-    .from("series")
-    .select("id, status")
-    .eq("id", seriesId)
-    .eq("user_id", user.id)
-    .single();
+  const { data: series, error: seriesError } = await supabase.from("series").select("id, status").eq("id", seriesId).eq("user_id", user.id).single();
 
   if (seriesError || !series) {
     return { error: "Serie introuvable." };
@@ -212,36 +230,11 @@ export async function deleteSeries(seriesId: string) {
     return { error: "Seules les series en cours peuvent etre supprimees." };
   }
 
-  // A series is deletable when it is empty (no bets) or holds only the
-  // first bet, still pending.
-  const { data: bets, error: betsError } = await supabase
-    .from("bets")
-    .select("id, bet_number, result")
-    .eq("series_id", seriesId);
-
-  if (betsError) {
-    return { error: `Erreur: ${betsError.message}` };
-  }
-
-  const isEmpty = !bets || bets.length === 0;
-  const isSinglePending =
-    !!bets &&
-    bets.length === 1 &&
-    bets[0].bet_number === 1 &&
-    bets[0].result === null;
-
-  if (!isEmpty && !isSinglePending) {
-    return {
-      error:
-        "Seules les series vides ou avec uniquement le pari #1 en cours peuvent etre supprimees.",
-    };
-  }
+  const deletable = await checkDeletableBets(supabase, seriesId);
+  if (deletable) return deletable;
 
   // Delete the series (cascade will delete the bet)
-  const { error } = await supabase
-    .from("series")
-    .delete()
-    .eq("id", seriesId);
+  const { error } = await supabase.from("series").delete().eq("id", seriesId);
 
   if (error) {
     return { error: `Erreur: ${error.message}` };
@@ -253,4 +246,3 @@ export async function deleteSeries(seriesId: string) {
 
   return { success: true };
 }
-

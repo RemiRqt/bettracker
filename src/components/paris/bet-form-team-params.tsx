@@ -3,6 +3,7 @@
 import { Check, Link2 } from "lucide-react";
 import { BET_TYPES, SPORTS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { useFocusAuMontage } from "@/hooks/use-focus-au-montage";
 import { Puces } from "@/components/kit/Puces";
 import type { TeamSelection } from "./use-team-selection";
 
@@ -34,9 +35,7 @@ export function BetModeSelector({ modeChoice, hasActiveSeries, onChoose }: ModeS
           onClick={() => onChoose(key)}
           className={cn(
             "h-11 rounded-xl border text-sm font-medium transition-colors",
-            modeChoice === key
-              ? "bg-primary/15 border-primary/40 text-primary"
-              : "bg-card border-border text-muted-foreground"
+            modeChoice === key ? "border-primary/40 bg-primary/15 text-primary" : "border-border bg-card text-muted-foreground",
           )}
         >
           {label}
@@ -51,6 +50,7 @@ export function BetTeamParams({ team }: { team: TeamSelection }) {
   const { betType, sport, apiTeam } = team;
   const typeLabel = libelleDe(BET_TYPE_ENTRIES, betType);
   const sportLabel = libelleDe(SPORT_ENTRIES, sport);
+  const focusAutre = useFocusAuMontage();
   return (
     <div className="space-y-3">
       <div className="space-y-2">
@@ -70,8 +70,8 @@ export function BetTeamParams({ team }: { team: TeamSelection }) {
             onChange={(e) => team.setBetTypeCustom(e.target.value)}
             placeholder="Type personnalisé"
             aria-label="Type de pari personnalisé"
-            className="w-full h-12 rounded-xl bg-card border border-border px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
-            autoFocus
+            className="h-12 w-full rounded-xl border border-border bg-card px-4 text-base text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/50 focus:outline-none"
+            ref={focusAutre}
           />
         )}
       </div>

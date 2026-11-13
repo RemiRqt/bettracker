@@ -20,28 +20,21 @@ export function formatFixtureDateTime(iso: string): string {
 }
 
 // Bandeau « série en cours » (+ prochain match si dispo), avec « Ajouter pari ».
-export function ActiveSeriesBanner({
-  nextFixture,
-  canBet,
-  onOpenBet,
-}: {
-  nextFixture?: { date: string };
-  canBet: boolean;
-  onOpenBet: () => void;
-}) {
+export function ActiveSeriesBanner({ nextFixture, canBet, onOpenBet }: { nextFixture?: { date: string }; canBet: boolean; onOpenBet: () => void }) {
   return (
-    <div className="flex items-center justify-between px-3 py-2 bg-info/10 border-b border-info/20">
+    <div className="flex items-center justify-between border-b border-info/20 bg-info/10 px-3 py-2">
       <div className="flex items-center gap-1.5 text-xs text-info">
         <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
-        <span className="font-medium">
-          {nextFixture ? `Prochain match : ${formatFixtureDateTime(nextFixture.date)}` : "Série en cours"}
-        </span>
+        <span className="font-medium">{nextFixture ? `Prochain match : ${formatFixtureDateTime(nextFixture.date)}` : "Série en cours"}</span>
       </div>
       {canBet && (
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onOpenBet(); }}
-          className="relative flex items-center gap-1 px-2.5 py-1 rounded-lg before:absolute before:-inset-y-2.5 before:inset-x-0 before:content-[''] bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenBet();
+          }}
+          className="relative flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground transition-colors before:absolute before:inset-x-0 before:-inset-y-2.5 before:content-[''] hover:bg-primary/90"
         >
           <Plus className="h-3 w-3" aria-hidden="true" />
           Ajouter pari
@@ -55,13 +48,13 @@ export function ActiveSeriesBanner({
 export function EquipeStatsRow({ eq, onDeleteEmpty }: { eq: MergedEquipe; onDeleteEmpty: () => void }) {
   if (eq.seriesCount === 0) {
     return (
-      <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-warning/10 border border-warning/20">
+      <div className="flex items-center justify-between rounded-lg border border-warning/20 bg-warning/10 px-2 py-1">
         <span className="text-xs text-warning">Pas de série créée</span>
         <button
           type="button"
           onClick={onDeleteEmpty}
           aria-label={`Supprimer l'équipe ${eq.name}`}
-          className="text-xs text-destructive hover:text-destructive/80 cursor-pointer"
+          className="cursor-pointer text-xs text-destructive hover:text-destructive/80"
         >
           Supprimer
         </button>
@@ -73,14 +66,12 @@ export function EquipeStatsRow({ eq, onDeleteEmpty }: { eq: MergedEquipe; onDele
       <span className="text-xs text-muted-foreground">
         {eq.seriesCount} serie{eq.seriesCount > 1 ? "s" : ""} · {eq.betsCount} pari{eq.betsCount > 1 ? "s" : ""}
         {eq.activeSeries && (
-          <span className="text-info ml-2">
-            <TrendingUp className="h-3 w-3 inline" aria-hidden="true" /> en cours (#{eq.activeSeries.betCount})
+          <span className="ml-2 text-info">
+            <TrendingUp className="inline h-3 w-3" aria-hidden="true" /> en cours (#{eq.activeSeries.betCount})
           </span>
         )}
       </span>
-      <span className={cn("text-xs font-medium", eq.roi >= 0 ? "text-primary/70" : "text-destructive/70")}>
-        ROI {formatPercent(eq.roi)}
-      </span>
+      <span className={cn("text-xs font-medium", eq.roi >= 0 ? "text-primary/70" : "text-destructive/70")}>ROI {formatPercent(eq.roi)}</span>
     </div>
   );
 }
@@ -93,7 +84,7 @@ export function EquipeProgressBar({ eq }: { eq: MergedEquipe }) {
   const lostPct = (eq.totalLostStake / barTotal) * 100;
   const pendingPct = (eq.potentialGains / barTotal) * 100;
   return (
-    <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-muted/50">
+    <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
       {wonPct > 0 && <div className="bg-primary" style={{ width: `${wonPct}%` }} />}
       {lostPct > 0 && <div className="bg-destructive" style={{ width: `${lostPct}%` }} />}
       {pendingPct > 0 && <div className="bg-info" style={{ width: `${pendingPct}%` }} />}
@@ -106,26 +97,30 @@ export function PendingBetBlock({ bet, onValidate }: { bet: PendingBet; onValida
   return (
     <>
       <SuggestedResultBadge bet={bet} onConfirm={(r) => onValidate(bet.id, r)} />
-      <div className="flex items-center justify-between gap-2 rounded-lg bg-info/10 border border-info/20 p-2">
-        <div className="flex items-center gap-2 min-w-0 text-xs text-secondary-foreground">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-info/20 text-info text-2xs font-bold">
-            {bet.bet_number}
-          </span>
+      <div className="flex items-center justify-between gap-2 rounded-lg border border-info/20 bg-info/10 p-2">
+        <div className="flex min-w-0 items-center gap-2 text-xs text-secondary-foreground">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-info/20 text-2xs font-bold text-info">{bet.bet_number}</span>
           <span>Cote {bet.odds.toFixed(2)}</span>
           <span className="text-muted-foreground">· {formatEuros(bet.stake)}</span>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onValidate(bet.id, "gagne"); }}
-            className="relative flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-2xs font-semibold text-primary hover:bg-primary/25 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onValidate(bet.id, "gagne");
+            }}
+            className="relative flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 text-2xs font-semibold text-primary transition-colors before:absolute before:inset-x-0 before:-inset-y-2.5 hover:bg-primary/25"
           >
             <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" /> Gagné
           </button>
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onValidate(bet.id, "perdu"); }}
-            className="relative flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 text-2xs font-semibold text-destructive hover:bg-destructive/25 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onValidate(bet.id, "perdu");
+            }}
+            className="relative flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-1 text-2xs font-semibold text-destructive transition-colors before:absolute before:inset-x-0 before:-inset-y-2.5 hover:bg-destructive/25"
           >
             <XCircle className="h-3.5 w-3.5" aria-hidden="true" /> Perdu
           </button>
@@ -152,12 +147,12 @@ export function EquipeSeriesPanel({
   const ordered = [...eq.series].sort((a, b) => b.created_at.localeCompare(a.created_at));
   const visible = showAllSeries ? ordered : ordered.slice(0, 1);
   return (
-    <div id={id} className="border-t border-border/50 px-3 pb-3 pt-2 space-y-1.5">
+    <div id={id} className="space-y-1.5 border-t border-border/50 px-3 pt-2 pb-3">
       {!eq.activeSeries && (
         <button
           type="button"
           onClick={onOpenBet}
-          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
         >
           <Plus className="h-3.5 w-3.5" aria-hidden="true" />
           Nouvelle serie
@@ -170,7 +165,7 @@ export function EquipeSeriesPanel({
             <button
               type="button"
               onClick={onOpenBet}
-              className="w-full mt-1.5 flex min-h-11 items-center justify-center gap-1.5 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+              className="mt-1.5 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               Parier
@@ -182,7 +177,7 @@ export function EquipeSeriesPanel({
         <button
           type="button"
           onClick={onToggleShowAllSeries}
-          className="w-full min-h-11 py-1 text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="min-h-11 w-full py-1 text-center text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           {showAllSeries ? "Voir moins" : `Voir plus (${ordered.length - 1})`}
         </button>

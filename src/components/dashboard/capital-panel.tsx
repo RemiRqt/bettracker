@@ -36,9 +36,7 @@ export function CapitalPanel({ data, monthly }: CapitalPanelProps) {
               title={v.label}
               className={cn(
                 "flex items-center justify-center rounded-md px-2 py-1 transition-all active:scale-95",
-                view === v.key
-                  ? "bg-primary/20 text-primary"
-                  : "text-muted-foreground hover:text-secondary-foreground"
+                view === v.key ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-secondary-foreground",
               )}
             >
               <v.Icon aria-hidden className="h-4 w-4" />
@@ -47,13 +45,7 @@ export function CapitalPanel({ data, monthly }: CapitalPanelProps) {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1">
-        {view === "courbe" ? (
-          <CapitalChart data={data} />
-        ) : (
-          <MonthlyBarChart data={monthly} />
-        )}
-      </div>
+      <div className="min-h-0 flex-1">{view === "courbe" ? <CapitalChart data={data} /> : <MonthlyBarChart data={monthly} />}</div>
     </div>
   );
 }

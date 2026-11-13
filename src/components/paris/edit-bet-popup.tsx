@@ -30,7 +30,7 @@ function EditBetForm({ bet, enCours, onSave }: { bet: Bet } & Pick<EditBetPopupP
     <div className="space-y-3">
       <ChampNombre libelle="Cote" valeur={odds} surValeur={setOdds} className="rounded-xl bg-card" />
       <ChampNombre libelle="Mise" valeur={stake} surValeur={setStake} unite="€" className="rounded-xl bg-card" />
-      <Bouton onClick={save} enCours={enCours} className="w-full h-11 rounded-xl font-semibold">
+      <Bouton onClick={save} enCours={enCours} className="h-11 w-full rounded-xl font-semibold">
         Enregistrer
       </Bouton>
     </div>

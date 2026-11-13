@@ -31,18 +31,12 @@ const TOKENS: Tok[] = [
 function Swatch({ tok }: { tok: Tok }) {
   return (
     <div className="rounded-lg border border-border/60 bg-background/40 p-2">
-      <div
-        className={`mb-2 h-12 w-full rounded-md ${tok.cls} ${
-          tok.ring ? "ring-1 ring-inset ring-border" : ""
-        }`}
-      />
+      <div className={`mb-2 h-12 w-full rounded-md ${tok.cls} ${tok.ring ? "ring-1 ring-border ring-inset" : ""}`} />
       <div className="flex items-center gap-1.5">
         <span className="inline-flex h-4 min-w-[1.25rem] items-center justify-center rounded bg-primary/15 px-1 font-mono text-2xs font-bold text-primary">
           {tok.id}
         </span>
-        <span className="truncate text-xs font-medium text-secondary-foreground">
-          {tok.name}
-        </span>
+        <span className="truncate text-xs font-medium text-secondary-foreground">{tok.name}</span>
       </div>
       <span className="font-mono text-2xs text-muted-foreground">{tok.hex}</span>
     </div>
@@ -51,12 +45,7 @@ function Swatch({ tok }: { tok: Tok }) {
 
 export function ColorsSection() {
   return (
-    <Section
-      anchor="colors"
-      n={1}
-      title="Couleurs & tokens"
-      description="Palette du thème (globals.css). Dark slate + accent emerald."
-    >
+    <Section anchor="colors" n={1} title="Couleurs & tokens" description="Palette du thème (globals.css). Dark slate + accent emerald.">
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
         {TOKENS.map((t) => (
           <Swatch key={t.id} tok={t} />
@@ -89,9 +78,7 @@ export function ColorsSection() {
           <div className="px-1 py-2">
             <div className="h-10 w-16 rounded-md bg-muted shadow-[var(--shadow-hard)]" />
           </div>
-          <span className="font-mono text-2xs text-muted-foreground">
-            4px 4px emerald/22
-          </span>
+          <span className="font-mono text-2xs text-muted-foreground">4px 4px emerald/22</span>
         </div>
 
         <div className="rounded-lg border border-border/60 bg-background/40 p-3">
@@ -99,16 +86,12 @@ export function ColorsSection() {
             <span className="inline-flex h-4 min-w-[1.25rem] items-center justify-center rounded bg-primary/15 px-1 font-mono text-2xs font-bold text-primary">
               26
             </span>
-            <span className="text-xs font-medium text-secondary-foreground">
-              shadow-hard-sm
-            </span>
+            <span className="text-xs font-medium text-secondary-foreground">shadow-hard-sm</span>
           </div>
           <div className="px-1 py-2">
             <div className="h-10 w-16 rounded-md bg-muted shadow-[var(--shadow-hard-sm)]" />
           </div>
-          <span className="font-mono text-2xs text-muted-foreground">
-            3px 3px emerald/18
-          </span>
+          <span className="font-mono text-2xs text-muted-foreground">3px 3px emerald/18</span>
         </div>
       </div>
     </Section>

@@ -24,17 +24,13 @@ export function MarketOdds({ state, outcomeLabel, currentOdds, onPick }: MarketO
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-secondary-foreground">
-        Cotes du marché · {outcomeLabel}
-      </label>
+      <label className="text-sm font-medium text-secondary-foreground">Cotes du marché · {outcomeLabel}</label>
       {state.status === "loading" && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Chargement des cotes…
         </div>
       )}
-      {state.status === "unavailable" && (
-        <p className="text-sm text-muted-foreground">Cotes indisponibles pour tes bookmakers</p>
-      )}
+      {state.status === "unavailable" && <p className="text-sm text-muted-foreground">Cotes indisponibles pour tes bookmakers</p>}
       {state.status === "ready" && (
         <>
           <div className="flex flex-wrap gap-1.5">
@@ -47,9 +43,7 @@ export function MarketOdds({ state, outcomeLabel, currentOdds, onPick }: MarketO
                   onClick={() => onPick(price)}
                   className={cn(
                     "flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
-                    Math.abs(currentOdds - price) < 0.005
-                      ? "bg-primary/15 border-primary/40 text-primary"
-                      : "bg-card border-border text-secondary-foreground",
+                    Math.abs(currentOdds - price) < 0.005 ? "border-primary/40 bg-primary/15 text-primary" : "border-border bg-card text-secondary-foreground",
                   )}
                 >
                   {key === state.data.bestBookmaker && <Star className="h-3 w-3 fill-current" />}
@@ -58,14 +52,8 @@ export function MarketOdds({ state, outcomeLabel, currentOdds, onPick }: MarketO
               ))}
           </div>
           {currentOdds > 1 && (
-            <p
-              className={cn(
-                "text-xs",
-                currentOdds >= state.data.avg ? "text-primary" : "text-destructive",
-              )}
-            >
-              Ta cote {currentOdds.toFixed(2)} · {pct(currentOdds / state.data.best - 1)} vs meilleure ·{" "}
-              {pct(currentOdds / state.data.avg - 1)} vs moyenne
+            <p className={cn("text-xs", currentOdds >= state.data.avg ? "text-primary" : "text-destructive")}>
+              Ta cote {currentOdds.toFixed(2)} · {pct(currentOdds / state.data.best - 1)} vs meilleure · {pct(currentOdds / state.data.avg - 1)} vs moyenne
             </p>
           )}
         </>

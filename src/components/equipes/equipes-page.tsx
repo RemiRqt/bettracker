@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { deleteEquipe, updateEquipeSport } from "@/actions/equipes";
 import { validateResult } from "@/actions/bet-results";
 import { fireConfetti } from "@/lib/confetti";
@@ -23,7 +22,6 @@ interface EquipesPageProps {
 
 export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMappings = [] }: EquipesPageProps) {
   const [, startTransition] = useTransition();
-  const router = useRouter();
 
   // Filters & sort
   const [search, setSearch] = useState("");
@@ -42,7 +40,10 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
 
   function handleSort(key: SortKey) {
     if (sortBy === key) setSortAsc(!sortAsc);
-    else { setSortBy(key); setSortAsc(false); }
+    else {
+      setSortBy(key);
+      setSortAsc(false);
+    }
   }
 
   const counts = useMemo(() => {
@@ -59,9 +60,12 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
     if (!eq.name.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterBy === null) return true;
     switch (filterBy) {
-      case "en_cours": return eq.enCoursCount > 0;
-      case "gagne": return eq.netProfit > 0;
-      case "perdu": return eq.netProfit < 0;
+      case "en_cours":
+        return eq.enCoursCount > 0;
+      case "gagne":
+        return eq.netProfit > 0;
+      case "perdu":
+        return eq.netProfit < 0;
     }
   });
 
@@ -73,9 +77,15 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
 
     let cmp = 0;
     switch (sortBy) {
-      case "date": cmp = b.lastBetDate.localeCompare(a.lastBetDate); break;
-      case "gains": cmp = b.netProfit - a.netProfit; break;
-      case "paris": cmp = b.betsCount - a.betsCount; break;
+      case "date":
+        cmp = b.lastBetDate.localeCompare(a.lastBetDate);
+        break;
+      case "gains":
+        cmp = b.netProfit - a.netProfit;
+        break;
+      case "paris":
+        cmp = b.betsCount - a.betsCount;
+        break;
     }
     return sortAsc ? -cmp : cmp;
   });
@@ -83,7 +93,8 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
   function toggleExpand(key: string) {
     setExpandedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }
@@ -91,11 +102,11 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
   function toggleSeriesShowAll(key: string) {
     setSeriesShowAll((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }
-
 
   function handleValidate(betId: string, result: "gagne" | "perdu") {
     startTransition(async () => {
@@ -120,8 +131,8 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
         onOpenBet={() => openBetModal({ subject: eq.name, betType: eq.bet_type, sport: eq.sport })}
         onValidate={handleValidate}
         onDeleteEmpty={async () => {
+          // deleteEquipe revalide /series : la réponse de l'action rafraîchit déjà l'écran.
           await deleteEquipe(eq.equipeId);
-          startTransition(() => { router.refresh(); });
         }}
       />
     );
@@ -145,20 +156,9 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
       />
 
       {/* List */}
-      {sorted.length === 0 ? (
-        <EtatVide>Aucune équipe trouvée.</EtatVide>
-      ) : (
-        <div className="space-y-2">
-          {sorted.map((eq) => renderCard(eq, ""))}
-        </div>
-      )}
+      {sorted.length === 0 ? <EtatVide>Aucune équipe trouvée.</EtatVide> : <div className="space-y-2">{sorted.map((eq) => renderCard(eq, ""))}</div>}
 
-      <Popup
-        ouvert={myTeamsOpen}
-        fermer={() => setMyTeamsOpen(false)}
-        titre="Mes équipes"
-        description="Ajoute des équipes API et gère tes favoris"
-      >
+      <Popup ouvert={myTeamsOpen} fermer={() => setMyTeamsOpen(false)} titre="Mes équipes" description="Ajoute des équipes API et gère tes favoris">
         <FollowedTeams teamMappings={teamMappings} />
       </Popup>
 
@@ -166,9 +166,9 @@ export function EquipesPage({ equipes, logoMap, nextFixtureMap = {}, teamMapping
         equipe={editEquipe}
         fermer={() => setEditEquipe(null)}
         surChoix={async (equipe, sport) => {
+          // updateEquipeSport revalide /series : la réponse de l'action rafraîchit déjà l'écran.
           await updateEquipeSport(equipe.equipeId, sport);
           setEditEquipe(null);
-          startTransition(() => { router.refresh(); });
         }}
       />
     </div>

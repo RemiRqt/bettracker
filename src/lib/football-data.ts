@@ -105,9 +105,7 @@ function toMatchResult(m: ApiMatch): MatchInfo {
 
 /** Prochains matchs programmés d'une équipe. `[]` en cas d'erreur. */
 export async function fetchTeamFixtures(teamId: number, limit: number): Promise<CachedFixture[]> {
-  const json = await apiGet<{ matches?: ApiMatch[] }>(
-    `/teams/${teamId}/matches?status=SCHEDULED&limit=${limit}`,
-  );
+  const json = await apiGet<{ matches?: ApiMatch[] }>(`/teams/${teamId}/matches?status=SCHEDULED&limit=${limit}`);
   return (json?.matches ?? []).map(toCachedFixture);
 }
 
@@ -123,28 +121,17 @@ export async function fetchMatch(matchId: number): Promise<MatchInfo | null> {
  * aujourd'hui sans match, prend le prochain match programmé.
  * `undefined` = erreur API, `null` = aucun match (ou équipe hors offre).
  */
-export async function fetchTeamFirstMatchSince(
-  teamId: number,
-  dateFrom: Date,
-): Promise<MatchInfo | null | undefined> {
+export async function fetchTeamFirstMatchSince(teamId: number, dateFrom: Date): Promise<MatchInfo | null | undefined> {
   const windowEnd = new Date(dateFrom.getTime() + 10 * 86_400_000);
   const from = dateFrom.toISOString().slice(0, 10);
   const to = windowEnd.toISOString().slice(0, 10);
-  const json = await apiGet<{ matches?: ApiMatch[] }>(
-    `/teams/${teamId}/matches?dateFrom=${from}&dateTo=${to}`,
-    { matches: [] },
-  );
+  const json = await apiGet<{ matches?: ApiMatch[] }>(`/teams/${teamId}/matches?dateFrom=${from}&dateTo=${to}`, { matches: [] });
   if (!json) return undefined;
-  const after = (json.matches ?? [])
-    .filter((m) => new Date(m.utcDate).getTime() >= dateFrom.getTime())
-    .sort((a, b) => a.utcDate.localeCompare(b.utcDate));
+  const after = (json.matches ?? []).filter((m) => new Date(m.utcDate).getTime() >= dateFrom.getTime()).sort((a, b) => a.utcDate.localeCompare(b.utcDate));
   if (after.length > 0) return toMatchResult(after[0]);
   if (windowEnd.getTime() < Date.now() - 86_400_000) return null;
 
-  const next = await apiGet<{ matches?: ApiMatch[] }>(
-    `/teams/${teamId}/matches?status=SCHEDULED&limit=1`,
-    { matches: [] },
-  );
+  const next = await apiGet<{ matches?: ApiMatch[] }>(`/teams/${teamId}/matches?status=SCHEDULED&limit=1`, { matches: [] });
   if (!next) return undefined;
   return next.matches?.[0] ? toMatchResult(next.matches[0]) : null;
 }

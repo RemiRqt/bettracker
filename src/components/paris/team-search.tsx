@@ -81,9 +81,11 @@ export function TeamSearch({
 
   return (
     <div className="space-y-2">
-      <label htmlFor={inputId} className="text-sm font-medium text-secondary-foreground">Nom</label>
+      <label htmlFor={inputId} className="text-sm font-medium text-secondary-foreground">
+        Nom
+      </label>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <input
           id={inputId}
           autoComplete="off"
@@ -100,13 +102,10 @@ export function TeamSearch({
           aria-controls={listId}
           aria-activedescendant={actifSur >= 0 ? optId(actifSur) : undefined}
           placeholder="PSG, Mbappé, Djokovic..."
-          className="w-full h-12 rounded-xl bg-card border border-border pl-9 pr-14 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+          className="h-12 w-full rounded-xl border border-border bg-card pr-14 pl-9 text-foreground transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/50 focus:outline-none"
         />
         {apiSelected && (
-          <span
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-2xs px-1.5 py-0.5 rounded bg-primary/15 text-primary"
-            title="Équipe liée à l'API"
-          >
+          <span className="absolute top-1/2 right-3 -translate-y-1/2 rounded bg-primary/15 px-1.5 py-0.5 text-2xs text-primary" title="Équipe liée à l'API">
             API
           </span>
         )}
@@ -117,15 +116,15 @@ export function TeamSearch({
           id={listId}
           role="listbox"
           aria-label="Suggestions"
-          className="max-h-56 overflow-y-auto rounded-lg border border-border bg-card divide-y divide-border/50"
+          className="max-h-56 divide-y divide-border/50 overflow-y-auto rounded-lg border border-border bg-card"
         >
           {subjectResults.map((r, i) => (
             <li key={`${r.subject}::${r.betType}`} {...optionProps(i, () => onPickSubject(r))} className={cn(OPTION, actifSur === i && "bg-muted/50")}>
-              <span aria-hidden="true" className={cn("h-2 w-2 rounded-full flex-shrink-0", STATUS_DOT[r.lastStatus] ?? "bg-muted")} />
+              <span aria-hidden="true" className={cn("h-2 w-2 flex-shrink-0 rounded-full", STATUS_DOT[r.lastStatus] ?? "bg-muted")} />
               {r.logoUrl && <TeamLogo logoUrl={r.logoUrl} size="sm" />}
-              <span className="text-sm text-foreground truncate">{r.subject}</span>
+              <span className="truncate text-sm text-foreground">{r.subject}</span>
               {STATUS_LABEL[r.lastStatus] && <span className="sr-only">, {STATUS_LABEL[r.lastStatus]}</span>}
-              <span className="ml-auto flex-shrink-0 px-1.5 py-0.5 rounded text-2xs bg-muted text-muted-foreground">
+              <span className="ml-auto flex-shrink-0 rounded bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground">
                 {BET_TYPES[r.betType as keyof typeof BET_TYPES] ?? r.betType}
               </span>
             </li>
@@ -135,7 +134,7 @@ export function TeamSearch({
             return (
               <li key={`map::${m.subject}`} {...optionProps(i, () => onPickMapping(m))} className={cn(OPTION, actifSur === i && "bg-muted/50")}>
                 {m.logoUrl && <TeamLogo logoUrl={m.logoUrl} size="sm" />}
-                <span className="text-sm text-foreground truncate">{m.subject}</span>
+                <span className="truncate text-sm text-foreground">{m.subject}</span>
                 <span className="ml-auto text-2xs text-muted-foreground">équipe</span>
               </li>
             );

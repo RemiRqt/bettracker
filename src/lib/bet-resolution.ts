@@ -37,11 +37,7 @@ function suggestFor(betType: string, outcome: Outcome | null): "gagne" | "perdu"
   return null;
 }
 
-export function resolveBet(input: {
-  betType: string;
-  teamId: number | null;
-  match: MatchResult;
-}): Resolution {
+export function resolveBet(input: { betType: string; teamId: number | null; match: MatchResult }): Resolution {
   const { betType, teamId, match } = input;
 
   if (POSTPONED_STATUSES.has(match.status)) {

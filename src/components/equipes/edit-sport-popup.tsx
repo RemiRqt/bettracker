@@ -30,7 +30,9 @@ function ChoixSport({ equipe, surChoix }: { equipe: MergedEquipe; surChoix: Edit
   const sportLabelId = useId();
   return (
     <div>
-      <p id={sportLabelId} className="text-xs text-muted-foreground mb-1.5 block">Sport</p>
+      <p id={sportLabelId} className="mb-1.5 block text-xs text-muted-foreground">
+        Sport
+      </p>
       <div role="group" aria-labelledby={sportLabelId} className="grid grid-cols-2 gap-2">
         {(Object.entries(SPORTS) as [string, string][]).map(([sKey, sLabel]) => (
           <button
@@ -39,10 +41,10 @@ function ChoixSport({ equipe, surChoix }: { equipe: MergedEquipe; surChoix: Edit
             aria-pressed={equipe.sport === sKey}
             onClick={() => surChoix(equipe, sKey)}
             className={cn(
-              "flex min-h-11 items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-medium transition-colors border",
+              "flex min-h-11 items-center justify-center gap-1.5 rounded-xl border py-2.5 text-sm font-medium transition-colors",
               equipe.sport === sKey
-                ? "bg-primary/20 text-primary border-primary/30"
-                : "bg-background text-muted-foreground border-border hover:border-border/80"
+                ? "border-primary/30 bg-primary/20 text-primary"
+                : "border-border bg-background text-muted-foreground hover:border-border/80",
             )}
           >
             <span aria-hidden="true">{SPORT_EMOJIS[sKey]}</span>

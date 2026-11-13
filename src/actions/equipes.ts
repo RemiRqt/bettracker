@@ -13,11 +13,7 @@ export async function updateEquipeSport(id: string, sport: string) {
   const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez etre connecte.");
 
-  const { error } = await supabase
-    .from("equipes")
-    .update({ sport })
-    .eq("id", id)
-    .eq("user_id", user.id);
+  const { error } = await supabase.from("equipes").update({ sport }).eq("id", id).eq("user_id", user.id);
 
   if (error) return { error: `Erreur: ${error.message}` };
 
@@ -34,11 +30,7 @@ export async function deleteEquipe(id: string) {
     throw new Error("Vous devez etre connecte.");
   }
 
-  const { error } = await supabase
-    .from("equipes")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
+  const { error } = await supabase.from("equipes").delete().eq("id", id).eq("user_id", user.id);
 
   if (error) {
     return { error: `Erreur: ${error.message}` };

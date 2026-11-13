@@ -20,21 +20,11 @@ const STATUS_BORDER: Record<SeriesStatus, string> = {
   abandonnee: "border-destructive/30",
 };
 
-function StatTile({
-  label,
-  value,
-  color = "text-foreground",
-}: {
-  label: string;
-  value: React.ReactNode;
-  color?: string;
-}) {
+function StatTile({ label, value, color = "text-foreground" }: { label: string; value: React.ReactNode; color?: string }) {
   return (
     <div className="rounded-xl bg-background px-3 py-2">
-      <p className="text-2xs uppercase tracking-wide text-muted-foreground">
-        {label}
-      </p>
-      <p className={cn("text-sm md:text-base font-bold", color)}>{value}</p>
+      <p className="text-2xs tracking-wide text-muted-foreground uppercase">{label}</p>
+      <p className={cn("text-sm font-bold md:text-base", color)}>{value}</p>
     </div>
   );
 }
@@ -54,22 +44,14 @@ export function SeriesDetail({ series, apiTeamId }: SeriesDetailProps) {
   const miseCumulee = bets.reduce((sum, b) => sum + b.stake, 0);
 
   const showAddBetForm = isEnCours && (bets.length === 0 || lastBetHasResult);
-  const showValidateForm =
-    isEnCours && lastBet !== null && lastBet.result === null;
+  const showValidateForm = isEnCours && lastBet !== null && lastBet.result === null;
 
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Hero serie */}
-      <div
-        className={cn(
-          "rounded-2xl bg-card p-4 md:p-5 border",
-          STATUS_BORDER[status]
-        )}
-      >
+      <div className={cn("rounded-2xl border bg-card p-4 md:p-5", STATUS_BORDER[status])}>
         <div className="flex items-start justify-between gap-3">
-          <h1 className="min-w-0 text-xl md:text-2xl font-bold text-foreground leading-tight">
-            {series.subject}
-          </h1>
+          <h1 className="min-w-0 text-xl leading-tight font-bold text-foreground md:text-2xl">{series.subject}</h1>
           <SeriesStatusBadge status={status} />
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -77,50 +59,24 @@ export function SeriesDetail({ series, apiTeamId }: SeriesDetailProps) {
         </p>
 
         <div className="mt-4 grid grid-cols-3 gap-2">
-          <StatTile
-            label="Objectif/pari"
-            value={<RollingNumber value={series.target_gain} format="euros" />}
-            color="text-primary"
-          />
-          <StatTile
-            label="Mise cumulée"
-            value={<RollingNumber value={miseCumulee} format="euros" />}
-          />
-          <StatTile
-            label="Paris"
-            value={<RollingNumber value={bets.length} format="int" />}
-          />
+          <StatTile label="Objectif/pari" value={<RollingNumber value={series.target_gain} format="euros" />} color="text-primary" />
+          <StatTile label="Mise cumulée" value={<RollingNumber value={miseCumulee} format="euros" />} />
+          <StatTile label="Paris" value={<RollingNumber value={bets.length} format="int" />} />
         </div>
 
         {showValidateForm && lastBet && (
           <div className="mt-2 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/10 px-3 py-2">
-            <span className="text-xs text-secondary-foreground">
-              Gain potentiel net si gagné
-            </span>
-            <RollingNumber
-              value={lastBet.potential_net}
-              format="euros"
-              className="text-base font-bold text-primary"
-            />
+            <span className="text-xs text-secondary-foreground">Gain potentiel net si gagné</span>
+            <RollingNumber value={lastBet.potential_net} format="euros" className="text-base font-bold text-primary" />
           </div>
         )}
 
-        {isEnCours && (
-          <div className="mt-3">
-            {bets.length === 0 ? (
-              <DeleteSeriesButton seriesId={series.id} />
-            ) : (
-              <AbandonDialog seriesId={series.id} />
-            )}
-          </div>
-        )}
+        {isEnCours && <div className="mt-3">{bets.length === 0 ? <DeleteSeriesButton seriesId={series.id} /> : <AbandonDialog seriesId={series.id} />}</div>}
       </div>
 
       {/* Paris */}
-      <div className="rounded-2xl bg-card p-4 md:p-5 border border-border/50">
-        <h2 className="mb-3 text-base md:text-lg font-bold text-foreground">
-          Paris
-        </h2>
+      <div className="rounded-2xl border border-border/50 bg-card p-4 md:p-5">
+        <h2 className="mb-3 text-base font-bold text-foreground md:text-lg">Paris</h2>
         <div className="space-y-5">
           <BetsTable bets={bets} />
 
@@ -142,12 +98,7 @@ export function SeriesDetail({ series, apiTeamId }: SeriesDetailProps) {
           )}
 
           {showValidateForm && lastBet && (
-            <ValidateResultForm
-              betId={lastBet.id}
-              stake={lastBet.stake}
-              potentialNet={lastBet.potential_net}
-              suggestion={lastBet}
-            />
+            <ValidateResultForm betId={lastBet.id} stake={lastBet.stake} potentialNet={lastBet.potential_net} suggestion={lastBet} />
           )}
         </div>
       </div>

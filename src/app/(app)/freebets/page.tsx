@@ -6,36 +6,23 @@ import { FreebetBetsList } from "@/components/freebets/freebet-bets-list";
 import { FreebetStatsCard } from "@/components/freebets/freebet-stats-card";
 
 export default async function FreebetsPage() {
-  const [freebets, freebetBets] = await Promise.all([
-    getFreebets(),
-    getFreebetBets(),
-  ]);
+  const [freebets, freebetBets] = await Promise.all([getFreebets(), getFreebetBets()]);
 
   const totalBalance = freebets.reduce((s, f) => s + f.remaining_amount, 0);
-  const totalUsed = freebetBets
-    .filter((b) => b.result !== null)
-    .reduce((s, b) => s + b.stake, 0);
-  const realGains = freebetBets
-    .filter((b) => b.result === "gagne")
-    .reduce((s, b) => s + (b.stake * b.odds - b.stake), 0);
+  const totalUsed = freebetBets.filter((b) => b.result !== null).reduce((s, b) => s + b.stake, 0);
+  const realGains = freebetBets.filter((b) => b.result === "gagne").reduce((s, b) => s + (b.stake * b.odds - b.stake), 0);
 
   return (
     <div className="space-y-4 pb-24">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-foreground">Freebets</h1>
-          <p className="text-xs text-muted-foreground">
-            Gérez vos crédits freebet et placez des paris
-          </p>
+          <p className="text-xs text-muted-foreground">Gérez vos crédits freebet et placez des paris</p>
         </div>
         <FreebetForm />
       </div>
 
-      <FreebetStatsCard
-        balance={Math.round(totalBalance * 100) / 100}
-        used={Math.round(totalUsed * 100) / 100}
-        realGains={Math.round(realGains * 100) / 100}
-      />
+      <FreebetStatsCard balance={Math.round(totalBalance * 100) / 100} used={Math.round(totalUsed * 100) / 100} realGains={Math.round(realGains * 100) / 100} />
 
       {freebets.length > 0 && <FreebetList freebets={freebets} />}
 

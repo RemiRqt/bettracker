@@ -7,24 +7,9 @@ import { cn } from "@/lib/utils";
  * ("modifie 42, augmente la police"). Les numéros sont alloués par tranches dans
  * chaque section, avec des trous pour insérer sans tout renuméroter.
  */
-export function Item({
-  id,
-  label,
-  hint,
-  children,
-  className,
-}: {
-  id: number;
-  label: string;
-  hint?: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
+export function Item({ id, label, hint, children, className }: { id: number; label: string; hint?: string; children: React.ReactNode; className?: string }) {
   return (
-    <div
-      id={`el-${id}`}
-      className="scroll-mt-32 rounded-lg border border-border/60 bg-background/40 p-4"
-    >
+    <div id={`el-${id}`} className="scroll-mt-32 rounded-lg border border-border/60 bg-background/40 p-4">
       <div className="mb-3 flex items-baseline gap-2">
         <span className="inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-md bg-primary/15 px-1.5 font-mono text-2xs font-bold text-primary ring-1 ring-primary/30">
           {id}
@@ -32,9 +17,7 @@ export function Item({
         <span className="text-sm font-medium text-secondary-foreground">{label}</span>
         {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
       </div>
-      <div className={cn("flex flex-wrap items-center gap-3", className)}>
-        {children}
-      </div>
+      <div className={cn("flex flex-wrap items-center gap-3", className)}>{children}</div>
     </div>
   );
 }
@@ -59,9 +42,7 @@ export function Section({
         <h2 className="text-lg font-semibold text-foreground">
           <span className="text-muted-foreground">{n}.</span> {title}
         </h2>
-        {description && (
-          <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
       </div>
       <div className="grid gap-3">{children}</div>
     </section>

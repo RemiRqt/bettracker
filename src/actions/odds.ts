@@ -1,9 +1,9 @@
 "use server";
 
-import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { BOOKMAKER_KEYS, SPORT_KEYS, getLeagueOdds } from "@/lib/odds-api";
 import { findEvent, outcomePrices, summarize, type OddsSummary } from "@/lib/odds-matching";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export interface MarketOddsInput {
   competitionCode: string | null;
@@ -29,17 +29,10 @@ export async function getMarketOdds(input: MarketOddsInput): Promise<MarketOddsR
   const { user } = await getAuthUser();
   if (!user) return null;
 
-  const { data: settings } = await supabase
-    .from("user_settings")
-    .select("bookmakers")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { data: settings } = await supabase.from("user_settings").select("bookmakers").eq("user_id", user.id).maybeSingle();
   const allowed = settings?.bookmakers ?? BOOKMAKER_KEYS;
 
-  const service = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  const service = createServiceClient();
   const events = await getLeagueOdds(service, sportKey);
   if (!events) return { unavailable: true };
 

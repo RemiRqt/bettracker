@@ -1,25 +1,14 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-} from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 import { Popup } from "@/components/kit/Popup";
 import { Loader2 } from "lucide-react";
 import { getBetFormData } from "@/actions/bets";
 import dynamic from "next/dynamic";
-import type {
-  ExistingSubject,
-  TeamMappingLite,
-} from "@/components/paris/bet-form-types";
+import type { ExistingSubject, TeamMappingLite } from "@/components/paris/bet-form-types";
 
 // Formulaire lourd chargé à la première ouverture, pas avec chaque page.
-const BetForm = dynamic(
-  () => import("@/components/paris/bet-form").then((m) => m.BetForm),
-  { ssr: false },
-);
+const BetForm = dynamic(() => import("@/components/paris/bet-form").then((m) => m.BetForm), { ssr: false });
 
 export interface BetPrefill {
   subject: string;
@@ -50,27 +39,19 @@ export function BetModalProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [prefill, setPrefill] = useState<BetPrefill | null>(null);
 
-  const openModal = useCallback(async (p?: BetPrefill) => {
+  const openModal = useCallback((p?: BetPrefill) => {
     setPrefill(p ?? null);
     setOpen(true);
     setLoading(true);
-    try {
-      const d = await getBetFormData();
-      setData(d as FormData);
-    } finally {
-      setLoading(false);
-    }
+    void getBetFormData()
+      .then((d) => setData(d as FormData))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
     <BetModalContext.Provider value={{ open: openModal }}>
       {children}
-      <Popup
-        ouvert={open}
-        fermer={() => setOpen(false)}
-        titre="Nouveau pari"
-        description="Recherche une équipe ou un joueur"
-      >
+      <Popup ouvert={open} fermer={() => setOpen(false)} titre="Nouveau pari" description="Recherche une équipe ou un joueur">
         {loading || !data ? (
           <div role="status" className="flex items-center justify-center py-10 text-muted-foreground">
             <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />

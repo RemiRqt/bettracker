@@ -3,10 +3,7 @@
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-export async function validateResult(
-  betId: string,
-  result: "gagne" | "perdu"
-) {
+export async function validateResult(betId: string, result: "gagne" | "perdu") {
   const supabase = await createClient();
 
   const { user, error: authError } = await getAuthUser();
@@ -16,11 +13,7 @@ export async function validateResult(
   }
 
   // Fetch the bet to find its series_id
-  const { data: bet, error: betError } = await supabase
-    .from("bets")
-    .select("id, series_id, result")
-    .eq("id", betId)
-    .single();
+  const { data: bet, error: betError } = await supabase.from("bets").select("id, series_id, result").eq("id", betId).single();
 
   if (betError || !bet) {
     return { error: "Pari introuvable." };
@@ -31,10 +24,7 @@ export async function validateResult(
   }
 
   // Update the bet result
-  const { error: updateError } = await supabase
-    .from("bets")
-    .update({ result })
-    .eq("id", betId);
+  const { error: updateError } = await supabase.from("bets").update({ result }).eq("id", betId);
 
   if (updateError) {
     return { error: `Erreur lors de la mise a jour du resultat: ${updateError.message}` };
@@ -42,22 +32,23 @@ export async function validateResult(
 
   // If the bet is won, mark the series as won
   if (result === "gagne") {
-    const { error: seriesError } = await supabase
-      .from("series")
-      .update({ status: "gagnee" })
-      .eq("id", bet.series_id);
+    const { error: seriesError } = await supabase.from("series").update({ status: "gagnee" }).eq("id", bet.series_id);
 
     if (seriesError) {
       return { error: `Erreur lors de la mise a jour de la serie: ${seriesError.message}` };
     }
   }
 
-  revalidatePath("/");
-  revalidatePath(`/series/${bet.series_id}`);
-  revalidatePath("/series");
-  revalidatePath("/series/new");
+  revalidateSeriesPages(bet.series_id);
 
   return { success: true };
+}
+
+function revalidateSeriesPages(seriesId: string) {
+  revalidatePath("/");
+  revalidatePath(`/series/${seriesId}`);
+  revalidatePath("/series");
+  revalidatePath("/series/new");
 }
 
 export async function deleteBet(betId: string) {
@@ -69,11 +60,7 @@ export async function deleteBet(betId: string) {
     throw new Error("Vous devez etre connecte.");
   }
 
-  const { data: bet, error: betError } = await supabase
-    .from("bets")
-    .select("id, series_id, bet_number")
-    .eq("id", betId)
-    .single();
+  const { data: bet, error: betError } = await supabase.from("bets").select("id, series_id, bet_number").eq("id", betId).single();
 
   if (betError || !bet) {
     return { error: "Pari introuvable." };
@@ -82,19 +69,13 @@ export async function deleteBet(betId: string) {
   // If this is the first bet of the series, delete the entire series
   // (the bet will be deleted automatically via ON DELETE CASCADE)
   if (bet.bet_number === 1) {
-    const { error: seriesDeleteError } = await supabase
-      .from("series")
-      .delete()
-      .eq("id", bet.series_id);
+    const { error: seriesDeleteError } = await supabase.from("series").delete().eq("id", bet.series_id);
 
     if (seriesDeleteError) {
       return { error: `Erreur: ${seriesDeleteError.message}` };
     }
   } else {
-    const { error: deleteError } = await supabase
-      .from("bets")
-      .delete()
-      .eq("id", betId);
+    const { error: deleteError } = await supabase.from("bets").delete().eq("id", betId);
 
     if (deleteError) {
       return { error: `Erreur: ${deleteError.message}` };
@@ -109,10 +90,7 @@ export async function deleteBet(betId: string) {
   return { success: true };
 }
 
-export async function updateBet(
-  betId: string,
-  data: { odds?: number; stake?: number }
-) {
+export async function updateBet(betId: string, data: { odds?: number; stake?: number }) {
   const supabase = await createClient();
 
   const { user, error: authError } = await getAuthUser();
@@ -121,11 +99,7 @@ export async function updateBet(
     throw new Error("Vous devez etre connecte.");
   }
 
-  const { data: bet, error: betError } = await supabase
-    .from("bets")
-    .select("id, series_id, odds, stake, bet_number")
-    .eq("id", betId)
-    .single();
+  const { data: bet, error: betError } = await supabase.from("bets").select("id, series_id, odds, stake, bet_number").eq("id", betId).single();
 
   if (betError || !bet) {
     return { error: "Pari introuvable." };
@@ -138,19 +112,12 @@ export async function updateBet(
   if (newStake <= 0) return { error: "La mise doit etre positive." };
 
   // Recalculate potential_net
-  const { data: prevBets } = await supabase
-    .from("bets")
-    .select("stake")
-    .eq("series_id", bet.series_id)
-    .lt("bet_number", bet.bet_number);
+  const { data: prevBets } = await supabase.from("bets").select("stake").eq("series_id", bet.series_id).lt("bet_number", bet.bet_number);
 
   const sumPrev = (prevBets ?? []).reduce((s, b) => s + b.stake, 0);
   const potential_net = Math.round((newStake * newOdds - newStake - sumPrev) * 100) / 100;
 
-  const { error: updateError } = await supabase
-    .from("bets")
-    .update({ odds: newOdds, stake: newStake, potential_net })
-    .eq("id", betId);
+  const { error: updateError } = await supabase.from("bets").update({ odds: newOdds, stake: newStake, potential_net }).eq("id", betId);
 
   if (updateError) {
     return { error: `Erreur: ${updateError.message}` };

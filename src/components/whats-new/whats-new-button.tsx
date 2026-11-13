@@ -5,10 +5,7 @@ import { ChevronRight, Sparkles } from "lucide-react";
 import { RELEASES } from "@/lib/releases";
 import dynamic from "next/dynamic";
 
-const WhatsNewDialog = dynamic(
-  () => import("./whats-new-dialog").then((m) => m.WhatsNewDialog),
-  { ssr: false },
-);
+const WhatsNewDialog = dynamic(() => import("./whats-new-dialog").then((m) => m.WhatsNewDialog), { ssr: false });
 
 /** Profil : revoir les nouveautés de la dernière version. */
 export function WhatsNewButton() {

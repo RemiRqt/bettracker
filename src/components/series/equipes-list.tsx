@@ -23,23 +23,3 @@ export type EquipeSeries = {
   netProfit: number;
   roi: number;
 };
-
-export type Equipe = {
-  subject: string;
-  bet_type: string;
-  sport: string;
-  totalStake: number;
-  netProfit: number;
-  roi: number;
-  seriesCount: number;
-  betsCount: number;
-  wonCount: number;
-  abandonedCount: number;
-  enCoursCount: number;
-  series: EquipeSeries[];
-  lastBetDate: string;
-  lastSeriesStatus: string;
-  totalWonAmount: number;
-  totalLostStake: number;
-  potentialGains: number;
-};

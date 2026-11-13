@@ -13,13 +13,7 @@ function OddsVisual() {
           { label: "N", price: "12.00", bk: "Unibet" },
           { label: "Le Mans", price: "23.00", bk: "Betclic" },
         ].map((c) => (
-          <div
-            key={c.label}
-            className={cn(
-              "flex flex-1 flex-col items-center rounded-lg bg-background py-1.5",
-              c.best && "ring-1 ring-primary",
-            )}
-          >
+          <div key={c.label} className={cn("flex flex-1 flex-col items-center rounded-lg bg-background py-1.5", c.best && "ring-1 ring-primary")}>
             <span className="text-2xs text-muted-foreground">{c.label}</span>
             <span className="text-base font-bold text-foreground">{c.price}</span>
             <span className="text-2xs text-muted-foreground">{c.bk}</span>
@@ -42,9 +36,7 @@ function ResultVisual() {
   return (
     <div className="w-full space-y-2">
       <div className="flex items-center gap-2 rounded-xl bg-background/80 p-2 shadow-sm">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-2xs font-black text-primary-foreground">
-          BT
-        </div>
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-2xs font-black text-primary-foreground">BT</div>
         <div className="min-w-0 text-left">
           <p className="text-xs font-semibold text-foreground">PSG 2-1</p>
           <p className="truncate text-2xs text-muted-foreground">Pari n°3 gagné ? Confirme en un tap</p>
@@ -139,4 +131,3 @@ export function ReleaseVisualView({ visual }: { visual: ReleaseVisual }) {
   const V = VISUALS[visual];
   return <V />;
 }
-

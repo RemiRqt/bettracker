@@ -22,11 +22,7 @@ export function isNoonInParis(now = new Date()): boolean {
 
 /** sport_keys des championnats à rafraîchir (matchs des équipes suivies sous 7 jours). */
 async function leaguesToRefresh(service: SupabaseClient): Promise<string[]> {
-  const { data } = await service
-    .from("team_mappings")
-    .select("cached_fixtures")
-    .eq("is_followed", true)
-    .not("cached_fixtures", "is", null);
+  const { data } = await service.from("team_mappings").select("cached_fixtures").eq("is_followed", true).not("cached_fixtures", "is", null);
 
   const now = Date.now();
   const keys = new Set<string>();
@@ -45,6 +41,7 @@ export async function runCalendarOdds(service: SupabaseClient): Promise<Calendar
   const leagues = await leaguesToRefresh(service);
   const failed: string[] = [];
   for (const key of leagues) {
+    // eslint-disable-next-line no-await-in-loop -- appels The Odds API volontairement séquentiels (crédits et quota du fournisseur)
     const events = await getLeagueOdds(service, key);
     if (!events) failed.push(key);
   }

@@ -1,17 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,20 +14,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { useConfirm } from "@/components/ui/confirm-dialog";
+import { Confirmation } from "@/components/kit/Confirmation";
 import { Item, Section } from "./item";
 
 export function FeedbackSection() {
   const { toast } = useToast();
-  const confirm = useConfirm();
 
   return (
-    <Section
-      anchor="feedback"
-      n={7}
-      title="Feedback & overlays"
-      description="Dialogs, confirmations, toasts, menus, skeletons."
-    >
+    <Section anchor="feedback" n={7} title="Feedback & overlays" description="Dialogs, confirmations, toasts, menus, skeletons.">
       <Item id={120} label="Dialog" hint="modale">
         <Dialog>
           <DialogTrigger asChild>
@@ -44,9 +30,7 @@ export function FeedbackSection() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Nouvelle série</DialogTitle>
-              <DialogDescription>
-                Configure ta série de paris.
-              </DialogDescription>
+              <DialogDescription>Configure ta série de paris.</DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <DialogClose asChild>
@@ -60,39 +44,8 @@ export function FeedbackSection() {
         </Dialog>
       </Item>
 
-      <Item id={121} label="Confirm — default" hint="useConfirm">
-        <Button
-          variant="outline"
-          onClick={async () => {
-            const ok = await confirm({
-              title: "Valider ce pari ?",
-              description: "Le résultat sera enregistré.",
-            });
-            toast({ title: ok ? "Confirmé" : "Annulé" });
-          }}
-        >
-          Confirmer une action
-        </Button>
-      </Item>
-
-      <Item id={122} label="Confirm — destructive" hint="variant destructive">
-        <Button
-          variant="destructive"
-          onClick={async () => {
-            const ok = await confirm({
-              title: "Supprimer la série ?",
-              description: "Cette action est irréversible.",
-              confirmLabel: "Supprimer",
-              variant: "destructive",
-            });
-            toast({
-              title: ok ? "Série supprimée" : "Annulé",
-              variant: ok ? "destructive" : "default",
-            });
-          }}
-        >
-          Supprimer
-        </Button>
+      <Item id={121} label="Confirmation — action irréversible" hint="kit/Confirmation">
+        <DemoConfirmation surConfirmer={() => toast({ title: "Série supprimée", variant: "destructive" })} />
       </Item>
 
       <Item id={123} label="Toast — succès" hint="toast()">
@@ -135,9 +88,7 @@ export function FeedbackSection() {
             <DropdownMenuSeparator />
             <DropdownMenuItem>Modifier</DropdownMenuItem>
             <DropdownMenuItem>Dupliquer</DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">
-              Supprimer
-            </DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive">Supprimer</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </Item>
@@ -157,5 +108,25 @@ export function FeedbackSection() {
         </div>
       </Item>
     </Section>
+  );
+}
+
+/** Démo de kit/Confirmation : réservée aux actions irréversibles (les autres passent par le toast « Annuler »). */
+function DemoConfirmation({ surConfirmer }: { surConfirmer: () => void }) {
+  const [ouvert, setOuvert] = useState(false);
+  return (
+    <>
+      <Button variant="destructive" onClick={() => setOuvert(true)}>
+        Supprimer
+      </Button>
+      <Confirmation
+        ouvert={ouvert}
+        fermer={() => setOuvert(false)}
+        titre="Supprimer la série ?"
+        message="Cette action est irréversible."
+        libelleAction="Supprimer"
+        surConfirmer={surConfirmer}
+      />
+    </>
   );
 }

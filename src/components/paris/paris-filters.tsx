@@ -23,18 +23,25 @@ const SORTS: { key: SortKey; label: string; srLabel: string }[] = [
 
 function matchFilter(b: Bet, filter: FilterValue) {
   switch (filter) {
-    case "en_cours": return b.result === null;
-    case "gagne": return b.result === "gagne";
-    case "perdu": return b.result === "perdu";
+    case "en_cours":
+      return b.result === null;
+    case "gagne":
+      return b.result === "gagne";
+    case "perdu":
+      return b.result === "perdu";
   }
 }
 
 function compare(a: Bet, b: Bet, sortBy: SortKey) {
   switch (sortBy) {
-    case "date": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    case "gains": return b.potential_net - a.potential_net;
-    case "mise": return b.stake - a.stake;
-    case "cote": return b.odds - a.odds;
+    case "date":
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    case "gains":
+      return b.potential_net - a.potential_net;
+    case "mise":
+      return b.stake - a.stake;
+    case "cote":
+      return b.odds - a.odds;
   }
 }
 
@@ -53,11 +60,14 @@ export function useParisTri(bets: Bet[], initialFilter: FilterKey) {
     }
   }
 
-  const counts = useMemo(() => ({
-    en_cours: bets.filter((b) => matchFilter(b, "en_cours")).length,
-    gagne: bets.filter((b) => matchFilter(b, "gagne")).length,
-    perdu: bets.filter((b) => matchFilter(b, "perdu")).length,
-  }), [bets]);
+  const counts = useMemo(
+    () => ({
+      en_cours: bets.filter((b) => matchFilter(b, "en_cours")).length,
+      gagne: bets.filter((b) => matchFilter(b, "gagne")).length,
+      perdu: bets.filter((b) => matchFilter(b, "perdu")).length,
+    }),
+    [bets],
+  );
 
   const sorted = useMemo(() => {
     const arr = filter === null ? [...bets] : bets.filter((b) => matchFilter(b, filter));
@@ -87,10 +97,8 @@ export function ParisFiltres({ tri }: { tri: Tri }) {
           aria-pressed={filter === f.key}
           onClick={() => setFilter(filter === f.key ? null : f.key)}
           className={cn(
-            "relative py-2 before:absolute before:-inset-y-1.5 before:inset-x-0 rounded-xl text-xs font-semibold transition-colors border",
-            filter === f.key
-              ? `${f.activeColor} ${f.color}`
-              : "bg-transparent text-muted-foreground border-border/50 hover:border-border"
+            "relative rounded-xl border py-2 text-xs font-semibold transition-colors before:absolute before:inset-x-0 before:-inset-y-1.5",
+            filter === f.key ? `${f.activeColor} ${f.color}` : "border-border/50 bg-transparent text-muted-foreground hover:border-border",
           )}
         >
           {f.label}
@@ -112,25 +120,15 @@ export function ParisTri({ tri }: { tri: Tri }) {
             key={s.key}
             type="button"
             aria-pressed={isActive}
-            aria-label={
-              isActive
-                ? `Trier par ${s.srLabel}, ${sortAsc ? "croissant" : "décroissant"}`
-                : `Trier par ${s.srLabel}`
-            }
+            aria-label={isActive ? `Trier par ${s.srLabel}, ${sortAsc ? "croissant" : "décroissant"}` : `Trier par ${s.srLabel}`}
             onClick={() => handleSort(s.key)}
             className={cn(
-              "relative before:absolute before:-top-1.5 before:-bottom-2.5 before:inset-x-0 flex items-center justify-center gap-0.5 py-1.5 rounded-lg text-2xs font-medium transition-colors border",
-              isActive
-                ? "bg-primary/20 text-primary border-primary/30"
-                : "bg-card text-muted-foreground border-border hover:border-border/80"
+              "relative flex items-center justify-center gap-0.5 rounded-lg border py-1.5 text-2xs font-medium transition-colors before:absolute before:inset-x-0 before:-top-1.5 before:-bottom-2.5",
+              isActive ? "border-primary/30 bg-primary/20 text-primary" : "border-border bg-card text-muted-foreground hover:border-border/80",
             )}
           >
             {s.label}
-            {isActive && (
-              sortAsc
-                ? <ChevronUp className="h-3 w-3" aria-hidden="true" />
-                : <ChevronDown className="h-3 w-3" aria-hidden="true" />
-            )}
+            {isActive && (sortAsc ? <ChevronUp className="h-3 w-3" aria-hidden="true" /> : <ChevronDown className="h-3 w-3" aria-hidden="true" />)}
           </button>
         );
       })}

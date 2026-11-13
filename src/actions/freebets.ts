@@ -46,22 +46,13 @@ export async function deleteFreebet(id: string) {
   const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez être connecté.");
 
-  const { data: pending } = await supabase
-    .from("freebet_bets")
-    .select("id")
-    .eq("freebet_id", id)
-    .is("result", null)
-    .limit(1);
+  const { data: pending } = await supabase.from("freebet_bets").select("id").eq("freebet_id", id).is("result", null).limit(1);
 
   if (pending && pending.length > 0) {
     return { error: "Impossible de supprimer : des paris sont en attente." };
   }
 
-  const { error } = await supabase
-    .from("freebets")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
+  const { error } = await supabase.from("freebets").delete().eq("id", id).eq("user_id", user.id);
 
   if (error) return { error: `Erreur: ${error.message}` };
 
@@ -89,11 +80,70 @@ export async function getFreebetBets(): Promise<(FreebetBet & { freebet_source: 
   })) as (FreebetBet & { freebet_source: string })[];
 }
 
-export async function placeFreebetBet(data: {
-  subject: string;
-  odds: number;
-  stake: number;
-}) {
+type Consumption = { id: string; oldAmount: number; deducted: number };
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+/** Consomme les freebets du plus ancien au plus récent (FIFO). */
+function planConsumptions(freebets: { id: string; remaining_amount: number }[], stake: number): Consumption[] {
+  let remaining = stake;
+  const consumptions: Consumption[] = [];
+  for (const fb of freebets) {
+    if (remaining <= 0) break;
+    const deducted = Math.min(fb.remaining_amount, remaining);
+    consumptions.push({ id: fb.id, oldAmount: fb.remaining_amount, deducted });
+    remaining = Math.round((remaining - deducted) * 100) / 100;
+  }
+  return consumptions;
+}
+
+async function restoreAmounts(supabase: SupabaseClient, consumptions: Consumption[]) {
+  await Promise.all(consumptions.map((c) => supabase.from("freebets").update({ remaining_amount: c.oldAmount }).eq("id", c.id)));
+}
+
+/** Déduit chaque consommation ; en cas d'erreur, restaure celles qui ont réussi et renvoie le message. */
+async function applyDeductions(supabase: SupabaseClient, consumptions: Consumption[]): Promise<string | null> {
+  const results = await Promise.all(
+    consumptions.map((c) =>
+      supabase
+        .from("freebets")
+        .update({ remaining_amount: Math.round((c.oldAmount - c.deducted) * 100) / 100 })
+        .eq("id", c.id),
+    ),
+  );
+  const firstError = results.find((r) => r.error)?.error;
+  if (!firstError) return null;
+  await restoreAmounts(
+    supabase,
+    consumptions.filter((_, i) => !results[i].error),
+  );
+  return firstError.message;
+}
+
+/** Freebets avec solde restant, du plus ancien au plus récent (FIFO), après contrôle du solde total. */
+async function getAvailableFreebets(
+  supabase: SupabaseClient,
+  userId: string,
+  stake: number,
+): Promise<{ freebets: { id: string; remaining_amount: number }[] } | { error: string }> {
+  const { data: freebets } = await supabase
+    .from("freebets")
+    .select("id, remaining_amount")
+    .eq("user_id", userId)
+    .gt("remaining_amount", 0)
+    .order("created_at", { ascending: true });
+
+  if (!freebets || freebets.length === 0) {
+    return { error: "Aucun freebet disponible." };
+  }
+
+  const totalBalance = freebets.reduce((s, f) => s + f.remaining_amount, 0);
+  if (totalBalance < stake) {
+    return { error: `Solde insuffisant (${Math.round(totalBalance * 100) / 100}€ disponible).` };
+  }
+  return { freebets };
+}
+
+export async function placeFreebetBet(data: { subject: string; odds: number; stake: number }) {
   const { subject, odds, stake } = data;
 
   if (!subject?.trim()) return { error: "Le sujet est requis." };
@@ -106,54 +156,18 @@ export async function placeFreebetBet(data: {
 
   const roundedStake = Math.round(stake * 100) / 100;
 
-  // Get freebets with remaining balance, oldest first (FIFO)
-  const { data: freebets } = await supabase
-    .from("freebets")
-    .select("id, remaining_amount")
-    .eq("user_id", user.id)
-    .gt("remaining_amount", 0)
-    .order("created_at", { ascending: true });
+  const available = await getAvailableFreebets(supabase, user.id, roundedStake);
+  if ("error" in available) return { error: available.error };
+  const freebets = available.freebets;
 
-  if (!freebets || freebets.length === 0) {
-    return { error: "Aucun freebet disponible." };
-  }
-
-  const totalBalance = freebets.reduce((s, f) => s + f.remaining_amount, 0);
-  if (totalBalance < roundedStake) {
-    return { error: `Solde insuffisant (${Math.round(totalBalance * 100) / 100}€ disponible).` };
-  }
-
-  // Consume from oldest to newest
-  let remaining = roundedStake;
-  const consumptions: { id: string; oldAmount: number; deducted: number }[] = [];
-
-  for (const fb of freebets) {
-    if (remaining <= 0) break;
-    const deducted = Math.min(fb.remaining_amount, remaining);
-    consumptions.push({ id: fb.id, oldAmount: fb.remaining_amount, deducted });
-    remaining = Math.round((remaining - deducted) * 100) / 100;
-  }
+  const consumptions = planConsumptions(freebets, roundedStake);
 
   // Use the first consumed freebet as the freebet_id for the bet record
   const primaryFreebetId = consumptions[0].id;
 
-  // Deduct from each freebet
-  for (const c of consumptions) {
-    const newAmount = Math.round((c.oldAmount - c.deducted) * 100) / 100;
-    const { error: decError } = await supabase
-      .from("freebets")
-      .update({ remaining_amount: newAmount })
-      .eq("id", c.id);
-
-    if (decError) {
-      // Rollback previous deductions
-      for (const prev of consumptions) {
-        if (prev.id === c.id) break;
-        await supabase.from("freebets").update({ remaining_amount: prev.oldAmount }).eq("id", prev.id);
-      }
-      return { error: `Erreur: ${decError.message}` };
-    }
-  }
+  // Deduct from each freebet (rows indépendantes : mises à jour en parallèle, rollback des réussies si échec)
+  const decError = await applyDeductions(supabase, consumptions);
+  if (decError) return { error: `Erreur: ${decError}` };
 
   const { error: insertError } = await supabase.from("freebet_bets").insert({
     user_id: user.id,
@@ -166,9 +180,7 @@ export async function placeFreebetBet(data: {
 
   if (insertError) {
     // Rollback all deductions
-    for (const c of consumptions) {
-      await supabase.from("freebets").update({ remaining_amount: c.oldAmount }).eq("id", c.id);
-    }
+    await restoreAmounts(supabase, consumptions);
     return { error: `Erreur: ${insertError.message}` };
   }
 
@@ -182,20 +194,12 @@ export async function validateFreebetResult(betId: string, result: "gagne" | "pe
   const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez être connecté.");
 
-  const { data: bet } = await supabase
-    .from("freebet_bets")
-    .select("id, result")
-    .eq("id", betId)
-    .eq("user_id", user.id)
-    .single();
+  const { data: bet } = await supabase.from("freebet_bets").select("id, result").eq("id", betId).eq("user_id", user.id).single();
 
   if (!bet) return { error: "Pari introuvable." };
   if (bet.result !== null) return { error: "Ce pari a déjà un résultat." };
 
-  const { error } = await supabase
-    .from("freebet_bets")
-    .update({ result })
-    .eq("id", betId);
+  const { error } = await supabase.from("freebet_bets").update({ result }).eq("id", betId);
 
   if (error) return { error: `Erreur: ${error.message}` };
 
@@ -209,22 +213,13 @@ export async function deleteFreebetBet(betId: string) {
   const { user, error: authError } = await getAuthUser();
   if (authError || !user) throw new Error("Vous devez être connecté.");
 
-  const { data: bet } = await supabase
-    .from("freebet_bets")
-    .select("id, freebet_id, stake, result")
-    .eq("id", betId)
-    .eq("user_id", user.id)
-    .single();
+  const { data: bet } = await supabase.from("freebet_bets").select("id, freebet_id, stake, result").eq("id", betId).eq("user_id", user.id).single();
 
   if (!bet) return { error: "Pari introuvable." };
 
   // Restore freebet balance if bet was pending
   if (bet.result === null) {
-    const { data: freebet } = await supabase
-      .from("freebets")
-      .select("remaining_amount")
-      .eq("id", bet.freebet_id)
-      .single();
+    const { data: freebet } = await supabase.from("freebets").select("remaining_amount").eq("id", bet.freebet_id).single();
 
     if (freebet) {
       await supabase
@@ -236,10 +231,7 @@ export async function deleteFreebetBet(betId: string) {
     }
   }
 
-  const { error } = await supabase
-    .from("freebet_bets")
-    .delete()
-    .eq("id", betId);
+  const { error } = await supabase.from("freebet_bets").delete().eq("id", betId);
 
   if (error) return { error: `Erreur: ${error.message}` };
 

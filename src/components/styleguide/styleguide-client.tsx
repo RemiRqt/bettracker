@@ -24,13 +24,10 @@ export function StyleguideClient() {
   return (
     <div className="pb-6">
       <header className="py-4">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Styleguide
-        </h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Styleguide</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Charte graphique vivante de BetTracker. Chaque élément porte un numéro{" "}
-          <span className="font-mono text-primary">#NN</span> — réfère-toi à
-          lui pour tes demandes (ex. « modifie 42 »).
+          Charte graphique vivante de BetTracker. Chaque élément porte un numéro <span className="font-mono text-primary">#NN</span> — réfère-toi à lui pour tes
+          demandes (ex. « modifie 42 »).
         </p>
       </header>
 

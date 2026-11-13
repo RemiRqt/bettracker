@@ -40,21 +40,10 @@ export function BottomNav() {
         key={l.href}
         href={l.href}
         aria-current={active ? "page" : undefined}
-        className="relative z-10 flex flex-1 h-full flex-col items-center justify-center gap-0.5 transition-transform active:scale-95"
+        className="relative z-10 flex h-full flex-1 flex-col items-center justify-center gap-0.5 transition-transform active:scale-95"
       >
-        <Icon
-          aria-hidden
-          className={cn(
-            "size-[1.1rem] transition-colors",
-            active ? "text-primary" : "text-muted-foreground"
-          )}
-        />
-        <span
-          className={cn(
-            "text-[0.65rem] leading-tight tracking-wide transition-colors",
-            active ? "font-medium text-primary" : "text-muted-foreground"
-          )}
-        >
+        <Icon aria-hidden className={cn("size-[1.1rem] transition-colors", active ? "text-primary" : "text-muted-foreground")} />
+        <span className={cn("text-xs leading-tight tracking-wide transition-colors", active ? "font-medium text-primary" : "text-muted-foreground")}>
           {l.label}
         </span>
       </Link>
@@ -62,12 +51,9 @@ export function BottomNav() {
   };
 
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-50 md:hidden pointer-events-none"
-      aria-label="Navigation principale"
-    >
+    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-50 md:hidden" aria-label="Navigation principale">
       <div className="pointer-events-auto mx-auto max-w-md px-3 pb-3">
-        <div className="relative flex justify-around items-stretch h-14 rounded-full border border-border/50 bg-card/90 backdrop-blur-md shadow-lg px-2">
+        <div className="relative flex h-14 items-stretch justify-around rounded-full border border-border/50 bg-card/90 px-2 shadow-lg backdrop-blur-md">
           {renderLink(LINKS[0])}
           {renderLink(LINKS[1])}
 

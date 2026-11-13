@@ -15,9 +15,7 @@ interface WhatsNewDialogProps {
 
 /** Carrousel des nouveautés : maquette visuelle, titre court, une ligne. */
 export function WhatsNewDialog({ releases, open, onClose }: WhatsNewDialogProps) {
-  const slides: (ReleaseSlide & { release: string })[] = releases.flatMap((r) =>
-    r.slides.map((s) => ({ ...s, release: r.title })),
-  );
+  const slides: (ReleaseSlide & { release: string })[] = releases.flatMap((r) => r.slides.map((s) => ({ ...s, release: r.title })));
   const [index, setIndex] = useState(0);
   const touchX = useRef<number | null>(null);
   const router = useRouter();
@@ -39,11 +37,9 @@ export function WhatsNewDialog({ releases, open, onClose }: WhatsNewDialogProps)
           touchX.current = null;
         }}
       >
-        <div className="relative bg-primary/10 px-5 pb-6 pt-8">
-          <p className="absolute left-5 top-3 text-2xs font-semibold uppercase tracking-wide text-primary">
-            {slide.release}
-          </p>
-          <span className="absolute right-12 top-3 text-2xs font-semibold text-muted-foreground">
+        <div className="relative bg-primary/10 px-5 pt-8 pb-6">
+          <p className="absolute top-3 left-5 text-2xs font-semibold tracking-wide text-primary uppercase">{slide.release}</p>
+          <span className="absolute top-3 right-12 text-2xs font-semibold text-muted-foreground">
             {index + 1}/{slides.length}
           </span>
           <div key={index} className="wn-slide-in flex min-h-[132px] items-center">
@@ -59,7 +55,7 @@ export function WhatsNewDialog({ releases, open, onClose }: WhatsNewDialogProps)
               type="button"
               onClick={() => {
                 onClose();
-                router.push(slide.cta!.href);
+                if (slide.cta) router.push(slide.cta.href);
               }}
               className="pt-1 text-sm font-medium text-primary"
             >

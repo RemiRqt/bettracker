@@ -112,7 +112,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -122,8 +124,7 @@
 @layer base {
   * {
     @apply border-border;
-    transition-property: color, background-color, border-color, box-shadow,
-      opacity, transform;
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 150ms;
   }
@@ -172,23 +173,54 @@
   }
 }
 
-@keyframes splash-logo { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-@keyframes splash-out  { to { opacity: 0; visibility: hidden; } }
+@keyframes splash-logo {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes splash-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .splash-logo-anim { animation: none !important; opacity: 1 !important; }
+  .splash-logo-anim {
+    animation: none !important;
+    opacity: 1 !important;
+  }
 }
 
 /* Popup Nouveautés : entrée de chaque maquette */
 @keyframes wn-slide-in {
-  from { opacity: 0; transform: translateX(16px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
-.wn-slide-in { animation: wn-slide-in 300ms ease-out; }
+.wn-slide-in {
+  animation: wn-slide-in 300ms ease-out;
+}
 @media (prefers-reduced-motion: reduce) {
-  .wn-slide-in { animation: none; }
+  .wn-slide-in {
+    animation: none;
+  }
 }
 
 /* Zoom autorisé : champs à 16 px mini sur écran tactile pour éviter le zoom auto d'iOS au focus. */
 @media (pointer: coarse) {
-  input, textarea, select { font-size: max(16px, 1em); }
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
 }

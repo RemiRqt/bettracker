@@ -14,9 +14,5 @@ interface SeriesStatusBadgeProps {
 }
 
 export function SeriesStatusBadge({ status }: SeriesStatusBadgeProps) {
-  return (
-    <Badge className={cn("text-2xs px-1.5 py-0", DARK_STATUS_COLORS[status])}>
-      {SERIES_STATUSES[status]}
-    </Badge>
-  );
+  return <Badge className={cn("px-1.5 py-0 text-2xs", DARK_STATUS_COLORS[status])}>{SERIES_STATUSES[status]}</Badge>;
 }

@@ -5,23 +5,10 @@ import { Input } from "@/components/ui/input";
 import { ChampNombre } from "@/components/kit/ChampNombre";
 import { Puces } from "@/components/kit/Puces";
 import { Bouton } from "@/components/kit/Bouton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Item, Section } from "./item";
 
 const SPORTS_DEMO = ["Football", "Tennis", "Rugby", "Basket"] as const;
@@ -32,20 +19,14 @@ export function FormsSection() {
   const [sports, setSports] = useState<string[]>(["Football"]);
   const [enCours, setEnCours] = useState(false);
 
-  const basculerSport = (s: string) =>
-    setSports((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
+  const basculerSport = (s: string) => setSports((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
   const simulerEnvoi = () => {
     setEnCours(true);
     setTimeout(() => setEnCours(false), 1500);
   };
 
   return (
-    <Section
-      anchor="forms"
-      n={6}
-      title="Formulaires & données"
-      description="Champs, sélecteurs, onglets et tableaux."
-    >
+    <Section anchor="forms" n={6} title="Formulaires & données" description="Champs, sélecteurs, onglets et tableaux.">
       <Item id={100} label="Input" hint="texte" className="block">
         <Input placeholder="Nom de la série" />
       </Item>

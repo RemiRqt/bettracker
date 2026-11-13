@@ -32,17 +32,10 @@ export function FreebetList({ freebets }: FreebetListProps) {
     if (confirmId === id) {
       return (
         <div className="flex gap-1">
-          <button
-            onClick={() => handleDelete(id)}
-            disabled={deletingId === id}
-            className="text-xs text-destructive hover:text-destructive cursor-pointer"
-          >
+          <button onClick={() => handleDelete(id)} disabled={deletingId === id} className="cursor-pointer text-xs text-destructive hover:text-destructive">
             Oui
           </button>
-          <button
-            onClick={() => setConfirmId(null)}
-            className="text-xs text-muted-foreground hover:text-secondary-foreground cursor-pointer"
-          >
+          <button onClick={() => setConfirmId(null)} className="cursor-pointer text-xs text-muted-foreground hover:text-secondary-foreground">
             Non
           </button>
         </div>
@@ -52,7 +45,7 @@ export function FreebetList({ freebets }: FreebetListProps) {
       <button
         onClick={() => setConfirmId(id)}
         aria-label="Supprimer ce freebet"
-        className="relative text-muted-foreground hover:text-destructive cursor-pointer before:absolute before:-inset-3 before:content-['']"
+        className="relative cursor-pointer text-muted-foreground before:absolute before:-inset-3 before:content-[''] hover:text-destructive"
       >
         <Trash2 aria-hidden className="h-3.5 w-3.5" />
       </button>
@@ -65,41 +58,24 @@ export function FreebetList({ freebets }: FreebetListProps) {
 
       {/* Active freebets — full card with progress bar */}
       {active.map((fb) => {
-        const usedPercent =
-          fb.initial_amount > 0
-            ? ((fb.initial_amount - fb.remaining_amount) / fb.initial_amount) * 100
-            : 0;
+        const usedPercent = fb.initial_amount > 0 ? ((fb.initial_amount - fb.remaining_amount) / fb.initial_amount) * 100 : 0;
 
         return (
-          <div
-            key={fb.id}
-            className="rounded-xl bg-card p-3 border border-warning/20"
-          >
-            <div className="flex items-center justify-between mb-2">
+          <div key={fb.id} className="rounded-xl border border-warning/20 bg-card p-3">
+            <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Ticket className="h-4 w-4 text-warning" />
-                <span className="text-sm font-bold text-warning">
-                  {formatEuros(fb.remaining_amount)}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  / {formatEuros(fb.initial_amount)}
-                </span>
+                <span className="text-sm font-bold text-warning">{formatEuros(fb.remaining_amount)}</span>
+                <span className="text-xs text-muted-foreground">/ {formatEuros(fb.initial_amount)}</span>
               </div>
               <DeleteControl id={fb.id} />
             </div>
-            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full bg-warning transition-all"
-                style={{ width: `${Math.min(usedPercent, 100)}%` }}
-              />
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+              <div className="h-full rounded-full bg-warning transition-all" style={{ width: `${Math.min(usedPercent, 100)}%` }} />
             </div>
-            <div className="flex justify-between mt-1">
-              <span className="text-2xs text-muted-foreground">
-                {new Date(fb.created_at).toLocaleDateString("fr-FR")}
-              </span>
-              <span className="text-2xs text-muted-foreground">
-                {Math.round(usedPercent)}% utilisé
-              </span>
+            <div className="mt-1 flex justify-between">
+              <span className="text-2xs text-muted-foreground">{new Date(fb.created_at).toLocaleDateString("fr-FR")}</span>
+              <span className="text-2xs text-muted-foreground">{Math.round(usedPercent)}% utilisé</span>
             </div>
           </div>
         );
@@ -107,7 +83,7 @@ export function FreebetList({ freebets }: FreebetListProps) {
 
       {active.length === 0 && (
         <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-          <Ticket className="h-8 w-8 mb-2 text-muted-foreground" />
+          <Ticket className="mb-2 h-8 w-8 text-muted-foreground" />
           <p className="text-xs">Aucun freebet disponible.</p>
         </div>
       )}
@@ -118,31 +94,20 @@ export function FreebetList({ freebets }: FreebetListProps) {
           <button
             onClick={() => setShowUsed((prev) => !prev)}
             aria-expanded={showUsed}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-muted-foreground cursor-pointer"
+            className="flex cursor-pointer items-center gap-1 text-xs text-muted-foreground hover:text-muted-foreground"
           >
-            {showUsed ? (
-              <ChevronDown aria-hidden className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronRight aria-hidden className="h-3.5 w-3.5" />
-            )}
+            {showUsed ? <ChevronDown aria-hidden className="h-3.5 w-3.5" /> : <ChevronRight aria-hidden className="h-3.5 w-3.5" />}
             Utilisés ({used.length})
           </button>
 
           {showUsed && (
             <div className="mt-2 space-y-1.5">
               {used.map((fb) => (
-                <div
-                  key={fb.id}
-                  className="flex items-center justify-between rounded-lg bg-card/60 px-3 py-2"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Ticket className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {formatEuros(fb.initial_amount)}
-                    </span>
-                    <span className="text-2xs text-muted-foreground">
-                      {new Date(fb.created_at).toLocaleDateString("fr-FR")}
-                    </span>
+                <div key={fb.id} className="flex items-center justify-between rounded-lg bg-card/60 px-3 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Ticket className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">{formatEuros(fb.initial_amount)}</span>
+                    <span className="text-2xs text-muted-foreground">{new Date(fb.created_at).toLocaleDateString("fr-FR")}</span>
                   </div>
                   <DeleteControl id={fb.id} />
                 </div>

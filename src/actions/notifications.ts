@@ -93,21 +93,16 @@ export async function saveBookmakers(keys: string[]) {
   const { user, error: authError } = await getAuthUser();
   if (authError || !user) return { error: "Non connecte." };
 
-  const { error } = await supabase.from("user_settings").upsert(
-    { user_id: user.id, bookmakers: valid, updated_at: new Date().toISOString() },
-    { onConflict: "user_id" },
-  );
+  const { error } = await supabase
+    .from("user_settings")
+    .upsert({ user_id: user.id, bookmakers: valid, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
   if (error) return { error: `Erreur: ${error.message}` };
 
   revalidatePath("/profile");
   return { success: true };
 }
 
-export async function savePushSubscription(subscription: {
-  endpoint: string;
-  keys: { p256dh: string; auth: string };
-  userAgent?: string;
-}) {
+export async function savePushSubscription(subscription: { endpoint: string; keys: { p256dh: string; auth: string }; userAgent?: string }) {
   const supabase = await createClient();
   const { user, error: authError } = await getAuthUser();
 
@@ -123,7 +118,7 @@ export async function savePushSubscription(subscription: {
       auth: subscription.keys.auth,
       user_agent: subscription.userAgent ?? null,
     },
-    { onConflict: "user_id,endpoint" }
+    { onConflict: "user_id,endpoint" },
   );
 
   if (error) {
@@ -141,11 +136,7 @@ export async function deletePushSubscription(endpoint: string) {
     return { error: "Non connecte." };
   }
 
-  await supabase
-    .from("push_subscriptions")
-    .delete()
-    .eq("user_id", user.id)
-    .eq("endpoint", endpoint);
+  await supabase.from("push_subscriptions").delete().eq("user_id", user.id).eq("endpoint", endpoint);
 
   return { success: true };
 }

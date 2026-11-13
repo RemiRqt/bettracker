@@ -8,7 +8,7 @@ type Commun = { libelle: string; indice?: string };
 function Entete({ id, libelle, indice }: Commun & { id: string }) {
   return (
     <>
-      <Label htmlFor={id} className="text-[15px] font-semibold">
+      <Label htmlFor={id} className="text-base font-semibold">
         {libelle}
       </Label>
       {indice && <p className="-mt-1 text-sm text-muted-foreground">{indice}</p>}

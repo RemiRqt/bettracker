@@ -12,11 +12,7 @@ export async function getUnseenReleases(): Promise<Release[]> {
   if (!user) return [];
   const supabase = await createClient();
 
-  const { data } = await supabase
-    .from("user_settings")
-    .select("last_seen_release")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { data } = await supabase.from("user_settings").select("last_seen_release").eq("user_id", user.id).maybeSingle();
   const lastSeen = data?.last_seen_release ?? null;
 
   if (!lastSeen && (await accountCreatedAfterLatestRelease())) {
@@ -39,8 +35,5 @@ export async function markReleasesSeen(): Promise<void> {
   const supabase = await createClient();
   await supabase
     .from("user_settings")
-    .upsert(
-      { user_id: user.id, last_seen_release: LATEST_RELEASE_ID, updated_at: new Date().toISOString() },
-      { onConflict: "user_id" },
-    );
+    .upsert({ user_id: user.id, last_seen_release: LATEST_RELEASE_ID, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
 }

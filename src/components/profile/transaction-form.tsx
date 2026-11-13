@@ -16,7 +16,7 @@ export function TransactionForm() {
     <>
       <Button
         onClick={() => setOpen(true)}
-        className="h-11 w-full rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 cursor-pointer"
+        className="h-11 w-full cursor-pointer rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
       >
         <Plus aria-hidden className="mr-1 h-4 w-4" />
         Ajouter une transaction
@@ -72,8 +72,8 @@ function Formulaire({ fermer }: { fermer: () => void }) {
             aria-pressed={type === t.valeur}
             onClick={() => setType(t.valeur)}
             className={cn(
-              "flex-1 h-11 rounded-xl text-sm font-medium transition-colors",
-              type === t.valeur ? t.actif : "bg-background text-muted-foreground border border-border"
+              "h-11 flex-1 rounded-xl text-sm font-medium transition-colors",
+              type === t.valeur ? t.actif : "border border-border bg-background text-muted-foreground",
             )}
           >
             {t.libelle}
@@ -98,10 +98,14 @@ function Formulaire({ fermer }: { fermer: () => void }) {
         onChange={(e) => setNote(e.target.value)}
         placeholder="Note (optionnel)"
         aria-label="Note (optionnel)"
-        className="h-11 w-full rounded-lg bg-background border border-border px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring"
+        className="h-11 w-full rounded-lg border border-border bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
 
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
       <Bouton type="submit" enCours={loading} className="h-11 rounded-lg font-semibold">
         Ajouter

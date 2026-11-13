@@ -7,6 +7,7 @@ import { AddApiTeamDialog } from "@/components/teams/add-api-team-dialog";
 import { useFollowedTeams } from "./use-followed-teams";
 import { ClubRow } from "./club-row";
 import { LinkSubjectsPopup, LinkClubsPopup } from "./link-popups";
+import { Confirmation } from "@/components/kit/Confirmation";
 
 interface FollowedTeamsProps {
   teamMappings: TeamMapping[];
@@ -64,11 +65,11 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm uppercase tracking-wide text-muted-foreground">Mes équipes</h2>
+        <h2 className="text-sm tracking-wide text-muted-foreground uppercase">Mes équipes</h2>
         <button
           onClick={() => setAddClubOpen(true)}
           aria-label="Ajouter une équipe"
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <Plus aria-hidden className="h-5 w-5" />
         </button>
@@ -78,9 +79,7 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
       {favorites.length > 0 ? (
         <div className="space-y-2">{favorites.map(renderClub)}</div>
       ) : (
-        <p className="text-xs text-muted-foreground">
-          Aucune équipe en favori. Touche l&apos;étoile d&apos;une équipe pour l&apos;épingler ici.
-        </p>
+        <p className="text-xs text-muted-foreground">Aucune équipe en favori. Touche l&apos;étoile d&apos;une équipe pour l&apos;épingler ici.</p>
       )}
 
       {/* Voir plus: non-favorites + unlinked subjects */}
@@ -89,13 +88,9 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
           <button
             onClick={() => setShowMore((s) => !s)}
             aria-expanded={showMore}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
-            {showMore ? (
-              <ChevronDown aria-hidden className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronRight aria-hidden className="h-3.5 w-3.5" />
-            )}
+            {showMore ? <ChevronDown aria-hidden className="h-3.5 w-3.5" /> : <ChevronRight aria-hidden className="h-3.5 w-3.5" />}
             Voir plus ({others.length + subjects.length})
           </button>
           {showMore && (
@@ -103,17 +98,15 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
               {others.length > 0 && <div className="space-y-2">{others.map(renderClub)}</div>}
               {subjects.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                    Non lies ({subjects.length})
-                  </p>
+                  <p className="mb-2 text-xs tracking-wide text-muted-foreground uppercase">Non lies ({subjects.length})</p>
                   <div className="flex flex-wrap gap-1.5">
                     {subjects.map((s) => (
                       <button
                         key={s.id}
                         onClick={() => setLinkUnlinked({ ouvert: true, valeur: s.subject })}
-                        className="px-2.5 py-1 rounded-full bg-background text-xs text-muted-foreground border border-border/50 hover:border-primary hover:text-primary transition-colors"
+                        className="rounded-full border border-border/50 bg-background px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
                       >
-                        <Link2 aria-hidden className="h-3 w-3 inline mr-1" />
+                        <Link2 aria-hidden className="mr-1 inline h-3 w-3" />
                         {s.subject}
                       </button>
                     ))}
@@ -149,6 +142,15 @@ export function FollowedTeams({ teamMappings: initialMappings }: FollowedTeamsPr
         clubs={clubs}
         subjectLinks={t.subjectLinks}
         onLink={handleLink}
+      />
+
+      <Confirmation
+        ouvert={t.suppression.ouvert}
+        fermer={t.fermerSuppression}
+        titre={`Supprimer ${t.suppression.club?.subject ?? "ce club"} ?`}
+        message="Le club sera dissocié des paris qui y sont liés."
+        libelleAction="Supprimer"
+        surConfirmer={t.confirmerSuppression}
       />
     </div>
   );

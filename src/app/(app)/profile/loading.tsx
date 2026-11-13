@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProfileLoading() {
   return (
@@ -13,5 +13,5 @@ export default function ProfileLoading() {
       <Skeleton className="h-40 w-full rounded-xl" />
       <Skeleton className="h-40 w-full rounded-xl" />
     </div>
-  )
+  );
 }

@@ -4,12 +4,7 @@ import { Item, Section } from "./item";
 
 export function ButtonsSection() {
   return (
-    <Section
-      anchor="buttons"
-      n={3}
-      title="Boutons"
-      description="Button (shadcn) — variants, tailles, états. Press tactile global au clic."
-    >
+    <Section anchor="buttons" n={3} title="Boutons" description="Button (shadcn) — variants, tailles, états. Press tactile global au clic.">
       <Item id={40} label="default" hint='variant="default"'>
         <Button>Ajouter un pari</Button>
       </Item>

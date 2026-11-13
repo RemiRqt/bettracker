@@ -30,7 +30,7 @@ export function BookmakerSettings({ initial }: { initial: string[] }) {
   }
 
   return (
-    <div className="rounded-xl bg-card p-4 space-y-3">
+    <div className="space-y-3 rounded-xl bg-card p-4">
       <div>
         <h2 className="text-sm font-semibold text-foreground">Mes bookmakers</h2>
         <p className="text-xs text-muted-foreground">Cotes du marché affichées quand tu crées un pari</p>
@@ -53,12 +53,7 @@ export function BookmakerSettings({ initial }: { initial: string[] }) {
                 {b.note && <span className="ml-1.5 text-xs text-muted-foreground">({b.note})</span>}
               </span>
               <span className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", on ? "bg-primary" : "bg-muted")}>
-                <span
-                  className={cn(
-                    "absolute top-0.5 h-5 w-5 rounded-full bg-background transition-transform",
-                    on ? "translate-x-5" : "translate-x-0.5",
-                  )}
-                />
+                <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-background transition-transform", on ? "translate-x-5" : "translate-x-0.5")} />
               </span>
             </button>
           );

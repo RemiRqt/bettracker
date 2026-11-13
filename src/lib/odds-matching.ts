@@ -48,17 +48,13 @@ export function sameTeam(a: string, b: string): boolean {
 
 const matchesAny = (name: string, candidates: string[]) => candidates.some((c) => sameTeam(name, c));
 
-export function findEvent(
-  events: OddsEvent[],
-  target: { kickoff: string; homeNames: string[]; awayNames: string[] },
-): OddsEvent | null {
+export function findEvent(events: OddsEvent[], target: { kickoff: string; homeNames: string[]; awayNames: string[] }): OddsEvent | null {
   const t = new Date(target.kickoff).getTime();
   const near = events.filter((e) => Math.abs(new Date(e.commence_time).getTime() - t) <= MAX_KICKOFF_GAP_MS);
   const scored = near
     .map((e) => ({
       e,
-      score:
-        Number(matchesAny(e.home_team, target.homeNames)) + Number(matchesAny(e.away_team, target.awayNames)),
+      score: Number(matchesAny(e.home_team, target.homeNames)) + Number(matchesAny(e.away_team, target.awayNames)),
     }))
     .filter((x) => x.score > 0)
     .sort((a, b) => b.score - a.score);
@@ -66,11 +62,7 @@ export function findEvent(
 }
 
 /** Cotes par bookmaker pour l'issue pariée. `side` = côté de l'équipe pariée. */
-export function outcomePrices(
-  event: OddsEvent,
-  side: "home" | "away",
-  betType: string,
-): Record<string, number> | null {
+export function outcomePrices(event: OddsEvent, side: "home" | "away", betType: string): Record<string, number> | null {
   if (betType !== "victoire" && betType !== "defaite") return null;
   const teamSide = betType === "victoire" ? side : side === "home" ? "away" : "home";
   const outcomeName = teamSide === "home" ? event.home_team : event.away_team;
@@ -103,10 +95,7 @@ export interface OutcomeBest {
 }
 
 /** Meilleure cote (et bookmaker) pour 1 / N / 2, limitée aux bookmakers cochés. */
-export function bestPerOutcome(
-  event: OddsEvent,
-  allowed: string[],
-): { home: OutcomeBest | null; draw: OutcomeBest | null; away: OutcomeBest | null } | null {
+export function bestPerOutcome(event: OddsEvent, allowed: string[]): { home: OutcomeBest | null; draw: OutcomeBest | null; away: OutcomeBest | null } | null {
   const names = { home: event.home_team, draw: "Draw", away: event.away_team };
   const best: Record<keyof typeof names, OutcomeBest | null> = { home: null, draw: null, away: null };
   for (const b of event.bookmakers) {
@@ -114,7 +103,7 @@ export function bestPerOutcome(
     const outcomes = b.markets.find((m) => m.key === "h2h")?.outcomes ?? [];
     for (const side of ["home", "draw", "away"] as const) {
       const o = outcomes.find((x) => x.name === names[side]);
-      if (o && (!best[side] || o.price > best[side]!.price)) best[side] = { price: o.price, bookmaker: b.key };
+      if (o && o.price > (best[side]?.price ?? -Infinity)) best[side] = { price: o.price, bookmaker: b.key };
     }
   }
   return best.home || best.draw || best.away ? best : null;

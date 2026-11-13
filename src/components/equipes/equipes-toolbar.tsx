@@ -2,6 +2,7 @@
 
 import { Search, ChevronDown, ChevronUp, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFocusAuMontage } from "@/hooks/use-focus-au-montage";
 
 export type SortKey = "date" | "gains" | "paris";
 export type FilterKey = "en_cours" | "gagne" | "perdu" | null;
@@ -39,19 +40,20 @@ interface EquipesToolbarProps {
 
 // Barre d'outils de la page Équipes : recherche (repliable), filtres, « Mes équipes », tri.
 export function EquipesToolbar(props: EquipesToolbarProps) {
+  const focusRecherche = useFocusAuMontage();
   return (
     <>
       {props.searchOpen && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <input
             type="search"
             aria-label="Rechercher une équipe"
             placeholder="Rechercher..."
             value={props.search}
             onChange={(e) => props.onSearch(e.target.value)}
-            autoFocus
-            className="w-full h-10 pl-10 pr-4 rounded-xl bg-card border border-border text-sm text-secondary-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+            ref={focusRecherche}
+            className="h-10 w-full rounded-xl border border-border bg-card pr-4 pl-10 text-sm text-secondary-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
           />
         </div>
       )}
@@ -64,11 +66,7 @@ export function EquipesToolbar(props: EquipesToolbarProps) {
 function FilterBar({ filterBy, onFilter, counts, onOpenMyTeams }: EquipesToolbarProps) {
   return (
     <div className="flex items-center gap-1.5">
-      <div
-        role="group"
-        aria-label="Filtrer les équipes"
-        className="flex gap-1.5 overflow-x-auto -my-2.5 pt-2.5 pb-3.5 scrollbar-none flex-1"
-      >
+      <div role="group" aria-label="Filtrer les équipes" className="scrollbar-none -my-2.5 flex flex-1 gap-1.5 overflow-x-auto pt-2.5 pb-3.5">
         {FILTER_OPTIONS.map((opt) => {
           const isActive = filterBy === opt.key;
           return (
@@ -78,10 +76,8 @@ function FilterBar({ filterBy, onFilter, counts, onOpenMyTeams }: EquipesToolbar
               aria-pressed={isActive}
               onClick={() => onFilter(isActive ? null : opt.key)}
               className={cn(
-                "relative flex-shrink-0 px-2.5 py-1 before:absolute before:-inset-y-2.5 before:inset-x-0 rounded-lg text-xs font-medium transition-colors border",
-                isActive
-                  ? `${opt.activeColor} ${opt.color}`
-                  : "bg-transparent text-muted-foreground border-border/50 hover:border-border"
+                "relative flex-shrink-0 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors before:absolute before:inset-x-0 before:-inset-y-2.5",
+                isActive ? `${opt.activeColor} ${opt.color}` : "border-border/50 bg-transparent text-muted-foreground hover:border-border",
               )}
             >
               {opt.label}
@@ -93,7 +89,7 @@ function FilterBar({ filterBy, onFilter, counts, onOpenMyTeams }: EquipesToolbar
       <button
         type="button"
         onClick={onOpenMyTeams}
-        className="flex-shrink-0 flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:border-primary/50 transition-colors"
+        className="flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-secondary-foreground transition-colors hover:border-primary/50"
       >
         <Users className="h-3.5 w-3.5" aria-hidden="true" /> Mes équipes
       </button>
@@ -114,10 +110,8 @@ function SortBar({ sortBy, sortAsc, onSort, searchOpen, onToggleSearch }: Equipe
             aria-label={`Trier par ${opt.srLabel}${isActive ? (sortAsc ? ", croissant" : ", décroissant") : ""}`}
             onClick={() => onSort(opt.key)}
             className={cn(
-              "relative flex-1 before:absolute before:-inset-y-2 before:inset-x-0 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-colors border",
-              isActive
-                ? "bg-primary/20 text-primary border-primary/30"
-                : "bg-card text-muted-foreground border-border hover:border-border/80"
+              "relative flex flex-1 items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-medium transition-colors before:absolute before:inset-x-0 before:-inset-y-2",
+              isActive ? "border-primary/30 bg-primary/20 text-primary" : "border-border bg-card text-muted-foreground hover:border-border/80",
             )}
           >
             {opt.label}
@@ -131,10 +125,8 @@ function SortBar({ sortBy, sortAsc, onSort, searchOpen, onToggleSearch }: Equipe
         aria-label="Rechercher une équipe"
         aria-expanded={searchOpen}
         className={cn(
-          "relative flex-shrink-0 w-11 before:absolute before:-inset-y-2 before:inset-x-0 flex items-center justify-center rounded-lg border transition-colors",
-          searchOpen
-            ? "bg-primary/10 border-primary/40 text-primary"
-            : "bg-card border-border text-secondary-foreground hover:text-foreground"
+          "relative flex w-11 flex-shrink-0 items-center justify-center rounded-lg border transition-colors before:absolute before:inset-x-0 before:-inset-y-2",
+          searchOpen ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-card text-secondary-foreground hover:text-foreground",
         )}
       >
         <Search className="h-4 w-4" aria-hidden="true" />

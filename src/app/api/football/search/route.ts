@@ -8,7 +8,6 @@ const cache = new Map<string, { data: unknown; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hours (teams don't change often)
 
 export async function GET(request: NextRequest) {
-
   const { user, error: authError } = await getAuthUser();
 
   if (authError || !user) {
@@ -18,10 +17,7 @@ export async function GET(request: NextRequest) {
   const competition = request.nextUrl.searchParams.get("competition");
 
   if (!competition || !competition.trim()) {
-    return NextResponse.json(
-      { error: "Le parametre 'competition' est requis." },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Le parametre 'competition' est requis." }, { status: 400 });
   }
 
   const cacheKey = `teams:${competition}`;
@@ -32,34 +28,27 @@ export async function GET(request: NextRequest) {
 
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) {
-    return NextResponse.json(
-      { error: "FOOTBALL_DATA_API_KEY non configuree." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "FOOTBALL_DATA_API_KEY non configuree." }, { status: 500 });
   }
 
+  return fetchCompetitionTeams(competition, cacheKey, apiKey);
+}
+
+async function fetchCompetitionTeams(competition: string, cacheKey: string, apiKey: string) {
   try {
-    const response = await fetch(
-      `${FOOTBALL_DATA_BASE}/competitions/${encodeURIComponent(competition)}/teams`,
-      { headers: { "X-Auth-Token": apiKey } }
-    );
+    const response = await fetch(`${FOOTBALL_DATA_BASE}/competitions/${encodeURIComponent(competition)}/teams`, { headers: { "X-Auth-Token": apiKey } });
 
     if (!response.ok) {
-      return NextResponse.json(
-        { error: "Erreur football-data.org." },
-        { status: response.status }
-      );
+      return NextResponse.json({ error: "Erreur football-data.org." }, { status: response.status });
     }
 
     const json = await response.json();
-    const teams = (json.teams ?? []).map(
-      (team: { id: number; name: string; shortName: string; crest: string }) => ({
-        id: team.id,
-        name: team.name,
-        shortName: team.shortName,
-        logo: team.crest,
-      })
-    );
+    const teams = (json.teams ?? []).map((team: { id: number; name: string; shortName: string; crest: string }) => ({
+      id: team.id,
+      name: team.name,
+      shortName: team.shortName,
+      logo: team.crest,
+    }));
 
     cache.set(cacheKey, { data: teams, timestamp: Date.now() });
 
@@ -67,9 +56,6 @@ export async function GET(request: NextRequest) {
       headers: { "Cache-Control": "public, max-age=86400" },
     });
   } catch {
-    return NextResponse.json(
-      { error: "Erreur de connexion a football-data.org." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erreur de connexion a football-data.org." }, { status: 500 });
   }
 }

@@ -9,14 +9,15 @@ export function SignOutButton() {
 
   async function handleSignOut() {
     await supabase.auth.signOut();
-    router.push("/login");
+    router.replace("/login");
+    // eslint-disable-next-line no-restricted-syntax -- déconnexion côté client (pas d'action serveur) : seul moyen de vider le cache routeur (staleTimes 30 s) des écrans de la session terminée
     router.refresh();
   }
 
   return (
     <button
       onClick={handleSignOut}
-      className="w-full h-12 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive font-medium hover:bg-destructive/20 transition-colors"
+      className="h-12 w-full rounded-xl border border-destructive/20 bg-destructive/10 font-medium text-destructive transition-colors hover:bg-destructive/20"
     >
       Se déconnecter
     </button>

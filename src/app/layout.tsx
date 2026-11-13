@@ -32,11 +32,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const theme = await getServerTheme();
   return (
     <html lang="fr" data-theme={theme}>
@@ -45,9 +41,7 @@ export default async function RootLayout({
         <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
       </head>
-      <body className={`${poppins.variable} font-sans antialiased`}>
-        {children}
-      </body>
+      <body className={`${poppins.variable} font-sans antialiased`}>{children}</body>
     </html>
   );
 }

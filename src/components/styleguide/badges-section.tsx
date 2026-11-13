@@ -4,12 +4,7 @@ import { Item, Section } from "./item";
 
 export function BadgesSection() {
   return (
-    <Section
-      anchor="badges"
-      n={4}
-      title="Badges & statuts"
-      description="Badge (shadcn) + badges de statut série (couleurs dédiées)."
-    >
+    <Section anchor="badges" n={4} title="Badges & statuts" description="Badge (shadcn) + badges de statut série (couleurs dédiées).">
       <Item id={70} label="default" hint='variant="default"'>
         <Badge>Nouveau</Badge>
       </Item>
