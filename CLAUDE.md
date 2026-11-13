@@ -1,5 +1,26 @@
 # BetTracker - Project Rules
 
+> **Pilotage projet** (objectif, plan d'action, décisions, "Reprendre par") :
+> `/Users/remi/Documents/Obsidian Vault/2 - PROJETS/bettracker/CLAUDE.md`
+
+## Avant de coder
+
+1. Lire `docs/regles/` : `qualite.md`, `securite.md`, `bdd.md`, `outils.md`, `design.md` (règles reprises de
+   `~/projects/_app-template` le 2026-11-13, adaptées).
+2. **`npm run verifier` → `VERIFIER OK`** avant tout commit/push (garde-fous, typecheck, lint, format, tests, knip,
+   build).
+
+## Règles d'or
+
+- Push sur `master` = prod. Jamais `--no-verify` (lefthook pre-push lance `verifier` ; hook Claude). npm seul.
+- Repo **public** : aucun secret dans le code ni l'historique ; valeurs dans Bitwarden (`bwenv bettracker`), toute
+  variable lue par le code listée dans `.env.example`.
+- Données : RLS `to authenticated` + `(select auth.uid()) = user_id` ; migrations horodatées
+  `YYYYMMDDHHMMSS_<sujet>.sql`, essai à blanc puis `sperso db query --linked -f …` (`docs/regles/bdd.md`).
+  **Jamais `db push`** (base partagée).
+- Chaque mise à jour livrée : entrée dans `src/lib/releases.ts`.
+- Commits en français « Zone : changement ».
+
 ## Stack
 
 - Next.js 16 (App Router) + React 19 + TypeScript
@@ -12,9 +33,9 @@
 
 ```bash
 npm run dev          # Dev server (127.0.0.1:3000)
-npm run build        # Production build
-npm run lint         # ESLint
-npx supabase db push # Push migrations
+npm run verifier     # Barrière avant push (garde-fous, typecheck, lint, format, tests, knip, build)
+npm test             # Vitest
+# Migrations : jamais `supabase db push` — voir docs/regles/bdd.md
 ```
 
 ## Architecture
@@ -37,7 +58,7 @@ src/
     ├── supabase/     # Client factories (client.ts, server.ts, middleware.ts)
     └── types/        # TypeScript types (index.ts, database.ts)
 
-supabase/migrations/  # SQL migrations (8 files)
+supabase/migrations/  # SQL (00001-00027 figées, puis YYYYMMDDHHMMSS_<sujet>.sql)
 ```
 
 ## Data Flow Rules
@@ -58,6 +79,7 @@ Page/Component → Server Action (src/actions/) → Supabase
 ### Server Actions (src/actions/)
 
 All mutations and data fetching go through server actions. Each file groups related operations:
+
 - `bets.ts` — addBet, validateBetResult
 - `series.ts` — createSeries, getSeries, deleteSeries, abandonSeries
 - `stats.ts` — getDashboardStats
@@ -70,10 +92,10 @@ When adding a new feature, create or extend an action file — never put Supabas
 ## Auth
 
 - Supabase Auth (Google OAuth + magic link)
-- Middleware (`middleware.ts`) protects all routes except /login, /auth, /api/football/image
+- Proxy (`src/proxy.ts`) refreshes the session and redirects to /login (not a security barrier: each action checks the user)
 - Server-side: `const supabase = await createClient()` from `lib/supabase/server.ts`
 - Client-side: `createClient()` from `lib/supabase/client.ts`
-- Always get user with `supabase.auth.getUser()`, never trust client-side session alone
+- Always get user with `getAuthUser()` (claims vérifiés), never trust client-side session alone
 
 ## Component Rules
 
@@ -83,7 +105,7 @@ When adding a new feature, create or extend an action file — never put Supabas
 4. Server Components by default
 5. Dynamic imports for heavy components:
    ```tsx
-   const Chart = dynamic(() => import("./Chart"))
+   const Chart = dynamic(() => import("./Chart"));
    ```
 
 ## File Size Limits
@@ -107,6 +129,7 @@ When adding a new feature, create or extend an action file — never put Supabas
 Tables: `series`, `bets`, `transactions`, `team_mappings`, `equipes`, `logo_cache`
 
 Rules:
+
 - Migrations in `supabase/migrations/` with sequential numbering
 - Always add indexes on filtered columns
 - Use RLS policies for row-level security
@@ -126,9 +149,9 @@ Rules:
 
 ```tsx
 try {
-  const data = await serverAction()
+  const data = await serverAction();
 } catch (error) {
-  console.error("Context:", error)
+  console.error("Context:", error);
   // Show user feedback via toast
 }
 ```
