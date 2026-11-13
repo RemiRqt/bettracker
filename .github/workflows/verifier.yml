@@ -4,7 +4,7 @@ name: verifier
 # npm run verifier + lefthook pre-push + hook Claude anti --no-verify.
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths-ignore: ["**/*.md", "docs/**"]
   pull_request:
   schedule:
